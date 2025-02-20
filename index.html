@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Organizador de Dados de Concurso</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #e0f7fa;
+        }
+        .container {
+            background-color: #f9f9f9;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            width: 80%;
+            max-width: 600px;
+            text-align: center;
+        }
+        .form-group {
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            text-align: center;
+            color: #4CAF50;
+        }
+        textarea, select, input, button {
+            border-radius: 10px;
+            border: 1px solid #4CAF50;
+            padding: 10px;
+            width: 70%;
+            box-sizing: border-box;
+            color: #004d40;
+        }
+        button {
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            margin-top: 10px;
+            padding: 10px 20px;
+            width: auto;
+            display: inline-block;
+        }
+        button:hover {
+            background-color: #388E3C;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #4CAF50;
+            padding: 8px;
+            text-align: center;
+            cursor: pointer;
+        }
+        th {
+            background-color: #4CAF50;
+            color: white;
+        }
+        td {
+            background-color: #f2f2f2;
+        }
+        tr:nth-child(even) td {
+            background-color: #e0f2f1;
+        }
+        #columnNames input {
+            margin-bottom: 5px;
+        }
+        .checkbox-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .search-group {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .footer {
+            margin-top: auto;
+            text-align: center;
+            padding: 20px;
+            background-color: transparent;
+            width: 80%;
+            max-width: 600px;
+            border-top: 1px solid #ddd;
+            box-sizing: border-box;
+        }
+        .footer img {
+            width: 100px;
+            border-radius: 50%;
+            margin-bottom: 10px;
+        }
+        .footer p {
+            margin: 0;
+            font-size: 14px;
+            color: #555;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Organizador de Dados de Concurso</h1>
+        <form id="organizeForm">
+            <div class="form-group">
+                <label for="dataInput" title="Insira os dados dos candidatos, separados por '/'.">Dados dos candidatos (separados por "/"):</label>
+                <textarea id="dataInput" name="dataInput" rows="4" cols="50" title="Insira os dados dos candidatos, separados por '/'."></textarea>
+            </div>
+            <div class="form-group">
+                <label for="separatorInput" title="Escolha o separador dos dados individuais.">Separador dos dados individuais:</label>
+                <select id="separatorInput" name="separatorInput" title="Escolha o separador dos dados individuais.">
+                    <option value="," title="Separador: Vírgula">Vírgula</option>
+                    <option value=";" title="Separador: Ponto e Vírgula">Ponto e Vírgula</option>
+                    <option value="." title="Separador: Ponto">Ponto</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="fieldsInput" title="Informe a quantidade de campos em sequência.">Quantidade de campos em sequência:</label>
+                <input type="number" id="fieldsInput" name="fieldsInput" min="1" oninput="generateColumnInputs()" title="Informe a quantidade de campos em sequência.">
+            </div>
+            <div id="columnNames" class="form-group"></div>
+            <div class="form-group">
+                <label>
+                    <input type="checkbox" id="addRankingColumn" name="addRankingColumn" title="Selecione para adicionar uma coluna de classificação.">
+                    Adicionar coluna de classificação
+                </label>
+            </div>
+            <button type="button" onclick="organizeData()" title="Clique para organizar os dados.">Organizar</button>
+        </form>
+    </div>
+
+    <div class="container">
+        <h1>Resultado Organizado</h1>
+		<table border="1" id="resultTable">
+            <thead>
+                <tr id="tableHeaders"></tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+        </table>
+    </div>
+
+    <footer class="footer">
+        <img src="minha_foto.jpg" alt="Foto do Autor">
+        <p><b>Autor: Júnior Chaves</b></p>
+    </footer>
+   
+    <script>
+        function generateColumnInputs() {
+            const fieldsInput = parseInt(document.getElementById('fieldsInput').value);
+            const columnNamesDiv = document.getElementById('columnNames');
+            columnNamesDiv.innerHTML = '';
+
+            for (let i = 1; i <= fieldsInput; i++) {
+                const label = document.createElement('label');
+                label.textContent = `Nome da Coluna ${i}: `;
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.id = `columnName${i}`;
+                input.name = `columnName${i}`;
+                input.placeholder = `Campo ${i}`;
+                input.title = `Informe o nome da Coluna ${i}.`;
+
+                columnNamesDiv.appendChild(label);
+                columnNamesDiv.appendChild(input);
+                columnNamesDiv.appendChild(document.createElement('br'));
+            }
+        }
+
+        function organizeData() {
+            const dataInput = document.getElementById('dataInput').value;
+            const separatorInput = document.getElementById('separatorInput').value;
+            const fieldsInput = parseInt(document.getElementById('fieldsInput').value);
+            const addRankingColumn = document.getElementById('addRankingColumn').checked;
+            const columnNames = [];
+            for (let i = 1; i <= fieldsInput; i++) {
+                const columnName = document.getElementById(`columnName${i}`).value || `Coluna ${i}`;
+                columnNames.push(columnName);
+            }
+            if (addRankingColumn) columnNames.unshift('Classificação'); // Adicionar a coluna "Classificação" na primeira posição
+
+            // Processar os dados para evitar separação de notas decimais
+            const candidates = dataInput.split('/').map(candidate => {
+                const regex = new RegExp(`${separatorInput}(?=\\s|$)`);
+                return candidate.trim().split(regex);
+            });
+
+            // Ordenar os candidatos pela nota (assumindo que a nota esteja na última posição dos dados do candidato)
+            const sortedCandidates = candidates.sort((a, b) => parseFloat(b[b.length - 1].replace(',', '.')) - parseFloat(a[a.length - 1].replace(',', '.')));
+
+            let organizedData = sortedCandidates.map((candidate, index) => {
+                if (addRankingColumn) candidate.unshift(index + 1); // Adicionar a classificação como a primeira coluna
+                return candidate;
+            });
+
+            updateTable(columnNames, organizedData);
+        }
+
+        function updateTable(columnNames, data) {
+            const tableHeaders = document.getElementById('tableHeaders');
+            const tableBody = document.getElementById('tableBody');
+            tableHeaders.innerHTML = '';
+            tableBody.innerHTML = '';
+
+            columnNames.forEach(columnName => {
+                const th = document.createElement('th');
+                th.textContent = columnName;
+                th.onclick = () => sortTable(columnNames.indexOf(columnName));
+                tableHeaders.appendChild(th);
+            });
+
+            data.forEach(row => {
+                const tr = document.createElement('tr');
+                row.forEach(cell => {
+                    const td = document.createElement('td');
+                    td.textContent = cell;
+                    tr.appendChild(td);
+                });
+                tableBody.appendChild(tr);
+            });
+
+            sortTable(columnNames.indexOf('Nota')); // Inicialmente ordenar por Nota
+        }
+
+        let sortDirections = [];
+        let nameColumnIndex = null;
+
+        window.onload = function() {
+            const tableHeaders = document.querySelectorAll('#resultTable th');
+            tableHeaders.forEach((header, index) => {
+                sortDirections[index] = true; // Inicialmente, definir ordenação crescente para todas as colunas
+
+                // Verificar se o nome da coluna inclui "nome" (caso insensível)
+                if (header.textContent.toLowerCase().includes('nome')) {
+                    nameColumnIndex = index; // Definir o índice da coluna do nome
+                }
+            });
+        };
+
+        function sortTable(columnIndex) {
+            const table = document.getElementById('resultTable');
+            const tbody = table.getElementsByTagName('tbody')[0];
+            const rows = Array.from(tbody.getElementsByTagName('tr'));
+
+            const sortedRows = rows.sort((a, b) => {
+                const textA = a.cells[columnIndex].textContent.trim();
+                const textB = b.cells[columnIndex].textContent.trim();
+
+                // Tentar converter para número
+                const numA = parseFloat(textA.replace(',', '.'));
+                const numB = parseFloat(textB.replace(',', '.'));
+
+                if (!isNaN(numA) && !isNaN(numB)) {
+                    // Comparar como números
+                    return sortDirections[columnIndex] ? numA - numB : numB - numA;
+                } else {
+                    // Comparar como strings
+                    return sortDirections[columnIndex] ? textA.localeCompare(textB) : textB.localeCompare(textA);
+                }
+            });
+
+            sortDirections[columnIndex] = !sortDirections[columnIndex]; // Alternar a direção de ordenação
+
+            tbody.innerHTML = '';
+            sortedRows.forEach(row => tbody.appendChild(row));
+        }
+
+        function normalizeString(str) {
+            return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/ç/g, "c").replace(/Ç/g, "C");
+        }
+    </script>
+</body>
+</html>
