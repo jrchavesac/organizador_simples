@@ -5,116 +5,146 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Organizador de Dados de Concurso</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            align-items: center;
-            min-height: 100vh;
-            background-color: #e0f7fa;
-        }
+    body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        align-items: center;
+        min-height: 100vh;
+        background-color: #e0f7fa;
+    }
+    .container {
+        background-color: #f9f9f9;
+        padding: 20px;
+        border-radius: 10px;
+        margin-top: 20px;
+        width: 80%;
+        max-width: 600px;
+        text-align: center;
+    }
+    .form-group {
+        margin-bottom: 15px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    .form-group label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+        text-align: center;
+        color: #4CAF50;
+    }
+    textarea, select, input, button {
+        border-radius: 10px;
+        border: 1px solid #4CAF50;
+        padding: 10px;
+        width: 70%;
+        box-sizing: border-box;
+        color: #004d40;
+    }
+    button {
+        cursor: pointer;
+        background-color: #4CAF50;
+        color: white;
+        border: none;
+        margin-top: 10px;
+        padding: 10px 20px;
+        width: auto;
+        display: inline-block;
+    }
+    button:hover {
+        background-color: #388E3C;
+    }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+    }
+    th, td {
+        border: 1px solid #4CAF50;
+        padding: 8px;
+        text-align: center;
+        cursor: pointer;
+    }
+    th {
+        background-color: #4CAF50;
+        color: white;
+    }
+    td {
+        background-color: #f2f2f2;
+    }
+    tr:nth-child(even) td {
+        background-color: #e0f2f1;
+    }
+    #columnNames input {
+        margin-bottom: 5px;
+    }
+    .checkbox-group {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-bottom: 15px;
+    }
+    .search-group {
+        margin-top: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    .footer {
+        margin-top: auto;
+        text-align: center;
+        padding: 20px;
+        background-color: transparent;
+        width: 80%;
+        max-width: 600px;
+        border-top: 1px solid #ddd;
+        box-sizing: border-box;
+    }
+    .footer img {
+        width: 100px;
+        border-radius: 50%;
+        margin-bottom: 10px;
+    }
+    .footer p {
+        margin: 0;
+        font-size: 14px;
+        color: #555;
+    }
+
+    /* Media Queries for Responsiveness */
+    @media (max-width: 768px) {
         .container {
-            background-color: #f9f9f9;
-            padding: 20px;
-            border-radius: 10px;
-            margin-top: 20px;
-            width: 80%;
-            max-width: 600px;
-            text-align: center;
-        }
-        .form-group {
-            margin-bottom: 15px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        .form-group label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-            text-align: center;
-            color: #4CAF50;
+            width: 90%;
         }
         textarea, select, input, button {
-            border-radius: 10px;
-            border: 1px solid #4CAF50;
-            padding: 10px;
-            width: 70%;
-            box-sizing: border-box;
-            color: #004d40;
-        }
-        button {
-            cursor: pointer;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            margin-top: 10px;
-            padding: 10px 20px;
-            width: auto;
-            display: inline-block;
-        }
-        button:hover {
-            background-color: #388E3C;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-        th, td {
-            border: 1px solid #4CAF50;
-            padding: 8px;
-            text-align: center;
-            cursor: pointer;
-        }
-        th {
-            background-color: #4CAF50;
-            color: white;
-        }
-        td {
-            background-color: #f2f2f2;
-        }
-        tr:nth-child(even) td {
-            background-color: #e0f2f1;
-        }
-        #columnNames input {
-            margin-bottom: 5px;
-        }
-        .checkbox-group {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            margin-bottom: 15px;
-        }
-        .search-group {
-            margin-top: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+            width: 90%;
         }
         .footer {
-            margin-top: auto;
-            text-align: center;
-            padding: 20px;
-            background-color: transparent;
-            width: 80%;
-            max-width: 600px;
-            border-top: 1px solid #ddd;
-            box-sizing: border-box;
+            width: 90%;
         }
-        .footer img {
-            width: 100px;
-            border-radius: 50%;
-            margin-bottom: 10px;
+    }
+    
+    @media (max-width: 480px) {
+        .container {
+            width: 100%;
+            padding: 10px;
         }
-        .footer p {
-            margin: 0;
-            font-size: 14px;
-            color: #555;
+        textarea, select, input, button {
+            width: 100%;
         }
-    </style>
+        button {
+            padding: 8px 16px;
+        }
+        .footer {
+            width: 100%;
+            padding: 10px;
+        }
+    }
+</style>
 </head>
 
 <body>
