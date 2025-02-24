@@ -215,34 +215,46 @@
             }
         }
 
-        function organizeData() {
-            const dataInput = document.getElementById('dataInput').value;
-            const separatorInput = document.getElementById('separatorInput').value;
-            const fieldsInput = parseInt(document.getElementById('fieldsInput').value);
-            const addRankingColumn = document.getElementById('addRankingColumn').checked;
-            const columnNames = [];
-            for (let i = 1; i <= fieldsInput; i++) {
-                const columnName = document.getElementById(`columnName${i}`).value || `Coluna ${i}`;
-                columnNames.push(columnName);
-            }
-            if (addRankingColumn) columnNames.unshift('Classificação'); // Adicionar a coluna "Classificação" na primeira posição
+		function organizeData() {
+			const dataInput = document.getElementById('dataInput').value;
+			const separatorInput = document.getElementById('separatorInput').value;
+			const fieldsInput = parseInt(document.getElementById('fieldsInput').value);
+			const addRankingColumn = document.getElementById('addRankingColumn').checked;
+			const columnNames = [];
 
-            // Processar os dados para evitar separação de notas decimais
-            const candidates = dataInput.split('/').map(candidate => {
-                const regex = new RegExp(`${separatorInput}(?=\\s|$)`);
-                return candidate.trim().split(regex);
-            });
+			for (let i = 1; i <= fieldsInput; i++) {
+				const columnName = document.getElementById(`columnName${i}`).value || `Coluna ${i}`;
+				columnNames.push(columnName);
+			}
 
-            // Ordenar os candidatos pela nota (assumindo que a nota esteja na última posição dos dados do candidato)
-            const sortedCandidates = candidates.sort((a, b) => parseFloat(b[b.length - 1].replace(',', '.')) - parseFloat(a[a.length - 1].replace(',', '.')));
+			// Processar os dados para evitar separação de notas decimais
+			const candidates = dataInput.split('/').map(candidate => {
+				return candidate.trim().split(/,\s*(?!\d)/); // Ajuste para evitar divisão de notas decimais
+			});
 
-            let organizedData = sortedCandidates.map((candidate, index) => {
-                if (addRankingColumn) candidate.unshift(index + 1); // Adicionar a classificação como a primeira coluna
-                return candidate;
-            });
+			// Ordenar os candidatos pela nota (assumindo que a nota esteja na penúltima posição dos dados do candidato)
+			const sortedCandidates = candidates.sort((a, b) => {
+				const aNota = parseFloat(a[a.length - 1].replace(',', '.'));
+				const bNota = parseFloat(b[b.length - 1].replace(',', '.'));
+				return bNota - aNota; // Ordenar em ordem decrescente
+			});
 
-            updateTable(columnNames, organizedData);
-        }
+			let organizedData;
+			if (addRankingColumn) {
+				// Adicionar a classificação como a primeira coluna após a ordenação
+				organizedData = sortedCandidates.map((candidate, index) => {
+					candidate.unshift(index + 1); // Adicionar a classificação como a primeira coluna
+					return candidate;
+				});
+
+				// Adicionar a coluna "Classificação" na primeira posição
+				columnNames.unshift('Classificação'); 
+			} else {
+				organizedData = sortedCandidates; // Manter os dados organizados sem a coluna "Classificação"
+			}
+
+			updateTable(columnNames, organizedData);
+		}
 
         function updateTable(columnNames, data) {
             const tableHeaders = document.getElementById('tableHeaders');
@@ -274,16 +286,22 @@
         let nameColumnIndex = null;
 
         window.onload = function() {
-            const tableHeaders = document.querySelectorAll('#resultTable th');
-            tableHeaders.forEach((header, index) => {
-                sortDirections[index] = true; // Inicialmente, definir ordenação crescente para todas as colunas
+			const tableHeaders = document.querySelectorAll('#resultTable th');
+			tableHeaders.forEach((header, index) => {
+				// Inicialmente, definir ordenação crescente para todas as colunas, exceto para a coluna "Classificação" e "Nota"
+				if (header.textContent.toLowerCase().includes('nota') || header.textContent.toLowerCase().includes('classificação')) {
+					sortDirections[index] = false; // Manter a ordem decrescente para "Nota" e crescente para "Classificação"
+				} else {
+					sortDirections[index] = true; // Ordenação crescente para as demais colunas
+				}
 
-                // Verificar se o nome da coluna inclui "nome" (caso insensível)
-                if (header.textContent.toLowerCase().includes('nome')) {
-                    nameColumnIndex = index; // Definir o índice da coluna do nome
-                }
-            });
-        };
+				// Verificar se o nome da coluna inclui "nome" (caso insensível)
+				if (header.textContent.toLowerCase().includes('nome')) {
+					nameColumnIndex = index; // Definir o índice da coluna do nome
+				}
+			});
+		};
+
 
         function sortTable(columnIndex) {
             const table = document.getElementById('resultTable');
