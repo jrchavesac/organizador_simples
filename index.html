@@ -217,7 +217,6 @@
 
 		function organizeData() {
 			const dataInput = document.getElementById('dataInput').value;
-			const separatorInput = document.getElementById('separatorInput').value;
 			const fieldsInput = parseInt(document.getElementById('fieldsInput').value);
 			const addRankingColumn = document.getElementById('addRankingColumn').checked;
 			const columnNames = [];
@@ -227,17 +226,33 @@
 				columnNames.push(columnName);
 			}
 
-			// Processar os dados para evitar separação de notas decimais
 			const candidates = dataInput.split('/').map(candidate => {
-				return candidate.trim().split(/,\s*(?!\d)/); // Ajuste para evitar divisão de notas decimais
+				const parts = candidate.trim().split(',');
+
+				if (parts.length === 5) {
+					// Formato: inscrição, nome, nota decimal, posição
+					return [...parts.slice(0, 2), parseFloat(parts[2] + '.' + parts[3]), parseInt(parts[4].replace('º', ''))];
+				} else if (parts.length === 4 && parts[3].includes('º')) {
+					// Formato: inscrição, nome, nota inteira, posição com "º"
+					return [...parts.slice(0, 2), parseFloat(parts[2]), parseInt(parts[3].replace('º', ''))];
+				} else if (parts.length === 4) {
+					// Formato: inscrição, nome, nota decimal, posição
+					const nota = parts[2].includes('.') ? parseFloat(parts[2]) : parseFloat(parts[2] + '.' + parts[3]);
+					const posicao = parts[3].includes('º') ? parseInt(parts[3].replace('º', '')) : parseInt(parts[4].replace('º', ''));
+					return [...parts.slice(0, 2), nota, posicao];
+				} else if (parts.length === 3 && parts[2].includes('º')) {
+					// Formato: inscrição, nome, nota inteira e posição juntos
+					const [nota, posicao] = parts[2].split(' ');
+					return [...parts.slice(0, 2), parseFloat(nota), parseInt(posicao.replace('º', ''))];
+				} else if (parts.length === 3) {
+					// Formato: inscrição, nome, nota decimal sem posição
+					return [...parts.slice(0, 2), parseFloat(parts[2])];
+				}
+				return parts;
 			});
 
-			// Ordenar os candidatos pela nota (assumindo que a nota esteja na penúltima posição dos dados do candidato)
-			const sortedCandidates = candidates.sort((a, b) => {
-				const aNota = parseFloat(a[a.length - 1].replace(',', '.'));
-				const bNota = parseFloat(b[b.length - 1].replace(',', '.'));
-				return bNota - aNota; // Ordenar em ordem decrescente
-			});
+			// Ordenar os candidatos pela nota
+			const sortedCandidates = candidates.sort((a, b) => b[2] - a[2]); // Ordenar em ordem decrescente
 
 			let organizedData;
 			if (addRankingColumn) {
@@ -301,7 +316,6 @@
 				}
 			});
 		};
-
 
         function sortTable(columnIndex) {
             const table = document.getElementById('resultTable');
