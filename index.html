@@ -24,6 +24,16 @@
         max-width: 600px;
         text-align: center;
     }
+	.container2 {
+        background-color: #f9f9f9;
+        padding: 20px;
+        border-radius: 10px;
+        margin-top: 20px;
+        width: 80%;
+        max-width: 600px;
+        text-align: center;
+		display: none;
+    }
     .form-group {
         margin-bottom: 15px;
         display: flex;
@@ -114,7 +124,7 @@
         font-size: 14px;
         color: #555;
     }
-
+	
     /* Media Queries for Responsiveness */
     @media (max-width: 768px) {
         .container {
@@ -153,7 +163,7 @@
         <form id="organizeForm">
             <div class="form-group">
                 <label for="dataInput" title="Insira os dados dos candidatos, separados por '/'.">Dados dos candidatos (separados por "/"):</label>
-                <textarea id="dataInput" name="dataInput" rows="4" cols="50" title="Insira os dados dos candidatos, separados por '/'."></textarea>
+                <textarea id="dataInput" name="dataInput" rows="4" cols="50" title="Insira os dados. Os campos, geralmente, são separados por vírgula."></textarea>
             </div>
             
             <div class="form-group">
@@ -171,8 +181,12 @@
         </form>
     </div>
 
-    <div class="container">
+    <div class="container2" id="ContainerResult">
         <h1>Resultado Organizado</h1>
+        <div class="searchContainer">
+            <input type="text" id="searchInput" onkeyup="searchTable()" placeholder="Digite para pesquisar..." title="A tabela vai atualizando ao digitar...">
+        </div>
+		<h4><i>Ao clicar no cabeçalho da tabela, os dados são organizados conforme a coluna clicada!</i></h4>
 		<table border="1" id="resultTable">
             <thead>
                 <tr id="tableHeaders"></tr>
@@ -262,6 +276,7 @@
 			}
 
 			updateTable(columnNames, organizedData);
+			document.getElementById('ContainerResult').style.display = 'block';
 		}
 
         function updateTable(columnNames, data) {
@@ -308,7 +323,7 @@
 					nameColumnIndex = index; // Definir o índice da coluna do nome
 				}
 			});
-		};
+	};
 
         function sortTable(columnIndex) {
             const table = document.getElementById('resultTable');
@@ -341,6 +356,30 @@
         function normalizeString(str) {
             return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/ç/g, "c").replace(/Ç/g, "C");
         }
+		
+	function searchTable() {
+            // Obtém o valor da pesquisa
+            let input = document.getElementById('searchInput').value.toUpperCase();
+            // Obtém a tabela e o corpo da tabela
+            let table = document.getElementById('resultTable');
+            let tr = table.getElementsByTagName('tr');
+
+            // Percorre todas as linhas da tabela e oculta as que não correspondem à pesquisa
+            for (let i = 1; i < tr.length; i++) {
+                let td = tr[i].getElementsByTagName('td');
+                let found = false;
+                for (let j = 0; j < td.length; j++) {
+                    if (td[j]) {
+                        if (td[j].innerHTML.toUpperCase().indexOf(input) > -1) {
+                            found = true;
+                            break;
+                        }
+                    }
+                }
+                tr[i].style.display = found ? '' : 'none';
+            }
+        }
+		
     </script>
 </body>
 </html>
