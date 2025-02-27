@@ -223,61 +223,64 @@
         }
 
 		function organizeData() {
+			
+			document.getElementById('ContainerResult').style.display = 'block';
+			
 			const dataInput = document.getElementById('dataInput').value;
-			const fieldsInput = parseInt(document.getElementById('fieldsInput').value);
+			let fieldsInput = parseInt(document.getElementById('fieldsInput').value);
 			const addRankingColumn = document.getElementById('addRankingColumn').checked;
-			const columnNames = [];
-
+			let columnNames = [];
+				
 			for (let i = 1; i <= fieldsInput; i++) {
-				const columnName = document.getElementById(`columnName${i}`).value || `Coluna ${i}`;
+				let columnName = document.getElementById(`columnName${i}`).value || `Coluna ${i}`;
 				columnNames.push(columnName);
 			}
-
+			
+			
 			const candidates = dataInput.split('/').map(candidate => {
 				const parts = candidate.trim().split(',');
 
+				if (parts.length < 3) {
+					alert("Formato errado de entrada de dados. Verifique para que a ordenação seja feita de maneira correta!");
+					return null;
+				}
+
 				if (parts.length === 5) {
-					// Formato: inscrição, nome, nota decimal, posição
 					return [...parts.slice(0, 2), parseFloat(parts[2] + '.' + parts[3]), parseInt(parts[4].replace('º', ''))];
 				} else if (parts.length === 4 && parts[3].includes('º')) {
-					// Formato: inscrição, nome, nota inteira, posição com "º"
 					return [...parts.slice(0, 2), parseFloat(parts[2]), parseInt(parts[3].replace('º', ''))];
 				} else if (parts.length === 4) {
-					// Formato: inscrição, nome, nota decimal, posição
 					const nota = parts[2].includes('.') ? parseFloat(parts[2]) : parseFloat(parts[2] + '.' + parts[3]);
 					const posicao = parts[3].includes('º') ? parseInt(parts[3].replace('º', '')) : parseInt(parts[4].replace('º', ''));
 					return [...parts.slice(0, 2), nota, posicao];
 				} else if (parts.length === 3 && parts[2].includes('º')) {
-					// Formato: inscrição, nome, nota inteira e posição juntos
 					const [nota, posicao] = parts[2].split(' ');
 					return [...parts.slice(0, 2), parseFloat(nota), parseInt(posicao.replace('º', ''))];
 				} else if (parts.length === 3) {
-					// Formato: inscrição, nome, nota decimal sem posição
 					return [...parts.slice(0, 2), parseFloat(parts[2])];
 				}
 				return parts;
-			});
+			}).filter(candidate => candidate !== null);
 
-			// Ordenar os candidatos pela nota
-			const sortedCandidates = candidates.sort((a, b) => b[2] - a[2]); // Ordenar em ordem decrescente
+			const sortedCandidates = candidates.sort((a, b) => b[2] - a[2]);
 
 			let organizedData;
+			
 			if (addRankingColumn) {
-				// Adicionar a classificação como a primeira coluna após a ordenação
 				organizedData = sortedCandidates.map((candidate, index) => {
-					candidate.unshift(index + 1); // Adicionar a classificação como a primeira coluna
+					candidate.unshift(index + 1);
 					return candidate;
 				});
 
-				// Adicionar a coluna "Classificação" na primeira posição
 				columnNames.unshift('Classificação'); 
 			} else {
-				organizedData = sortedCandidates; // Manter os dados organizados sem a coluna "Classificação"
+				organizedData = sortedCandidates;
 			}
 
 			updateTable(columnNames, organizedData);
-			document.getElementById('ContainerResult').style.display = 'block';
+			
 		}
+
 
         function updateTable(columnNames, data) {
             const tableHeaders = document.getElementById('tableHeaders');
@@ -323,7 +326,7 @@
 					nameColumnIndex = index; // Definir o índice da coluna do nome
 				}
 			});
-	};
+		};
 
         function sortTable(columnIndex) {
             const table = document.getElementById('resultTable');
@@ -357,7 +360,7 @@
             return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/ç/g, "c").replace(/Ç/g, "C");
         }
 		
-	function searchTable() {
+		function searchTable() {
             // Obtém o valor da pesquisa
             let input = document.getElementById('searchInput').value.toUpperCase();
             // Obtém a tabela e o corpo da tabela
