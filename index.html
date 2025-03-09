@@ -64,7 +64,7 @@
         padding: 7px 10px;
         width: auto;
         display: inline-block;
-	max-width: 150px;
+		max-width: 180px
     }
     button:hover {
         background-color: #388E3C;
@@ -167,12 +167,6 @@
                 <textarea id="dataInput" name="dataInput" rows="4" cols="50" title="Insira a lista dos candidatos, separados por barra (/). Os campos são separados por vírgula (,)."></textarea>
             </div>
             
-            <div class="form-group">
-                <label for="fieldsInput" title="Informe a quantidade de campos em sequência.">Quantidade de campos em sequência:</label>
-                <input type="number" id="fieldsInput" name="fieldsInput" min="1" oninput="generateColumnInputs()" title="Informe a quantidade de campos em sequência.">
-            </div>
-            <div id="columnNames" class="form-group"></div>
-            <div class="form-group">
                 <label>
                     <input type="checkbox" id="addRankingColumn" name="addRankingColumn" title="Selecione para adicionar uma coluna de classificação.">
                     <br>Adicionar coluna de classificação
@@ -224,62 +218,114 @@
         }
 
 		function organizeData() {
-			
 			document.getElementById('ContainerResult').style.display = 'block';
-			
-			const dataInput = document.getElementById('dataInput').value;
-			let fieldsInput = parseInt(document.getElementById('fieldsInput').value);
+
+			const dataInput = document.getElementById('dataInput').value.trim();
 			const addRankingColumn = document.getElementById('addRankingColumn').checked;
 			let columnNames = [];
-				
-			for (let i = 1; i <= fieldsInput; i++) {
-				let columnName = document.getElementById(`columnName${i}`).value || `Coluna ${i}`;
-				columnNames.push(columnName);
-			}
-			
-			
-			const candidates = dataInput.split('/').map(candidate => {
-				const parts = candidate.trim().split(',');
 
-				if (parts.length < 3) {
-					alert("Formato errado de entrada de dados. Verifique para que a ordenação seja feita de maneira correta!");
+			// Função auxiliar para parsear cada candidato de forma genérica
+			function parseCandidate(candidateStr) {
+				const parts = candidateStr.trim().split(',').map(part => part.trim());
+
+				// Ignora candidatos vazios ou com menos de 3 campos
+				if (!candidateStr || parts.length < 3) {
 					return null;
 				}
 
-				if (parts.length === 5) {
-					return [...parts.slice(0, 2), parseFloat(parts[2] + '.' + parts[3]), parseInt(parts[4].replace('º', ''))];
-				} else if (parts.length === 4 && parts[3].includes('º')) {
-					return [...parts.slice(0, 2), parseFloat(parts[2]), parseInt(parts[3].replace('º', ''))];
-				} else if (parts.length === 4) {
-					const nota = parts[2].includes('.') ? parseFloat(parts[2]) : parseFloat(parts[2] + '.' + parts[3]);
-					const posicao = parts[3].includes('º') ? parseInt(parts[3].replace('º', '')) : parseInt(parts[4].replace('º', ''));
-					return [...parts.slice(0, 2), nota, posicao];
-				} else if (parts.length === 3 && parts[2].includes('º')) {
-					const [nota, posicao] = parts[2].split(' ');
-					return [...parts.slice(0, 2), parseFloat(nota), parseInt(posicao.replace('º', ''))];
-				} else if (parts.length === 3) {
-					return [...parts.slice(0, 2), parseFloat(parts[2])];
+				// Identifica se o primeiro campo é numérico (inscrição)
+				const isFirstFieldNumeric = !isNaN(parseFloat(parts[0]));
+				let inscricao, nome, notasRaw = [];
+				let pontuacaoTotal = 0;
+				let posicao = null;
+
+				if (isFirstFieldNumeric) {
+					inscricao = parts.shift(); // Primeiro campo é inscrição
+					nome = parts.shift();      // Segundo campo é nome
+					notasRaw = parts;          // Restante são as notas e posição
+				} else {
+					nome = parts.shift();      // Primeiro campo é nome
+					inscricao = parts.shift(); // Segundo campo é inscrição
+					notasRaw = parts;          // Restante são as notas e posição
 				}
-				return parts;
-			}).filter(candidate => candidate !== null);
 
-			const sortedCandidates = candidates.sort((a, b) => b[2] - a[2]);
+				// Junta notas decimais (ex.: "103,8" -> "103.8") e separa a posição
+				const processedNotas = [];
+				for (let i = 0; i < notasRaw.length; i++) {
+					if (notasRaw[i].includes('º')) {
+						posicao = parseInt(notasRaw[i].replace('º', '')); // Último campo com "º" é a posição
+					} else if (i + 1 < notasRaw.length && !isNaN(parseFloat(notasRaw[i])) && !isNaN(parseFloat(notasRaw[i + 1])) && !notasRaw[i + 1].includes('º')) {
+						const decimalValue = parseFloat(`${notasRaw[i]}.${notasRaw[i + 1]}`);
+						processedNotas.push(decimalValue);
+						pontuacaoTotal += decimalValue; // Soma apenas as notas
+						i++; // Pula o próximo elemento, pois já foi usado
+					} else if (!isNaN(parseFloat(notasRaw[i]))) {
+						const value = parseFloat(notasRaw[i]);
+						processedNotas.push(value);
+						pontuacaoTotal += value; // Soma apenas as notas
+					} else {
+						processedNotas.push(notasRaw[i]); // Campo textual adicional (raro)
+					}
+				}
 
-			let organizedData;
-			
-			if (addRankingColumn) {
-				organizedData = sortedCandidates.map((candidate, index) => {
-					candidate.unshift(index + 1);
-					return candidate;
-				});
-
-				columnNames.unshift('Classificação'); 
-			} else {
-				organizedData = sortedCandidates;
+				// Retorna o array ajustado
+				if (processedNotas.length === 1 && posicao === null) {
+					return [inscricao, nome, processedNotas[0]]; // Uma nota, sem posição
+				} else if (processedNotas.length === 1 && posicao !== null) {
+					return [inscricao, nome, processedNotas[0], posicao]; // Uma nota, com posição
+				} else {
+					return [inscricao, nome, ...processedNotas, posicao !== null ? posicao : null, pontuacaoTotal]; // Mais de uma nota
+				}
 			}
 
+			// Processa os candidatos, filtrando entradas vazias desde o início
+			const candidates = dataInput.split('/')
+				.map(candidate => candidate.trim())
+				.filter(candidate => candidate.length > 0) // Remove entradas vazias
+				.map(parseCandidate)
+				.filter(candidate => candidate !== null);
+
+			// Gera nomes de colunas dinamicamente com base no primeiro candidato válido
+			if (candidates.length > 0) {
+				const numFields = candidates[0].length;
+				const numNotas = candidates[0].slice(2, numFields - (numFields > 4 ? 2 : numFields > 3 ? 1 : 0)).filter(val => typeof val === 'number').length; // Conta notas numéricas
+				columnNames = ['Inscrição', 'Nome'];
+
+				// Adiciona colunas de notas
+				if (numNotas > 0) {
+					for (let i = 1; i <= numNotas; i++) {
+						columnNames.push(`Nota ${i}`);
+					}
+				}
+
+				// Adiciona a coluna Posição, se existir
+				if (numFields > 3 && candidates[0][numFields - (numNotas > 1 ? 2 : 1)] !== null) {
+					columnNames.push('Posição');
+				}
+
+				// Adiciona Pontuação Total apenas se houver mais de uma nota
+				if (numNotas > 1) {
+					columnNames.push('Pontuação Total');
+				}
+			}
+
+			// Ordena por pontuação total (último índice) ou pela única nota, se aplicável
+			const sortedCandidates = candidates.sort((a, b) => {
+				if (a.length <= 4) return b[2] - a[2]; // Uma nota, com ou sem posição
+				return b[b.length - 1] - a[b.length - 1]; // Mais de uma nota
+			});
+
+			// Remove a pontuação total dos dados se houver apenas uma nota (já tratado no parseCandidate)
+			let organizedData = sortedCandidates;
+
+			// Adiciona a coluna de ranking, se solicitado
+			if (addRankingColumn) {
+				organizedData = sortedCandidates.map((candidate, index) => [index + 1, ...candidate]);
+				columnNames.unshift('Classificação');
+			}
+
+			// Atualiza a tabela com os dados organizados
 			updateTable(columnNames, organizedData);
-			
 		}
 
 
