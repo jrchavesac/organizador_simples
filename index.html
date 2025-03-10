@@ -164,9 +164,8 @@
         <form id="organizeForm">
             <div class="form-group">
                 <label for="dataInput" title="Insira a lista dos candidatos, separados por '/'.">Lista dos candidatos (do Diário Oficial ou da Banca):</label>
-                <textarea id="dataInput" name="dataInput" rows="4" cols="50" title="Insira a lista dos candidatos, separados por barra (/). Os campos são separados por vírgula (,)."></textarea>
+                <textarea id="dataInput" name="dataInput" rows="4" cols="50" title="Insira a lista dos candidatos, separados por barra (/)."></textarea>
             </div>
-            
                 <label>
                     <input type="checkbox" id="addRankingColumn" name="addRankingColumn" title="Selecione para adicionar uma coluna de classificação.">
                     <br>Adicionar coluna de classificação
@@ -196,26 +195,6 @@
     </footer>
    
     <script>
-        function generateColumnInputs() {
-            const fieldsInput = parseInt(document.getElementById('fieldsInput').value);
-            const columnNamesDiv = document.getElementById('columnNames');
-            columnNamesDiv.innerHTML = '';
-
-            for (let i = 1; i <= fieldsInput; i++) {
-                const label = document.createElement('label');
-                label.textContent = `Nome da Coluna ${i}: `;
-                const input = document.createElement('input');
-                input.type = 'text';
-                input.id = `columnName${i}`;
-                input.name = `columnName${i}`;
-                input.placeholder = `Campo ${i}`;
-                input.title = `Informe o nome da Coluna ${i}.`;
-
-                columnNamesDiv.appendChild(label);
-                columnNamesDiv.appendChild(input);
-                columnNamesDiv.appendChild(document.createElement('br'));
-            }
-        }
 
 		function organizeData() {
 			document.getElementById('ContainerResult').style.display = 'block';
@@ -226,30 +205,40 @@
 
 			// Função auxiliar para parsear cada candidato de forma genérica
 			function parseCandidate(candidateStr) {
-				const parts = candidateStr.trim().split(',').map(part => part.trim());
+				// Detecta o separador baseado no primeiro candidato
+				const separator = candidateStr.includes(';') ? ';' : ',';
+				const parts = candidateStr.trim().split(separator).map(part => part.trim());
 
 				// Ignora candidatos vazios ou com menos de 3 campos
 				if (!candidateStr || parts.length < 3) {
 					return null;
 				}
 
-				// Identifica se o primeiro campo é numérico (inscrição)
-				const isFirstFieldNumeric = !isNaN(parseFloat(parts[0]));
+				// Identifica se o primeiro campo é numérico (pode ser posição ou inscrição)
+				const isFirstFieldNumeric = !isNaN(parseFloat(parts[0].replace('º', '')));
 				let inscricao, nome, notasRaw = [];
 				let pontuacaoTotal = 0;
 				let posicao = null;
 
-				if (isFirstFieldNumeric) {
+				if (isFirstFieldNumeric && parts[0].includes('º')) {
+					// Caso com posição no início (ex.: "1º; 769.279-0; ...")
+					posicao = parseInt(parts.shift().replace('º', '')); // Primeiro campo é posição
+					inscricao = parts.shift(); // Segundo campo é inscrição
+					nome = parts.shift();      // Terceiro campo é nome
+					notasRaw = parts;          // Restante são as notas
+				} else if (isFirstFieldNumeric) {
+					// Caso com inscrição no início (ex.: "10025495, Alan Verlaine Dias Silva, ...")
 					inscricao = parts.shift(); // Primeiro campo é inscrição
 					nome = parts.shift();      // Segundo campo é nome
 					notasRaw = parts;          // Restante são as notas e posição
 				} else {
+					// Caso com nome no início (ex.: "ABNER MENEZES SILVA, 8330008232, ...")
 					nome = parts.shift();      // Primeiro campo é nome
 					inscricao = parts.shift(); // Segundo campo é inscrição
 					notasRaw = parts;          // Restante são as notas e posição
 				}
 
-				// Junta notas decimais (ex.: "103,8" -> "103.8") e separa a posição
+				// Junta notas decimais (ex.: "103,8" -> "103.8") e separa a posição (se não foi detectada antes)
 				const processedNotas = [];
 				for (let i = 0; i < notasRaw.length; i++) {
 					if (notasRaw[i].includes('º')) {
@@ -259,8 +248,8 @@
 						processedNotas.push(decimalValue);
 						pontuacaoTotal += decimalValue; // Soma apenas as notas
 						i++; // Pula o próximo elemento, pois já foi usado
-					} else if (!isNaN(parseFloat(notasRaw[i]))) {
-						const value = parseFloat(notasRaw[i]);
+					} else if (!isNaN(parseFloat(notasRaw[i].replace(',', '.')))) {
+						const value = parseFloat(notasRaw[i].replace(',', '.')); // Converte "95,50" para 95.50
 						processedNotas.push(value);
 						pontuacaoTotal += value; // Soma apenas as notas
 					} else {
