@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Organizador de Dados de Concurso</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script> <!-- jsPDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script> <!-- autoTable -->
     <style>
     body {
         font-family: Arial, sans-serif;
@@ -24,7 +26,7 @@
         max-width: 600px;
         text-align: center;
     }
-	.container2 {
+    .container2 {
         background-color: #f9f9f9;
         padding: 20px;
         border-radius: 10px;
@@ -32,7 +34,7 @@
         width: 80%;
         max-width: 600px;
         text-align: center;
-		display: none;
+        display: none;
     }
     .form-group {
         margin-bottom: 15px;
@@ -64,7 +66,7 @@
         padding: 7px 10px;
         width: auto;
         display: inline-block;
-		max-width: 180px
+        max-width: 180px;
     }
     button:hover {
         background-color: #388E3C;
@@ -99,7 +101,7 @@
         align-items: center;
         margin-bottom: 15px;
     }
-    .search-group {
+    .searchContainer {
         margin-top: 20px;
         display: flex;
         flex-direction: column;
@@ -125,10 +127,8 @@
         font-size: 14px;
         color: #555;
     }
-	
-    /* Media Queries for Responsiveness */
     @media (max-width: 768px) {
-        .container {
+        .container, .container2 {
             width: 90%;
         }
         textarea, select, input, button {
@@ -138,9 +138,8 @@
             width: 90%;
         }
     }
-    
     @media (max-width: 480px) {
-        .container {
+        .container, .container2 {
             width: 100%;
             padding: 10px;
         }
@@ -166,11 +165,11 @@
                 <label for="dataInput" title="Insira a lista dos candidatos, separados por '/'.">Lista dos candidatos (do Diário Oficial ou da Banca):</label>
                 <textarea id="dataInput" name="dataInput" rows="4" cols="50" title="Insira a lista dos candidatos, separados por barra (/)."></textarea>
             </div>
-                <label>
-                    <input type="checkbox" id="addRankingColumn" name="addRankingColumn" title="Selecione para adicionar uma coluna de classificação.">
-                    <br>Adicionar coluna de classificação
-                </label>
-            </div>
+            <label>
+                <input type="checkbox" id="addRankingColumn" name="addRankingColumn" title="Selecione para adicionar uma coluna de classificação.">
+                <br>Adicionar coluna de classificação
+            </label>
+			<br>
             <button type="button" onclick="organizeData()" title="Clique para organizar os dados.">Organizar</button>
         </form>
     </div>
@@ -180,8 +179,9 @@
         <div class="searchContainer">
             <input type="text" id="searchInput" onkeyup="searchTable()" placeholder="Digite para pesquisar..." title="A tabela vai atualizando ao digitar...">
         </div>
-		<h4><i>Ao clicar no cabeçalho da tabela, os dados são organizados conforme a coluna clicada!</i></h4>
-		<table border="1" id="resultTable">
+        <button type="button" onclick="generatePDF()" title="Clique para gerar um PDF com os dados da tabela.">Gerar PDF</button>
+        <h4><i>Ao clicar no cabeçalho da tabela, os dados são organizados conforme a coluna clicada!</i></h4>
+        <table border="1" id="resultTable">
             <thead>
                 <tr id="tableHeaders"></tr>
             </thead>
@@ -193,232 +193,246 @@
         <img src="minha_foto.jpg" alt="Foto do Autor">
         <p><b>Autor: Júnior Chaves</b></p>
     </footer>
-   
+
     <script>
+    function organizeData() {
+        document.getElementById('ContainerResult').style.display = 'block';
 
-		function organizeData() {
-			document.getElementById('ContainerResult').style.display = 'block';
+        const dataInput = document.getElementById('dataInput').value.trim();
+        const addRankingColumn = document.getElementById('addRankingColumn').checked;
+        let columnNames = [];
 
-			const dataInput = document.getElementById('dataInput').value.trim();
-			const addRankingColumn = document.getElementById('addRankingColumn').checked;
-			let columnNames = [];
+        function parseCandidate(candidateStr) {
+            const separator = candidateStr.includes(';') ? ';' : ',';
+            const parts = candidateStr.trim().split(separator).map(part => part.trim());
 
-			// Função auxiliar para parsear cada candidato de forma genérica
-			function parseCandidate(candidateStr) {
-				// Detecta o separador baseado no primeiro candidato
-				const separator = candidateStr.includes(';') ? ';' : ',';
-				const parts = candidateStr.trim().split(separator).map(part => part.trim());
+            if (!candidateStr || parts.length < 3) {
+                return null;
+            }
 
-				// Ignora candidatos vazios ou com menos de 3 campos
-				if (!candidateStr || parts.length < 3) {
-					return null;
-				}
+            const isFirstFieldNumeric = !isNaN(parseFloat(parts[0].replace('º', '')));
+            let inscricao, nome, notasRaw = [];
+            let pontuacaoTotal = 0;
+            let posicao = null;
 
-				// Identifica se o primeiro campo é numérico (pode ser posição ou inscrição)
-				const isFirstFieldNumeric = !isNaN(parseFloat(parts[0].replace('º', '')));
-				let inscricao, nome, notasRaw = [];
-				let pontuacaoTotal = 0;
-				let posicao = null;
+            if (isFirstFieldNumeric && parts[0].includes('º')) {
+                posicao = parseInt(parts.shift().replace('º', ''));
+                inscricao = parts.shift();
+                nome = parts.shift();
+                notasRaw = parts;
+            } else if (isFirstFieldNumeric) {
+                inscricao = parts.shift();
+                nome = parts.shift();
+                notasRaw = parts;
+            } else {
+                nome = parts.shift();
+                inscricao = parts.shift();
+                notasRaw = parts;
+            }
 
-				if (isFirstFieldNumeric && parts[0].includes('º')) {
-					// Caso com posição no início (ex.: "1º; 769.279-0; ...")
-					posicao = parseInt(parts.shift().replace('º', '')); // Primeiro campo é posição
-					inscricao = parts.shift(); // Segundo campo é inscrição
-					nome = parts.shift();      // Terceiro campo é nome
-					notasRaw = parts;          // Restante são as notas
-				} else if (isFirstFieldNumeric) {
-					// Caso com inscrição no início (ex.: "10025495, Alan Verlaine Dias Silva, ...")
-					inscricao = parts.shift(); // Primeiro campo é inscrição
-					nome = parts.shift();      // Segundo campo é nome
-					notasRaw = parts;          // Restante são as notas e posição
-				} else {
-					// Caso com nome no início (ex.: "ABNER MENEZES SILVA, 8330008232, ...")
-					nome = parts.shift();      // Primeiro campo é nome
-					inscricao = parts.shift(); // Segundo campo é inscrição
-					notasRaw = parts;          // Restante são as notas e posição
-				}
-
-				// Junta notas decimais (ex.: "103,8" -> "103.8") e separa a posição (se não foi detectada antes)
-				const processedNotas = [];
-				for (let i = 0; i < notasRaw.length; i++) {
-					if (notasRaw[i].includes('º')) {
-						posicao = parseInt(notasRaw[i].replace('º', '')); // Último campo com "º" é a posição
-					} else if (i + 1 < notasRaw.length && !isNaN(parseFloat(notasRaw[i])) && !isNaN(parseFloat(notasRaw[i + 1])) && !notasRaw[i + 1].includes('º')) {
-						const decimalValue = parseFloat(`${notasRaw[i]}.${notasRaw[i + 1]}`);
-						processedNotas.push(decimalValue);
-						pontuacaoTotal += decimalValue; // Soma apenas as notas
-						i++; // Pula o próximo elemento, pois já foi usado
-					} else if (!isNaN(parseFloat(notasRaw[i].replace(',', '.')))) {
-						const value = parseFloat(notasRaw[i].replace(',', '.')); // Converte "95,50" para 95.50
-						processedNotas.push(value);
-						pontuacaoTotal += value; // Soma apenas as notas
-					} else {
-						processedNotas.push(notasRaw[i]); // Campo textual adicional (raro)
-					}
-				}
-
-				// Retorna o array ajustado
-				if (processedNotas.length === 1 && posicao === null) {
-					return [inscricao, nome, processedNotas[0]]; // Uma nota, sem posição
-				} else if (processedNotas.length === 1 && posicao !== null) {
-					return [inscricao, nome, processedNotas[0], posicao]; // Uma nota, com posição
-				} else {
-					return [inscricao, nome, ...processedNotas, posicao !== null ? posicao : null, pontuacaoTotal]; // Mais de uma nota
-				}
-			}
-
-			// Processa os candidatos, filtrando entradas vazias desde o início
-			const candidates = dataInput.split('/')
-				.map(candidate => candidate.trim())
-				.filter(candidate => candidate.length > 0) // Remove entradas vazias
-				.map(parseCandidate)
-				.filter(candidate => candidate !== null);
-
-			// Gera nomes de colunas dinamicamente com base no primeiro candidato válido
-			if (candidates.length > 0) {
-				const numFields = candidates[0].length;
-				const numNotas = candidates[0].slice(2, numFields - (numFields > 4 ? 2 : numFields > 3 ? 1 : 0)).filter(val => typeof val === 'number').length; // Conta notas numéricas
-				columnNames = ['Inscrição', 'Nome'];
-
-				// Adiciona colunas de notas
-				if (numNotas > 0) {
-					for (let i = 1; i <= numNotas; i++) {
-						columnNames.push(`Nota ${i}`);
-					}
-				}
-
-				// Adiciona a coluna Posição, se existir
-				if (numFields > 3 && candidates[0][numFields - (numNotas > 1 ? 2 : 1)] !== null) {
-					columnNames.push('Posição');
-				}
-
-				// Adiciona Pontuação Total apenas se houver mais de uma nota
-				if (numNotas > 1) {
-					columnNames.push('Pontuação Total');
-				}
-			}
-
-			// Ordena por pontuação total (último índice) ou pela única nota, se aplicável
-			const sortedCandidates = candidates.sort((a, b) => {
-				if (a.length <= 4) return b[2] - a[2]; // Uma nota, com ou sem posição
-				return b[b.length - 1] - a[b.length - 1]; // Mais de uma nota
-			});
-
-			// Remove a pontuação total dos dados se houver apenas uma nota (já tratado no parseCandidate)
-			let organizedData = sortedCandidates;
-
-			// Adiciona a coluna de ranking, se solicitado
-			if (addRankingColumn) {
-				organizedData = sortedCandidates.map((candidate, index) => [index + 1, ...candidate]);
-				columnNames.unshift('Classificação');
-			}
-
-			// Atualiza a tabela com os dados organizados
-			updateTable(columnNames, organizedData);
-		}
-
-
-        function updateTable(columnNames, data) {
-            const tableHeaders = document.getElementById('tableHeaders');
-            const tableBody = document.getElementById('tableBody');
-            tableHeaders.innerHTML = '';
-            tableBody.innerHTML = '';
-
-            columnNames.forEach(columnName => {
-                const th = document.createElement('th');
-                th.textContent = columnName;
-                th.onclick = () => sortTable(columnNames.indexOf(columnName));
-                tableHeaders.appendChild(th);
-            });
-
-            data.forEach(row => {
-                const tr = document.createElement('tr');
-                row.forEach(cell => {
-                    const td = document.createElement('td');
-                    td.textContent = cell;
-                    tr.appendChild(td);
-                });
-                tableBody.appendChild(tr);
-            });
-
-            sortTable(columnNames.indexOf('Nota')); // Inicialmente ordenar por Nota
-        }
-
-        let sortDirections = [];
-        let nameColumnIndex = null;
-
-        window.onload = function() {
-			const tableHeaders = document.querySelectorAll('#resultTable th');
-			tableHeaders.forEach((header, index) => {
-				// Inicialmente, definir ordenação crescente para todas as colunas, exceto para a coluna "Classificação" e "Nota"
-				if (header.textContent.toLowerCase().includes('nota') || header.textContent.toLowerCase().includes('classificação')) {
-					sortDirections[index] = false; // Manter a ordem decrescente para "Nota" e crescente para "Classificação"
-				} else {
-					sortDirections[index] = true; // Ordenação crescente para as demais colunas
-				}
-
-				// Verificar se o nome da coluna inclui "nome" (caso insensível)
-				if (header.textContent.toLowerCase().includes('nome')) {
-					nameColumnIndex = index; // Definir o índice da coluna do nome
-				}
-			});
-		};
-
-        function sortTable(columnIndex) {
-            const table = document.getElementById('resultTable');
-            const tbody = table.getElementsByTagName('tbody')[0];
-            const rows = Array.from(tbody.getElementsByTagName('tr'));
-
-            const sortedRows = rows.sort((a, b) => {
-                const textA = a.cells[columnIndex].textContent.trim();
-                const textB = b.cells[columnIndex].textContent.trim();
-
-                // Tentar converter para número
-                const numA = parseFloat(textA.replace(',', '.'));
-                const numB = parseFloat(textB.replace(',', '.'));
-
-                if (!isNaN(numA) && !isNaN(numB)) {
-                    // Comparar como números
-                    return sortDirections[columnIndex] ? numA - numB : numB - numA;
+            const processedNotas = [];
+            for (let i = 0; i < notasRaw.length; i++) {
+                if (notasRaw[i].includes('º')) {
+                    posicao = parseInt(notasRaw[i].replace('º', ''));
+                } else if (i + 1 < notasRaw.length && !isNaN(parseFloat(notasRaw[i])) && !isNaN(parseFloat(notasRaw[i + 1])) && !notasRaw[i + 1].includes('º')) {
+                    const decimalValue = parseFloat(`${notasRaw[i]}.${notasRaw[i + 1]}`);
+                    processedNotas.push(decimalValue);
+                    pontuacaoTotal += decimalValue;
+                    i++;
+                } else if (!isNaN(parseFloat(notasRaw[i].replace(',', '.')))) {
+                    const value = parseFloat(notasRaw[i].replace(',', '.'));
+                    processedNotas.push(value);
+                    pontuacaoTotal += value;
                 } else {
-                    // Comparar como strings
-                    return sortDirections[columnIndex] ? textA.localeCompare(textB) : textB.localeCompare(textA);
+                    processedNotas.push(notasRaw[i]);
                 }
-            });
+            }
 
-            sortDirections[columnIndex] = !sortDirections[columnIndex]; // Alternar a direção de ordenação
-
-            tbody.innerHTML = '';
-            sortedRows.forEach(row => tbody.appendChild(row));
-        }
-
-        function normalizeString(str) {
-            return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/ç/g, "c").replace(/Ç/g, "C");
-        }
-		
-		function searchTable() {
-            // Obtém o valor da pesquisa
-            let input = document.getElementById('searchInput').value.toUpperCase();
-            // Obtém a tabela e o corpo da tabela
-            let table = document.getElementById('resultTable');
-            let tr = table.getElementsByTagName('tr');
-
-            // Percorre todas as linhas da tabela e oculta as que não correspondem à pesquisa
-            for (let i = 1; i < tr.length; i++) {
-                let td = tr[i].getElementsByTagName('td');
-                let found = false;
-                for (let j = 0; j < td.length; j++) {
-                    if (td[j]) {
-                        if (td[j].innerHTML.toUpperCase().indexOf(input) > -1) {
-                            found = true;
-                            break;
-                        }
-                    }
-                }
-                tr[i].style.display = found ? '' : 'none';
+            if (processedNotas.length === 1 && posicao === null) {
+                return [inscricao, nome, processedNotas[0]];
+            } else if (processedNotas.length === 1 && posicao !== null) {
+                return [inscricao, nome, processedNotas[0], posicao];
+            } else {
+                return [inscricao, nome, ...processedNotas, posicao !== null ? posicao : null, pontuacaoTotal];
             }
         }
-		
+
+        const candidates = dataInput.split('/')
+            .map(candidate => candidate.trim())
+            .filter(candidate => candidate.length > 0)
+            .map(parseCandidate)
+            .filter(candidate => candidate !== null);
+
+        if (candidates.length > 0) {
+            const numFields = candidates[0].length;
+            const numNotas = candidates[0].slice(2, numFields - (numFields > 4 ? 2 : numFields > 3 ? 1 : 0)).filter(val => typeof val === 'number').length;
+            columnNames = ['Inscrição', 'Nome'];
+
+            if (numNotas > 0) {
+                for (let i = 1; i <= numNotas; i++) {
+                    columnNames.push(`Nota ${i}`);
+                }
+            }
+
+            if (numFields > 3 && candidates[0][numFields - (numNotas > 1 ? 2 : 1)] !== null) {
+                columnNames.push('Posição');
+            }
+
+            if (numNotas > 1) {
+                columnNames.push('Pontuação Total');
+            }
+        }
+
+        const sortedCandidates = candidates.sort((a, b) => {
+            if (a.length <= 4) return b[2] - a[2];
+            return b[b.length - 1] - a[b.length - 1];
+        });
+
+        let organizedData = sortedCandidates;
+
+        if (addRankingColumn) {
+            organizedData = sortedCandidates.map((candidate, index) => [index + 1, ...candidate]);
+            columnNames.unshift('Classificação');
+        }
+
+        updateTable(columnNames, organizedData);
+    }
+
+    function updateTable(columnNames, data) {
+        const tableHeaders = document.getElementById('tableHeaders');
+        const tableBody = document.getElementById('tableBody');
+        tableHeaders.innerHTML = '';
+        tableBody.innerHTML = '';
+
+        columnNames.forEach(columnName => {
+            const th = document.createElement('th');
+            th.textContent = columnName;
+            th.onclick = () => sortTable(columnNames.indexOf(columnName));
+            tableHeaders.appendChild(th);
+        });
+
+        data.forEach(row => {
+            const tr = document.createElement('tr');
+            row.forEach(cell => {
+                const td = document.createElement('td');
+                td.textContent = cell !== null ? cell : '';
+                tr.appendChild(td);
+            });
+            tableBody.appendChild(tr);
+        });
+
+        // Corrige a ordenação inicial para "Nota 1" ou a primeira coluna numérica disponível
+        const notaIndex = columnNames.findIndex(col => col.includes('Nota'));
+        if (notaIndex !== -1) {
+            sortTable(notaIndex); // Ordena inicialmente pela primeira coluna "Nota"
+        }
+    }
+
+    let sortDirections = [];
+
+    window.onload = function() {
+        const tableHeaders = document.querySelectorAll('#resultTable th');
+        tableHeaders.forEach((header, index) => {
+            if (header.textContent.toLowerCase().includes('nota') || header.textContent.toLowerCase().includes('classificação')) {
+                sortDirections[index] = false; // Ordem decrescente para "Nota" e "Classificação"
+            } else {
+                sortDirections[index] = true; // Ordem crescente para as demais
+            }
+        });
+    };
+
+    function sortTable(columnIndex) {
+        const table = document.getElementById('resultTable');
+        const tbody = table.getElementsByTagName('tbody')[0];
+        const rows = Array.from(tbody.getElementsByTagName('tr'));
+
+        const sortedRows = rows.sort((a, b) => {
+            const textA = a.cells[columnIndex].textContent.trim();
+            const textB = b.cells[columnIndex].textContent.trim();
+
+            const numA = parseFloat(textA.replace(',', '.'));
+            const numB = parseFloat(textB.replace(',', '.'));
+
+            if (!isNaN(numA) && !isNaN(numB)) {
+                return sortDirections[columnIndex] ? numA - numB : numB - numA;
+            } else {
+                return sortDirections[columnIndex] ? textA.localeCompare(textB) : textB.localeCompare(textA);
+            }
+        });
+
+        sortDirections[columnIndex] = !sortDirections[columnIndex];
+        tbody.innerHTML = '';
+        sortedRows.forEach(row => tbody.appendChild(row));
+    }
+
+    function searchTable() {
+        let input = document.getElementById('searchInput').value.toUpperCase();
+        let table = document.getElementById('resultTable');
+        let tr = table.getElementsByTagName('tr');
+
+        for (let i = 1; i < tr.length; i++) {
+            let td = tr[i].getElementsByTagName('td');
+            let found = false;
+            for (let j = 0; j < td.length; j++) {
+                if (td[j] && td[j].innerHTML.toUpperCase().indexOf(input) > -1) {
+                    found = true;
+                    break;
+                }
+            }
+            tr[i].style.display = found ? '' : 'none';
+        }
+    }
+
+    function generatePDF() {
+    try {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+
+        const margin = 10;
+        let y = margin;
+        const lineHeight = 10;
+        const pageWidth = doc.internal.pageSize.getWidth();
+
+        // Título centralizado e em negrito
+        doc.setFontSize(16);
+        doc.setFont("helvetica", "bold");
+        const title = "Relatório de Resultados";
+        const titleWidth = doc.getTextWidth(title);
+        const x = (pageWidth - titleWidth) / 2;
+        doc.text(title, x, y);
+        y += lineHeight * 2;
+
+        const table = document.getElementById('resultTable');
+        if (!table || table.querySelector('tbody').children.length === 0) {
+            alert("Erro: Gere a tabela primeiro clicando em 'Organizar'!");
+            return;
+        }
+
+        const headers = Array.from(table.querySelectorAll('thead th')).map(th => th.textContent);
+        const rows = Array.from(table.querySelectorAll('tbody tr')).map(tr =>
+            Array.from(tr.querySelectorAll('td')).map(td => 
+                td.textContent.replace(/\s*\n\s*/g, ' ').trim() // Remove quebras de linha e junta com espaço
+            )
+        );
+
+        doc.autoTable({
+            head: [headers],
+            body: rows,
+            startY: y,
+            margin: { left: margin, right: margin },
+            styles: { fontSize: 10, cellPadding: 2 },
+            headStyles: { fillColor: [76, 175, 80], textColor: 255 },
+            alternateRowStyles: { fillColor: [224, 242, 241] },
+        });
+
+        const pdfBlob = doc.output('blob');
+        const pdfUrl = URL.createObjectURL(pdfBlob);
+        window.open(pdfUrl, '_blank');
+    } catch (error) {
+        console.error("Erro ao gerar PDF:", error);
+        alert("Erro ao gerar PDF. Veja o console para detalhes.");
+    }
+    }
     </script>
 </body>
 </html>
