@@ -196,137 +196,145 @@
 
     <script>
     function organizeData() {
-        document.getElementById('ContainerResult').style.display = 'block';
+    document.getElementById('ContainerResult').style.display = 'block';
 
-        const dataInput = document.getElementById('dataInput').value.trim();
-        const addRankingColumn = document.getElementById('addRankingColumn').checked;
-        let columnNames = [];
+    const dataInput = document.getElementById('dataInput').value.trim();
+    const addRankingColumn = document.getElementById('addRankingColumn').checked;
+    let columnNames = [];
 
-        function parseCandidate(candidateStr) {
-            const separator = candidateStr.includes(';') ? ';' : ',';
-            const parts = candidateStr.trim().split(separator).map(part => part.trim());
+    function parseCandidate(candidateStr) {
+        const separator = candidateStr.includes(';') ? ';' : ',';
+        const parts = candidateStr.trim().split(separator).map(part => part.trim());
 
-            if (!candidateStr || parts.length < 3) {
-                return null;
-            }
+        if (!candidateStr || parts.length < 3) {
+            return null;
+        }
 
-            const isFirstFieldNumeric = !isNaN(parseFloat(parts[0].replace('º', '')));
-            let inscricao, nome, notasRaw = [];
-            let pontuacaoTotal = 0;
-            let posicao = null;
+        const isFirstFieldNumeric = !isNaN(parseFloat(parts[0].replace('º', '')));
+        let inscricao, nome, notasRaw = [];
+        let pontuacaoTotal = 0;
+        let posicao = null;
 
-            if (isFirstFieldNumeric && parts[0].includes('º')) {
-                posicao = parseInt(parts.shift().replace('º', ''));
-                inscricao = parts.shift();
-                nome = parts.shift();
-                notasRaw = parts;
-            } else if (isFirstFieldNumeric) {
-                inscricao = parts.shift();
-                nome = parts.shift();
-                notasRaw = parts;
+        if (isFirstFieldNumeric && parts[0].includes('º')) {
+            posicao = parseInt(parts.shift().replace('º', ''));
+            inscricao = parts.shift();
+            nome = parts.shift();
+            notasRaw = parts;
+        } else if (isFirstFieldNumeric) {
+            inscricao = parts.shift();
+            nome = parts.shift();
+            notasRaw = parts;
+        } else {
+            nome = parts.shift();
+            inscricao = parts.shift();
+            notasRaw = parts;
+        }
+
+        const processedNotas = [];
+        for (let i = 0; i < notasRaw.length; i++) {
+            if (notasRaw[i].includes('º')) {
+                posicao = parseInt(notasRaw[i].replace('º', ''));
+            } else if (i + 1 < notasRaw.length && !isNaN(parseFloat(notasRaw[i])) && !isNaN(parseFloat(notasRaw[i + 1])) && !notasRaw[i + 1].includes('º')) {
+                const decimalValue = parseFloat(`${notasRaw[i]}.${notasRaw[i + 1]}`);
+                processedNotas.push(decimalValue);
+                pontuacaoTotal += decimalValue;
+                i++;
+            } else if (!isNaN(parseFloat(notasRaw[i].replace(',', '.')))) {
+                const value = parseFloat(notasRaw[i].replace(',', '.'));
+                processedNotas.push(value);
+                pontuacaoTotal += value;
             } else {
-                nome = parts.shift();
-                inscricao = parts.shift();
-                notasRaw = parts;
-            }
-
-            const processedNotas = [];
-            for (let i = 0; i < notasRaw.length; i++) {
-                if (notasRaw[i].includes('º')) {
-                    posicao = parseInt(notasRaw[i].replace('º', ''));
-                } else if (i + 1 < notasRaw.length && !isNaN(parseFloat(notasRaw[i])) && !isNaN(parseFloat(notasRaw[i + 1])) && !notasRaw[i + 1].includes('º')) {
-                    const decimalValue = parseFloat(`${notasRaw[i]}.${notasRaw[i + 1]}`);
-                    processedNotas.push(decimalValue);
-                    pontuacaoTotal += decimalValue;
-                    i++;
-                } else if (!isNaN(parseFloat(notasRaw[i].replace(',', '.')))) {
-                    const value = parseFloat(notasRaw[i].replace(',', '.'));
-                    processedNotas.push(value);
-                    pontuacaoTotal += value;
-                } else {
-                    processedNotas.push(notasRaw[i]);
-                }
-            }
-
-            if (processedNotas.length === 1 && posicao === null) {
-                return [inscricao, nome, processedNotas[0]];
-            } else if (processedNotas.length === 1 && posicao !== null) {
-                return [inscricao, nome, processedNotas[0], posicao];
-            } else {
-                return [inscricao, nome, ...processedNotas, posicao !== null ? posicao : null, pontuacaoTotal];
+                processedNotas.push(notasRaw[i]);
             }
         }
 
-        const candidates = dataInput.split('/')
-            .map(candidate => candidate.trim())
-            .filter(candidate => candidate.length > 0)
-            .map(parseCandidate)
-            .filter(candidate => candidate !== null);
-
-        if (candidates.length > 0) {
-            const numFields = candidates[0].length;
-            const numNotas = candidates[0].slice(2, numFields - (numFields > 4 ? 2 : numFields > 3 ? 1 : 0)).filter(val => typeof val === 'number').length;
-            columnNames = ['Inscrição', 'Nome'];
-
-            if (numNotas > 0) {
-                for (let i = 1; i <= numNotas; i++) {
-                    columnNames.push(`Nota ${i}`);
-                }
-            }
-
-            if (numFields > 3 && candidates[0][numFields - (numNotas > 1 ? 2 : 1)] !== null) {
-                columnNames.push('Posição');
-            }
-
-            if (numNotas > 1) {
-                columnNames.push('Pontuação Total');
-            }
+        // Suporte para uma única nota: retorna [inscricao, nome, nota]
+        if (processedNotas.length === 1 && posicao === null) {
+            return [inscricao, nome, processedNotas[0]];
         }
-
-        const sortedCandidates = candidates.sort((a, b) => {
-            if (a.length <= 4) return b[2] - a[2];
-            return b[b.length - 1] - a[b.length - 1];
-        });
-
-        let organizedData = sortedCandidates;
-
-        if (addRankingColumn) {
-            organizedData = sortedCandidates.map((candidate, index) => [index + 1, ...candidate]);
-            columnNames.unshift('Classificação');
+        // Suporte para uma nota com posição: retorna [inscricao, nome, nota, posicao]
+        else if (processedNotas.length === 1 && posicao !== null) {
+            return [inscricao, nome, processedNotas[0], posicao];
         }
-
-        updateTable(columnNames, organizedData);
+        // Suporte para múltiplas notas: retorna [inscricao, nome, nota1, nota2, ..., pontuacaoTotal]
+        else {
+            return [inscricao, nome, ...processedNotas, pontuacaoTotal];
+        }
     }
 
-    function updateTable(columnNames, data) {
-        const tableHeaders = document.getElementById('tableHeaders');
-        const tableBody = document.getElementById('tableBody');
-        tableHeaders.innerHTML = '';
-        tableBody.innerHTML = '';
+    const candidates = dataInput.split('/')
+        .map(candidate => candidate.trim())
+        .filter(candidate => candidate.length > 0)
+        .map(parseCandidate)
+        .filter(candidate => candidate !== null);
 
-        columnNames.forEach(columnName => {
-            const th = document.createElement('th');
-            th.textContent = columnName;
-            th.onclick = () => sortTable(columnNames.indexOf(columnName));
-            tableHeaders.appendChild(th);
-        });
+    if (candidates.length > 0) {
+        // Contar o número de notas (exclui inscrição, nome e pontuação total)
+        const numNotas = candidates[0].length - 2 - (candidates[0].length > 3 && candidates[0][candidates[0].length - 1] !== null ? 1 : 0);
+        columnNames = ['Inscrição', 'Nome'];
 
-        data.forEach(row => {
-            const tr = document.createElement('tr');
-            row.forEach(cell => {
-                const td = document.createElement('td');
-                td.textContent = cell !== null ? cell : '';
-                tr.appendChild(td);
-            });
-            tableBody.appendChild(tr);
-        });
+        // Adicionar colunas para as notas
+        if (numNotas > 0) {
+            for (let i = 1; i <= numNotas; i++) {
+                columnNames.push(`Nota ${i}`);
+            }
+        }
 
-        // Corrige a ordenação inicial para "Nota 1" ou a primeira coluna numérica disponível
-        const notaIndex = columnNames.findIndex(col => col.includes('Nota'));
-        if (notaIndex !== -1) {
-            sortTable(notaIndex); // Ordena inicialmente pela primeira coluna "Nota"
+        // Adicionar Pontuação Total apenas se houver mais de uma nota
+        if (numNotas > 1) {
+            columnNames.push('Pontuação Total');
         }
     }
+
+    const sortedCandidates = candidates.sort((a, b) => {
+        // Para uma única nota, ordenar pela nota (índice 2)
+        if (a.length <= 3) return b[2] - a[2];
+        // Para múltiplas notas, ordenar pela pontuação total (último elemento)
+        return b[b.length - 1] - a[b.length - 1];
+    });
+
+    let organizedData = sortedCandidates;
+
+    if (addRankingColumn) {
+        organizedData = sortedCandidates.map((candidate, index) => [index + 1, ...candidate]);
+        columnNames.unshift('Classificação');
+    }
+
+    updateTable(columnNames, organizedData);
+	}
+
+	function updateTable(columnNames, data) {
+		const tableHeaders = document.getElementById('tableHeaders');
+		const tableBody = document.getElementById('tableBody');
+		tableHeaders.innerHTML = '';
+		tableBody.innerHTML = '';
+
+		// Criar cabeçalhos
+		columnNames.forEach(columnName => {
+			const th = document.createElement('th');
+			th.textContent = columnName;
+			th.onclick = () => sortTable(columnNames.indexOf(columnName));
+			tableHeaders.appendChild(th);
+		});
+
+		// Criar linhas da tabela
+		data.forEach(row => {
+			const tr = document.createElement('tr');
+			// Limitar a iteração ao número de colunas definidas em columnNames
+			for (let i = 0; i < columnNames.length; i++) {
+				const td = document.createElement('td');
+				td.textContent = row[i] !== null && row[i] !== undefined ? row[i] : '';
+				tr.appendChild(td);
+			}
+			tableBody.appendChild(tr);
+		});
+
+		// Corrige a ordenação inicial para "Nota 1" ou a primeira coluna numérica disponível
+		const notaIndex = columnNames.findIndex(col => col.includes('Nota'));
+		if (notaIndex !== -1) {
+			sortTable(notaIndex); // Ordena inicialmente pela primeira coluna "Nota"
+		}
+	}
 
     let sortDirections = [];
 
