@@ -49,7 +49,7 @@
         text-align: center;
         color: #4CAF50;
     }
-    textarea, select, input, button {
+    textarea, select, input { /* Ajustado para não incluir button aqui */
         border-radius: 10px;
         border: 1px solid #4CAF50;
         padding: 10px;
@@ -67,6 +67,7 @@
         width: auto;
         display: inline-block;
         max-width: 180px;
+        border-radius: 10px; /* Adicionado para consistência */
     }
     button:hover {
         background-color: #388E3C;
@@ -133,31 +134,75 @@
         font-size: 14px;
         color: #555;
     }
+    /* Estilos para a nova seção de renomear colunas - CORES ATUALIZADAS */
+    #renameColumnsContainer {
+        background-color: #f9f9f9; /* Mesma cor do .container */
+        padding: 15px;
+        border-radius: 10px; /* Mesma borda do .container */
+        margin-top: 20px; /* Mesma margem do .container */
+        border: 1px solid #4CAF50; /* Mesma borda do .container */
+        display: none; /* Inicia oculto */
+        flex-direction: column; /* Para empilhar o título, inputs e botões */
+        align-items: center; /* Centraliza o conteúdo */
+        gap: 15px; /* Espaçamento entre os grupos de elementos */
+    }
+    #renameColumnsContainer h2 {
+        text-align: center; /* Centraliza o título */
+        color: #4CAF50;
+        margin-top: 0;
+        margin-bottom: 5px;
+    }
+    #renameColumnsContainer #columnRenameInputs {
+        display: flex;
+        flex-wrap: wrap; /* Permite que os inputs quebrem linha */
+        justify-content: center;
+        gap: 10px; /* Espaçamento entre os campos */
+        width: 100%; /* Ocupa a largura total para centralizar os inputs */
+    }
+    #renameColumnsContainer .column-input-group {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start; /* Alinha o label e input à esquerda */
+        margin-bottom: 5px;
+        width: calc(33% - 20px); /* 3 colunas por linha em telas maiores, ajustado com gap */
+        min-width: 150px; /* Largura mínima para cada input */
+    }
+    #renameColumnsContainer label {
+        font-weight: normal;
+        margin-bottom: 3px;
+        font-size: 0.9em;
+        color: #4CAF50; /* Cor do label do .container */
+    }
+    #renameColumnsContainer input[type="text"] {
+        width: 100%;
+        padding: 5px;
+        border-radius: 10px; /* Borda do input do .container */
+        border: 1px solid #4CAF50; /* Borda do input do .container */
+        color: #004d40; /* Cor do texto do input do .container */
+    }
+    /* Estilos para o grupo de botões */
+    #renameButtonsGroup {
+        display: flex;
+        justify-content: center; /* Centraliza os botões dentro do grupo */
+        gap: 15px; /* Espaçamento entre os botões */
+        margin-top: 10px; /* Margem superior para separar dos inputs */
+    }
+    #renameColumnsContainer button {
+        margin-top: 0; /* Zera a margem original, pois o grupo já tem margem */
+        background-color: #4CAF50; /* Mesma cor do botão do .container */
+    }
+    #renameColumnsContainer button:hover {
+        background-color: #388E3C; /* Mesma cor hover do botão do .container */
+    }
+
     @media (max-width: 768px) {
-        .container, .container2 {
-            width: 90%;
-        }
-        textarea, select, input, button {
-            width: 90%;
-        }
-        .footer {
-            width: 90%;
+        #renameColumnsContainer .column-input-group {
+            width: calc(48% - 10px); /* 2 colunas por linha */
         }
     }
     @media (max-width: 480px) {
-        .container, .container2 {
-            width: 100%;
-            padding: 10px;
-        }
-        textarea, select, input, button {
-            width: 100%;
-        }
-        button {
-            padding: 8px 16px;
-        }
-        .footer {
-            width: 100%;
-            padding: 10px;
+        #renameColumnsContainer .column-input-group {
+            width: 95%; /* 1 coluna por linha */
         }
     }
     </style>
@@ -180,12 +225,23 @@
         </form>
     </div>
 
+    <div class="container" id="renameColumnsContainer" style="display: none;">
+        <h2>Renomear Colunas</h2>
+        <div id="columnRenameInputs">
+            </div>
+        <div id="renameButtonsGroup">
+            <button type="button" onclick="applyColumnRenames()">Aplicar Nomes</button>
+            <button type="button" onclick="toggleColumnRename()">Fechar Edição</button>
+        </div>
+    </div>
+
     <div class="container2" id="ContainerResult">
         <h1>Resultado Organizado</h1>
         <div class="searchContainer">
             <input type="text" id="searchInput" onkeyup="searchTable()" placeholder="Digite para pesquisar..." title="A tabela vai atualizando ao digitar...">
         </div>
         <button type="button" onclick="generatePDF()" title="Clique para gerar um PDF com os dados da tabela.">Gerar PDF</button>
+        <button type="button" onclick="toggleColumnRename()" title="Clique para mudar os nomes dos cabeçalhos das colunas.">Renomear Colunas</button>
         <h4><i>Ao clicar no cabeçalho da tabela, os dados são organizados conforme a coluna clicada!</i></h4>
         <table border="1" id="resultTable">
             <thead>
@@ -203,6 +259,8 @@
     <script>
         // Variável global para armazenar a direção de ordenação de cada coluna
         let sortDirections = [];
+        // Variável global para armazenar os nomes de coluna atuais para referência
+        let currentColumnNames = [];
 
         function organizeData() {
             document.getElementById('ContainerResult').style.display = 'block';
@@ -269,7 +327,6 @@
                 }
 
                 // --- TENTATIVA DE IDENTIFICAR O FORMATO: Nome, Nota1, Nota2, Nota3... (Primeiro não numérico, resto só notas) ---
-                // Esta condição vem AGORA, depois das mais específicas de 4 partes com Inscrição/Classificação INTEIRA.
                 if (isNaN(parseFloat(parts[0].replace(',', '.'))) && // Nome (não numérico)
                     parts.slice(1).every(p => !isNaN(parseFloat(p.replace(',', '.'))))) { // Todas as outras são numéricas (notas)
                     nome = parts[0];
@@ -343,8 +400,7 @@
             const firstCandidateType = candidates[0].type;
             const firstCandidateData = candidates[0].data;
 
-            columnNames = [];
-
+            // Definir nomes de coluna baseados no tipo detectado inicialmente
             if (firstCandidateType === 'NomeInscNotaClassificacao') {
                 columnNames = ['Nome', 'Inscrição', 'Nota', 'Classificação'];
             } else if (firstCandidateType === 'InscNomeNotaClassificacao') {
@@ -353,7 +409,7 @@
                 columnNames = ['Classificação', 'Inscrição', 'Nome', 'Nota'];
             } else if (firstCandidateType === 'NomeMultipleNotes') {
                 columnNames = ['Nome'];
-                const numActualNotes = firstCandidateData.length - 3; // Total - null - nome - pontuacaoTotal
+                const numActualNotes = firstCandidateData.length - 3; // Total de elementos - (null, nome, pontuacaoTotal)
                 for (let i = 1; i <= numActualNotes; i++) {
                     columnNames.push(`Nota ${i}`);
                 }
@@ -462,6 +518,9 @@
                 tableBody.appendChild(tr);
             });
 
+            // Atualiza currentColumnNames com os nomes ATUAIS da tabela após ela ser renderizada
+            currentColumnNames = Array.from(document.querySelectorAll('#tableHeaders th')).map(th => th.textContent);
+
             columnNames.forEach((col, index) => {
                 if (col.includes('Nota') || col.includes('Pontuação Total') || col === 'Classificação' || col === 'Posição') {
                     sortDirections[index] = false;
@@ -534,6 +593,11 @@
                         found = true;
                         break;
                     }
+                    // Adicionar uma verificação para os atributos 'title' também, se aplicável
+                    if (td[j] && td[j].title && td[j].title.toUpperCase().indexOf(input) > -1) {
+                        found = true;
+                        break;
+                    }
                 }
                 tr[i].style.display = found ? '' : 'none';
             }
@@ -563,7 +627,7 @@
                     return;
                 }
 
-                const headers = Array.from(table.querySelectorAll('thead th')).map(th => th.textContent);
+                const headers = Array.from(document.querySelectorAll('#tableHeaders th')).map(th => th.textContent); // Pega nomes atuais
                 const rows = Array.from(table.querySelectorAll('tbody tr')).map(tr =>
                     Array.from(tr.querySelectorAll('td')).map(td => 
                         td.textContent.replace(/\s*\n\s*/g, ' ').trim()
@@ -587,6 +651,79 @@
                 console.error("Erro ao gerar PDF:", error);
                 alert("Erro ao gerar PDF. Veja o console para detalhes.");
             }
+        }
+
+        // --- Funções para Renomear Colunas ---
+        function toggleColumnRename() {
+            const renameContainer = document.getElementById('renameColumnsContainer');
+            const columnRenameInputs = document.getElementById('columnRenameInputs');
+            
+            // Alterna a visibilidade
+            if (renameContainer.style.display === 'none' || renameContainer.style.display === '') {
+                renameContainer.style.display = 'flex'; // Exibe o container
+
+                // Limpa inputs antigos
+                columnRenameInputs.innerHTML = ''; 
+
+                // Gera novos inputs com base nos currentColumnNames (que já contém os nomes atuais da tabela)
+                if (currentColumnNames.length > 0) {
+                    currentColumnNames.forEach((name, index) => {
+                        const div = document.createElement('div');
+                        div.className = 'column-input-group';
+
+                        const label = document.createElement('label');
+                        label.textContent = `Coluna ${index + 1}:`;
+                        label.htmlFor = `rename-col-${index}`;
+
+                        const input = document.createElement('input');
+                        input.type = 'text';
+                        input.id = `rename-col-${index}`;
+                        input.value = name; // Preenche com o nome ATUAL da coluna
+                        input.placeholder = `Nome da Coluna ${index + 1}`;
+
+                        div.appendChild(label);
+                        div.appendChild(input);
+                        columnRenameInputs.appendChild(div);
+                    });
+                } else {
+                    columnRenameInputs.textContent = 'Organize os dados primeiro para renomear as colunas.';
+                }
+                
+                // --- Rola a página para o container de renomear ---
+                renameContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+            } else {
+                renameContainer.style.display = 'none'; // Oculta o container
+            }
+        }
+
+        function applyColumnRenames() {
+            const newColumnNames = [];
+            const inputElements = document.querySelectorAll('#columnRenameInputs input[type="text"]');
+            
+            inputElements.forEach(input => {
+                newColumnNames.push(input.value.trim());
+            });
+
+            // Atualiza os cabeçalhos da tabela com os novos nomes
+            const tableHeaders = document.querySelectorAll('#tableHeaders th');
+            tableHeaders.forEach((th, index) => {
+                if (newColumnNames[index] !== undefined && newColumnNames[index] !== null && newColumnNames[index] !== '') { 
+                    th.textContent = newColumnNames[index];
+                } else {
+                    // Se o campo estiver vazio, mantém o nome original da coluna
+                    th.textContent = currentColumnNames[index];
+                }
+            });
+
+            // --- ATUALIZA currentColumnNames COM OS NOVOS NOMES ---
+            // Pega os nomes da tabela novamente para garantir que 'currentColumnNames' reflita o que foi realmente aplicado (incluindo campos vazios que mantiveram o original).
+            currentColumnNames = Array.from(document.querySelectorAll('#tableHeaders th')).map(th => th.textContent);
+
+            // Opcional: Ocultar o container de renomear após aplicar
+            document.getElementById('renameColumnsContainer').style.display = 'none';
+
+            alert('Nomes das colunas atualizados com sucesso!');
         }
     </script>
 </body>
