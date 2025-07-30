@@ -4,210 +4,210 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Organizador de Dados de Concurso</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script> <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script> <style>
-    body {
-        font-family: Arial, sans-serif;
-        margin: 0;
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-        align-items: center;
-        min-height: 100vh;
-        background-color: #e0f7fa;
-    }
-    .container {
-        background-color: #f9f9f9;
-        padding: 20px;
-        border-radius: 10px;
-        margin-top: 20px;
-        width: 80%;
-        max-width: 600px;
-        text-align: center;
-    }
-    .container2 {
-        background-color: #f9f9f9;
-        padding: 20px;
-        border-radius: 10px;
-        margin-top: 20px;
-        width: 70%;
-        max-width: 90%;
-        overflow-x:auto;
-        text-align: center;
-        align-items: center;
-        display: none; /* Inicia oculto */
-    }
-    .form-group {
-        margin-bottom: 15px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-    }
-    .form-group label {
-        display: block;
-        margin-bottom: 5px;
-        font-weight: bold;
-        text-align: center;
-        color: #4CAF50;
-    }
-    textarea, select, input { /* Ajustado para não incluir button aqui */
-        border-radius: 10px;
-        border: 1px solid #4CAF50;
-        padding: 10px;
-        width: 70%;
-        box-sizing: border-box;
-        color: #004d40;
-    }
-    button {
-        cursor: pointer;
-        background-color: #4CAF50;
-        color: white;
-        border: none;
-        margin-top: 10px;
-        padding: 7px 10px;
-        width: auto;
-        display: inline-block;
-        max-width: 180px;
-        border-radius: 10px; /* Adicionado para consistência */
-    }
-    button:hover {
-        background-color: #388E3C;
-    }
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        align-items: center;
-        text-align: center;
-        margin-top: 20px;
-        margin: auto;
-        border-radius: 10px;
-        overflow: hidden;
-    }
-    th, td {
-        border: 1px solid #4CAF50;
-        padding: 8px;
-        text-align: center;
-        cursor: pointer;
-    }
-    th {
-        background-color: #4CAF50;
-        color: white;
-    }
-    td {
-        background-color: #f2f2f2;
-    }
-    tr:nth-child(even) td {
-        background-color: #e0f2f1;
-    }
-    #columnNames input {
-        margin-bottom: 5px;
-    }
-    .checkbox-group {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        margin-bottom: 15px;
-    }
-    .searchContainer {
-        margin-top: 20px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-    }
-    .footer {
-        margin-top: auto;
-        margin-bottom: auto;
-        text-align: center;
-        padding: 20px;
-        background-color: transparent;
-        width: 80%;
-        max-width: 600px;
-        border-top: 1px solid #ddd;
-        box-sizing: border-box;
-    }
-    .footer img {
-        width: 100px;
-        border-radius: 50%;
-        margin-bottom: 10px;
-    }
-    .footer p {
-        margin: 0;
-        font-size: 14px;
-        color: #555;
-    }
-    /* Estilos para a nova seção de renomear colunas - CORES ATUALIZADAS */
-    #renameColumnsContainer {
-        background-color: #f9f9f9; /* Mesma cor do .container */
-        padding: 15px;
-        border-radius: 10px; /* Mesma borda do .container */
-        margin-top: 20px; /* Mesma margem do .container */
-        border: 1px solid #4CAF50; /* Mesma borda do .container */
-        display: none; /* Inicia oculto */
-        flex-direction: column; /* Para empilhar o título, inputs e botões */
-        align-items: center; /* Centraliza o conteúdo */
-        gap: 15px; /* Espaçamento entre os grupos de elementos */
-    }
-    #renameColumnsContainer h2 {
-        text-align: center; /* Centraliza o título */
-        color: #4CAF50;
-        margin-top: 0;
-        margin-bottom: 5px;
-    }
-    #renameColumnsContainer #columnRenameInputs {
-        display: flex;
-        flex-wrap: wrap; /* Permite que os inputs quebrem linha */
-        justify-content: center;
-        gap: 10px; /* Espaçamento entre os campos */
-        width: 100%; /* Ocupa a largura total para centralizar os inputs */
-    }
-    #renameColumnsContainer .column-input-group {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-start; /* Alinha o label e input à esquerda */
-        margin-bottom: 5px;
-        width: calc(33% - 20px); /* 3 colunas por linha em telas maiores, ajustado com gap */
-        min-width: 150px; /* Largura mínima para cada input */
-    }
-    #renameColumnsContainer label {
-        font-weight: normal;
-        margin-bottom: 3px;
-        font-size: 0.9em;
-        color: #4CAF50; /* Cor do label do .container */
-    }
-    #renameColumnsContainer input[type="text"] {
-        width: 100%;
-        padding: 5px;
-        border-radius: 10px; /* Borda do input do .container */
-        border: 1px solid #4CAF50; /* Borda do input do .container */
-        color: #004d40; /* Cor do texto do input do .container */
-    }
-    /* Estilos para o grupo de botões */
-    #renameButtonsGroup {
-        display: flex;
-        justify-content: center; /* Centraliza os botões dentro do grupo */
-        gap: 15px; /* Espaçamento entre os botões */
-        margin-top: 10px; /* Margem superior para separar dos inputs */
-    }
-    #renameColumnsContainer button {
-        margin-top: 0; /* Zera a margem original, pois o grupo já tem margem */
-        background-color: #4CAF50; /* Mesma cor do botão do .container */
-    }
-    #renameColumnsContainer button:hover {
-        background-color: #388E3C; /* Mesma cor hover do botão do .container */
-    }
-
-    @media (max-width: 768px) {
-        #renameColumnsContainer .column-input-group {
-            width: calc(48% - 10px); /* 2 colunas por linha */
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #e0f7fa;
         }
-    }
-    @media (max-width: 480px) {
-        #renameColumnsContainer .column-input-group {
-            width: 95%; /* 1 coluna por linha */
+        .container {
+            background-color: #f9f9f9;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            width: 80%;
+            max-width: 600px;
+            text-align: center;
         }
-    }
+        .container2 {
+            background-color: #f9f9f9;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            width: 70%;
+            max-width: 90%;
+            overflow-x:auto;
+            text-align: center;
+            align-items: center;
+            display: none; /* Inicia oculto */
+        }
+        .form-group {
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            text-align: center;
+            color: #4CAF50;
+        }
+        textarea, select, input { /* Ajustado para não incluir button aqui */
+            border-radius: 10px;
+            border: 1px solid #4CAF50;
+            padding: 10px;
+            width: 70%;
+            box-sizing: border-box;
+            color: #004d40;
+        }
+        button {
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            margin-top: 10px;
+            padding: 7px 10px;
+            width: auto;
+            display: inline-block;
+            max-width: 180px;
+            border-radius: 10px; /* Adicionado para consistência */
+        }
+        button:hover {
+            background-color: #388E3C;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            align-items: center;
+            text-align: center;
+            margin-top: 20px;
+            margin: auto;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        th, td {
+            border: 1px solid #4CAF50;
+            padding: 8px;
+            text-align: center;
+            cursor: pointer;
+        }
+        th {
+            background-color: #4CAF50;
+            color: white;
+        }
+        td {
+            background-color: #f2f2f2;
+        }
+        tr:nth-child(even) td {
+            background-color: #e0f2f1;
+        }
+        #columnNames input {
+            margin-bottom: 5px;
+        }
+        .checkbox-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .searchContainer {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .footer {
+            margin-top: auto;
+            margin-bottom: auto;
+            text-align: center;
+            padding: 20px;
+            background-color: transparent;
+            width: 80%;
+            max-width: 600px;
+            border-top: 1px solid #ddd;
+            box-sizing: border-box;
+        }
+        .footer img {
+            width: 100px;
+            border-radius: 50%;
+            margin-bottom: 10px;
+        }
+        .footer p {
+            margin: 0;
+            font-size: 14px;
+            color: #555;
+        }
+        /* Estilos para a nova seção de renomear colunas - CORES ATUALIZADAS */
+        #renameColumnsContainer {
+            background-color: #f9f9f9; /* Mesma cor do .container */
+            padding: 15px;
+            border-radius: 10px; /* Mesma borda do .container */
+            margin-top: 20px; /* Mesma margem do .container */
+            border: 1px solid #4CAF50; /* Mesma borda do .container */
+            display: none; /* Inicia oculto */
+            flex-direction: column; /* Para empilhar o título, inputs e botões */
+            align-items: center; /* Centraliza o conteúdo */
+            gap: 15px; /* Espaçamento entre os grupos de elementos */
+        }
+        #renameColumnsContainer h2 {
+            text-align: center; /* Centraliza o título */
+            color: #4CAF50;
+            margin-top: 0;
+            margin-bottom: 5px;
+        }
+        #renameColumnsContainer #columnRenameInputs {
+            display: flex;
+            flex-wrap: wrap; /* Permite que os inputs quebrem linha */
+            justify-content: center;
+            gap: 10px; /* Espaçamento entre os campos */
+            width: 100%; /* Ocupa a largura total para centralizar os inputs */
+        }
+        #renameColumnsContainer .column-input-group {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start; /* Alinha o label e input à esquerda */
+            margin-bottom: 5px;
+            width: calc(33% - 20px); /* 3 colunas por linha em telas maiores, ajustado com gap */
+            min-width: 150px; /* Largura mínima para cada input */
+        }
+        #renameColumnsContainer label {
+            font-weight: normal;
+            margin-bottom: 3px;
+            font-size: 0.9em;
+            color: #4CAF50; /* Cor do label do .container */
+        }
+        #renameColumnsContainer input[type="text"] {
+            width: 100%;
+            padding: 5px;
+            border-radius: 10px; /* Borda do input do .container */
+            border: 1px solid #4CAF50; /* Borda do input do .container */
+            color: #004d40; /* Cor do texto do input do .container */
+        }
+        /* Estilos para o grupo de botões */
+        #renameButtonsGroup {
+            display: flex;
+            justify-content: center; /* Centraliza os botões dentro do grupo */
+            gap: 15px; /* Espaçamento entre os botões */
+            margin-top: 10px; /* Margem superior para separar dos inputs */
+        }
+        #renameColumnsContainer button {
+            margin-top: 0; /* Zera a margem original, pois o grupo já tem margem */
+            background-color: #4CAF50; /* Mesma cor do botão do .container */
+        }
+        #renameColumnsContainer button:hover {
+            background-color: #388E3C; /* Mesma cor hover do botão do .container */
+        }
+        @media (max-width: 768px) {
+            #renameColumnsContainer .column-input-group {
+                width: calc(48% - 10px); /* 2 colunas por linha */
+            }
+        }
+        @media (max-width: 480px) {
+            #renameColumnsContainer .column-input-group {
+                width: 95%; /* 1 coluna por linha */
+            }
+        }
     </style>
 </head>
-
 <body>
     <div class="container">
         <h1>Organizador de Dados de Concurso</h1>
@@ -228,7 +228,7 @@
     <div class="container" id="renameColumnsContainer" style="display: none;">
         <h2>Renomear Colunas</h2>
         <div id="columnRenameInputs">
-            </div>
+        </div>
         <div id="renameButtonsGroup">
             <button type="button" onclick="applyColumnRenames()">Aplicar Nomes</button>
             <button type="button" onclick="toggleColumnRename()">Fechar Edição</button>
@@ -262,228 +262,278 @@
         // Variável global para armazenar os nomes de coluna atuais para referência
         let currentColumnNames = [];
 
+        // --- NOVA FUNÇÃO parseCandidate ---
+        function parseCandidate(candidateStr) {
+            // 1. Pré-processamento e Normalização da String
+            let cleanStr = candidateStr
+                .replace(/-\s*\n\s*/g, '') // Remove hífens de quebra de linha (ex: "nome-\ncompleto" vira "nomecompleto")
+                .replace(/\s*\n\s*/g, ' ') // Remove outras quebras de linha, substituindo por espaço
+                .replace(/\s+/g, ' ')      // Reduz múltiplos espaços para um único espaço
+                .trim();                   // Remove espaços no início e fim
+
+            const data = {};
+            const detectedHeaders = [];
+
+            // --- Prioridade 1: Formato "Classificação, Inscrição, Nome, Nota" (separado por vírgula) ---
+            // IMPORTANTE: Aqui, as vírgulas dentro dos números decimais já foram convertidas para pontos.
+            // Esta regex busca especificamente pelo padrão de campos separados por vírgula.
+            const commaPatternMatch = cleanStr.match(/^(\d+)\s*,\s*(\d+)\s*,\s*([^,]+?)\s*,\s*(\d+\.\d+|\d+)$/);
+            if (commaPatternMatch) {
+                data.classificacao = parseInt(commaPatternMatch[1]);
+                data.inscricao = commaPatternMatch[2];
+                data.nome = commaPatternMatch[3].trim();
+                data.notas = [parseFloat(commaPatternMatch[4].replace(',', '.'))]; // Garante que nota seja float
+                data.pontuacaoTotal = data.notas[0];
+
+                detectedHeaders.push('Classificação', 'Inscrição', 'Nome', 'Nota 1');
+                return { data: [data.classificacao, data.inscricao, data.nome, data.notas[0]], headers: detectedHeaders };
+            }
+
+            // --- Prioridade 2: Formato "Inscrição; Nome; Nota" (separado por ponto e vírgula) ---
+            // Ex: "7516959; JONATAS DOS SANTOS FONSECA; 93"
+            const semicolonPatternMatch = cleanStr.match(/^(\d+)\s*;\s*([^;]+?)\s*;\s*(\d+\.\d+|\d+)$/);
+            if (semicolonPatternMatch) {
+                data.inscricao = semicolonPatternMatch[1];
+                data.nome = semicolonPatternMatch[2].trim();
+                data.notas = [parseFloat(semicolonPatternMatch[3].replace(',', '.'))];
+                data.pontuacaoTotal = data.notas[0];
+
+                detectedHeaders.push('Inscrição', 'Nome', 'Nota 1');
+                return { data: [data.inscricao, data.nome, data.notas[0]], headers: detectedHeaders };
+            }
+
+            // --- Prioridade 3: Lógica Genérica com Heurísticas ---
+            // Trabalhamos com uma cópia mutável da string para ir removendo os campos encontrados.
+            let workingStr = cleanStr;
+
+            // 1. Extrair NOTAS (números que podem ter decimal ou são os últimos números na string)
+            // Regex para pegar todos os números que podem ser notas (inteiro ou decimal).
+            // A ordem reversa ajuda a pegar notas que aparecem no final da string antes.
+            const notesMatches = [...workingStr.matchAll(/\b(\d+(?:[.,]\d+)?)\b/g)]
+                                    .map(m => ({ value: m[1], index: m.index, length: m[0].length }))
+                                    .sort((a, b) => b.index - a.index); // Ordena por índice decrescente
+
+            let tempNotes = [];
+            let tempWorkingStrArray = workingStr.split(''); // Trabalhar com array para remoção fácil
+
+            for (const match of notesMatches) {
+                // Tenta converter para float para verificar se é uma nota válida (não muito grande para ser nota)
+                const numVal = parseFloat(match.value.replace(',', '.'));
+                // Critério para ser nota: geralmente < 1000 e não parecer uma inscrição (muitos dígitos).
+                // Ajustar '1000' se notas puderem ser maiores.
+                if (!isNaN(numVal) && numVal < 1000) { // Limite de valor para notas
+                    tempNotes.unshift(numVal); // Adiciona no início para manter a ordem original
+                    // Remove a nota da string de trabalho
+                    tempWorkingStrArray.splice(match.index, match.length, ' '.repeat(match.length));
+                }
+            }
+            if (tempNotes.length > 0) {
+                data.notas = tempNotes;
+                data.pontuacaoTotal = data.notas.reduce((sum, current) => sum + current, 0);
+            }
+            workingStr = tempWorkingStrArray.join('').replace(/\s+/g, ' ').trim();
+
+
+            // 2. Tentar identificar a INSCRIÇÃO: número inteiro mais longo restante, geralmente não no início
+            const potentialInscricoes = [...workingStr.matchAll(/\b(\d+)\b/g)]
+                                            .map(m => ({ value: m[1], index: m.index, length: m[0].length }));
+
+            let bestInscricaoMatch = null;
+            // Busca o número inteiro mais longo, assumindo que Inscrições têm pelo menos 4 dígitos
+            for (const num of potentialInscricoes) {
+                // Se já temos uma classificação no início, não consideramos o primeiro número como inscrição
+                const isFirstWord = num.index === 0;
+
+                if (num.value.length >= 4) { // Inscrições com 4 ou mais dígitos
+                    if (bestInscricaoMatch === null || num.value.length > bestInscricaoMatch.value.length) {
+                        bestInscricaoMatch = num;
+                    }
+                }
+            }
+
+            if (bestInscricaoMatch) {
+                data.inscricao = bestInscricaoMatch.value;
+                // Remover a inscrição da string de trabalho
+                workingStr = workingStr.substring(0, bestInscricaoMatch.index) + ' '.repeat(bestInscricaoMatch.length) + workingStr.substring(bestInscricaoMatch.index + bestInscricaoMatch.length);
+                workingStr = workingStr.replace(/\s+/g, ' ').trim();
+            }
+
+
+            // 3. Tentar identificar a CLASSIFICAÇÃO: número inteiro no início, ou com 'º'/'°'
+            // Critérios: No início da string OU com "º" / "°", e geralmente pequeno.
+            let classifMatch = workingStr.match(/^(\d+)(?:º|°)?\b/); // No início da string
+            if (classifMatch) {
+                const classifValue = parseInt(classifMatch[1]);
+                if (!isNaN(classifValue) && classifValue < 10000) { // Limite razoável para classificação
+                    data.classificacao = classifValue;
+                    workingStr = workingStr.replace(classifMatch[0], ' ').trim();
+                }
+            } else {
+                // Tenta encontrar em qualquer lugar, mas com "º" / "°" para ser mais específico
+                classifMatch = workingStr.match(/\b(\d+)(?:º|°)\b/);
+                if (classifMatch) {
+                    const classifValue = parseInt(classifMatch[1]);
+                     if (!isNaN(classifValue) && classifValue < 10000) {
+                        data.classificacao = classifValue;
+                        workingStr = workingStr.replace(classifMatch[0], ' ').trim();
+                    }
+                }
+            }
+
+
+            // 4. O que sobrou (após remover números e padrões conhecidos) é o Nome
+            data.nome = workingStr.replace(/[^a-zA-ZáéíóúÁÉÍÓÚâêîôûÂÊÎÔÛãõÃÕçÇ\s]/g, '').trim();
+            if (data.nome === "") data.nome = null;
+
+            // --- Montar os dados para a tabela de forma flexível ---
+            const rowData = [];
+
+            if (data.classificacao !== undefined) {
+                detectedHeaders.push('Classificação');
+                rowData.push(data.classificacao);
+            }
+            if (data.inscricao !== undefined) {
+                detectedHeaders.push('Inscrição');
+                rowData.push(data.inscricao);
+            }
+            if (data.nome !== undefined && data.nome !== null) {
+                detectedHeaders.push('Nome');
+                rowData.push(data.nome);
+            }
+            if (data.notas !== undefined && data.notas.length > 0) {
+                data.notas.forEach((nota, index) => {
+                    detectedHeaders.push(`Nota ${index + 1}`);
+                    rowData.push(nota);
+                });
+            }
+            if (data.pontuacaoTotal !== undefined) {
+                // Adiciona Pontuação Total apenas se for diferente da única nota, ou se houver múltiplas notas
+                const lastNoteAdded = data.notas && data.notas.length > 0 ? data.notas[data.notas.length - 1] : undefined;
+                // Se a pontuação total é igual à única nota E já temos o cabeçalho 'Nota 1', não adiciona 'Pontuação Total'
+                if (!(data.notas && data.notas.length === 1 && data.pontuacaoTotal === lastNoteAdded && detectedHeaders.includes('Nota 1'))) {
+                     if (detectedHeaders.indexOf('Pontuação Total') === -1) { // Garante que não duplique o cabeçalho
+                        detectedHeaders.push('Pontuação Total');
+                        rowData.push(data.pontuacaoTotal);
+                    }
+                }
+            }
+
+            // Fallback: se nada foi detectado, usa o split por espaço
+            if (rowData.length === 0 && candidateStr.length > 0) {
+                const parts = candidateStr.split(' ').filter(p => p.length > 0);
+                parts.forEach((part, index) => {
+                    detectedHeaders.push(`Campo ${index + 1}`);
+                    rowData.push(part);
+                });
+            }
+
+            return {
+                data: rowData,
+                headers: detectedHeaders.length > 0 ? detectedHeaders : ['Campo 1', 'Campo 2', 'Campo 3']
+            };
+        }
+
+        // --- organizeData (SEM MUDANÇAS DESDE A ÚLTIMA VERSÃO, JÁ ESTÁ ADAPTADA) ---
         function organizeData() {
             document.getElementById('ContainerResult').style.display = 'block';
 
             const dataInput = document.getElementById('dataInput').value.trim();
             const addRankingColumn = document.getElementById('addRankingColumn').checked;
-            let columnNames = [];
 
-            function parseCandidate(candidateStr) {
-                const separator = candidateStr.includes(';') ? ';' : ',';
-                const parts = candidateStr.trim().split(separator).map(part => part.trim());
+            const parsedCandidates = dataInput.split('/')
+                .map(candidate => parseCandidate(candidate.trim()))
+                .filter(result => result.data.length > 0);
 
-                if (!candidateStr || parts.length < 2) {
-                    return null; // Dados insuficientes
-                }
-
-                let classificacao = null;
-                let inscricao = null;
-                let nome = null;
-                let notasRaw = [];
-                let pontuacaoTotal = 0;
-                let posicao = null;
-
-                // --- TENTATIVA DE IDENTIFICAR FORMATO: Nome, Inscrição, Nota, Classificação (4 partes exatas) ---
-                if (parts.length === 4 &&
-                    isNaN(parseFloat(parts[0].replace(',', '.'))) && // Nome (não numérico)
-                    Number.isInteger(parseFloat(parts[1])) && // Inscrição (DEVE ser inteiro)
-                    !isNaN(parseFloat(parts[2].replace(',', '.'))) && // Nota (pode ser decimal)
-                    Number.isInteger(parseFloat(parts[3])) // Classificação (DEVE ser inteiro)
-                ) {
-                    nome = parts[0];
-                    inscricao = parts[1];
-                    const nota = parseFloat(parts[2].replace(',', '.'));
-                    classificacao = parseInt(parts[3]);
-                    return { type: 'NomeInscNotaClassificacao', data: [inscricao, nome, nota, classificacao] };
-                }
-
-                // --- TENTATIVA DE IDENTIFICAR NOVO FORMATO: Inscrição, Nome, Nota, Classificação (4 partes exatas) ---
-                if (parts.length === 4 &&
-                    Number.isInteger(parseFloat(parts[0])) && // Inscrição (DEVE ser inteiro)
-                    isNaN(parseFloat(parts[1].replace(',', '.'))) && // Nome (NÃO numérico)
-                    !isNaN(parseFloat(parts[2].replace(',', '.'))) && // Nota (pode ser decimal)
-                    Number.isInteger(parseFloat(parts[3])) // Classificação (DEVE ser inteiro)
-                ) {
-                    inscricao = parts[0];
-                    nome = parts[1];
-                    const nota = parseFloat(parts[2].replace(',', '.'));
-                    classificacao = parseInt(parts[3]);
-                    return { type: 'InscNomeNotaClassificacao', data: [inscricao, nome, nota, classificacao] };
-                }
-
-                // --- TENTATIVA DE IDENTIFICAR FORMATO: Classificação, Inscrição, Nome, Nota (mínimo 4 partes) ---
-                if (parts.length >= 4 &&
-                    Number.isInteger(parseFloat(parts[0])) && !parts[0].includes('º') && // Classificação (DEVE ser inteiro, sem 'º')
-                    Number.isInteger(parseFloat(parts[1])) && // Inscrição (DEVE ser inteiro)
-                    isNaN(parseFloat(parts[2].replace(',', '.'))) && // Nome (não numérico)
-                    !isNaN(parseFloat(parts[parts.length - 1].replace(',', '.')))) // Último campo é a nota (pode ser decimal)
-                {
-                    classificacao = parseInt(parts.shift());
-                    inscricao = parts.shift();
-                    const lastPartAsNote = parseFloat(parts.pop().replace(',', '.'));
-                    nome = parts.join(' ');
-                    return { type: 'ClassificacaoInscNomeNota', data: [inscricao, nome, lastPartAsNote, classificacao] };
-                }
-
-                // --- TENTATIVA DE IDENTIFICAR O FORMATO: Nome, Nota1, Nota2, Nota3... (Primeiro não numérico, resto só notas) ---
-                if (isNaN(parseFloat(parts[0].replace(',', '.'))) && // Nome (não numérico)
-                    parts.slice(1).every(p => !isNaN(parseFloat(p.replace(',', '.'))))) { // Todas as outras são numéricas (notas)
-                    nome = parts[0];
-                    const notas = parts.slice(1).map(p => parseFloat(p.replace(',', '.')));
-                    pontuacaoTotal = notas.reduce((sum, current) => sum + current, 0);
-                    return { type: 'NomeMultipleNotes', data: [null, nome, ...notas, pontuacaoTotal] }; // null para inscrição ausente
-                }
-
-                // --- LÓGICA EXISTENTE PARA OUTROS FORMATOS: (Posição/Inscrição, Nome, Notas...) ---
-                let remainingParts = [...parts];
-
-                const isFirstFieldNumeric = !isNaN(parseFloat(remainingParts[0].replace('º', '')));
-
-                if (isFirstFieldNumeric && remainingParts[0].includes('º')) {
-                    posicao = parseInt(remainingParts.shift().replace('º', ''));
-                    inscricao = remainingParts.shift();
-                    nome = remainingParts.shift();
-                    notasRaw = remainingParts;
-                } else if (isFirstFieldNumeric && remainingParts.length >= 3) {
-                    inscricao = remainingParts.shift();
-                    nome = remainingParts.shift();
-                    notasRaw = remainingParts;
-                } else {
-                    nome = remainingParts.shift();
-                    inscricao = remainingParts.shift();
-                    notasRaw = remainingParts;
-                }
-
-                const processedNotas = [];
-                for (let i = 0; i < notasRaw.length; i++) {
-                    if (notasRaw[i].includes('º')) {
-                        posicao = parseInt(notasRaw[i].replace('º', ''));
-                    } else if (!isNaN(parseFloat(notasRaw[i].replace(',', '.')))) {
-                        if (i + 2 < notasRaw.length && !isNaN(parseFloat(notasRaw[i + 1])) && notasRaw[i + 2].includes('º') && !notasRaw[i + 1].includes('.')) {
-                            const decimalValue = parseFloat(`${notasRaw[i]}.${notasRaw[i + 1]}`);
-                            processedNotas.push(decimalValue);
-                            pontuacaoTotal += decimalValue;
-                            i++;
-                        } else {
-                            const value = parseFloat(notasRaw[i].replace(',', '.'));
-                            processedNotas.push(value);
-                            pontuacaoTotal += value;
-                        }
-                    } else {
-                        processedNotas.push(notasRaw[i]);
-                    }
-                }
-
-                if (processedNotas.length === 1 && posicao === null) {
-                    return { type: 'InscNomeSingleNote', data: [inscricao, nome, processedNotas[0]] };
-                } else if (processedNotas.length === 1 && posicao !== null) {
-                    return { type: 'InscNomeNotaPosicaoXgrau', data: [inscricao, nome, processedNotas[0], posicao] };
-                } else if (processedNotas.length > 1) {
-                    return { type: 'InscNomeMultipleNotes', data: [inscricao, nome, ...processedNotas, pontuacaoTotal] };
-                } else {
-                    return { type: 'Unknown', data: [inscricao, nome, null] };
-                }
-            }
-
-            const candidates = dataInput.split('/')
-                .map(candidate => candidate.trim())
-                .filter(candidate => candidate.length > 0)
-                .map(parseCandidate)
-                .filter(candidate => candidate !== null);
-
-            if (candidates.length === 0) {
+            if (parsedCandidates.length === 0) {
                 updateTable([], []);
                 return;
             }
 
-            const firstCandidateType = candidates[0].type;
-            const firstCandidateData = candidates[0].data;
+            let allDetectedHeaders = new Set();
+            parsedCandidates.forEach(pc => pc.headers.forEach(h => allDetectedHeaders.add(h)));
+            let finalColumnNames = Array.from(allDetectedHeaders);
 
-            // Definir nomes de coluna baseados no tipo detectado inicialmente
-            if (firstCandidateType === 'NomeInscNotaClassificacao') {
-                columnNames = ['Nome', 'Inscrição', 'Nota', 'Classificação'];
-            } else if (firstCandidateType === 'InscNomeNotaClassificacao') {
-                columnNames = ['Inscrição', 'Nome', 'Nota', 'Classificação'];
-            } else if (firstCandidateType === 'ClassificacaoInscNomeNota') {
-                columnNames = ['Classificação', 'Inscrição', 'Nome', 'Nota'];
-            } else if (firstCandidateType === 'NomeMultipleNotes') {
-                columnNames = ['Nome'];
-                const numActualNotes = firstCandidateData.length - 3; // Total de elementos - (null, nome, pontuacaoTotal)
-                for (let i = 1; i <= numActualNotes; i++) {
-                    columnNames.push(`Nota ${i}`);
-                }
-                columnNames.push('Pontuação Total');
-            } else if (firstCandidateType === 'InscNomeMultipleNotes') {
-                columnNames = ['Inscrição', 'Nome'];
-                for (let i = 1; i <= firstCandidateData.length - 3; i++) {
-                    columnNames.push(`Nota ${i}`);
-                }
-                columnNames.push('Pontuação Total');
-            } else if (firstCandidateType === 'InscNomeNotaPosicaoXgrau') {
-                columnNames = ['Inscrição', 'Nome', 'Nota', 'Posição'];
-            } else if (firstCandidateType === 'InscNomeSingleNote') {
-                columnNames = ['Inscrição', 'Nome', 'Nota'];
-            } else {
-                columnNames = ['Campo 1', 'Campo 2', 'Campo 3'];
-                for(let i = 3; i < firstCandidateData.length; i++) {
-                    columnNames.push(`Campo ${i + 1}`);
-                }
-            }
-
-            const sortedCandidates = candidates.sort((a, b) => {
-                let valA, valB;
-
-                if (a.type === 'NomeMultipleNotes' || a.type === 'InscNomeMultipleNotes') {
-                    valA = parseFloat(a.data[a.data.length - 1]);
-                    valB = parseFloat(b.data[b.data.length - 1]);
-                } else if (a.type === 'NomeInscNotaClassificacao' || a.type === 'InscNomeNotaClassificacao' ||
-                           a.type === 'ClassificacaoInscNomeNota' || a.type === 'InscNomeNotaPosicaoXgrau' ||
-                           a.type === 'InscNomeSingleNote') {
-                    valA = parseFloat(a.data[2]);
-                    valB = parseFloat(b.data[2]);
-                } else {
-                    valA = parseFloat(a.data[0]);
-                    valB = parseFloat(b.data[0]);
-                }
-
-                return valB - valA;
+            const preferredOrder = ['Classificação', 'Inscrição', 'Nome', 'Nota 1', 'Nota 2', 'Nota 3', 'Nota 4', 'Nota 5', 'Pontuação Total'];
+            finalColumnNames.sort((a, b) => {
+                const indexA = preferredOrder.indexOf(a);
+                const indexB = preferredOrder.indexOf(b);
+                if (indexA === -1 && indexB === -1) return a.localeCompare(b);
+                if (indexA === -1) return 1;
+                if (indexB === -1) return -1;
+                return indexA - indexB;
             });
 
-            let organizedData = sortedCandidates.map(candidate => {
-                const data = candidate.data;
-                if (candidate.type === 'NomeInscNotaClassificacao') {
-                    const [insc, nome, nota, classif] = data;
-                    return [nome, insc, nota, classif];
-                } else if (candidate.type === 'InscNomeNotaClassificacao') {
-                    return [...data];
-                } else if (candidate.type === 'ClassificacaoInscNomeNota') {
-                    const [insc, nome, nota, classif] = data;
-                    return [classif, insc, nome, nota];
-                } else if (candidate.type === 'NomeMultipleNotes') {
-                    const [, nome, ...rest] = data; // Remove o 'null' da inscrição
-                    return [nome, ...rest]; // rest contém [nota1, nota2, nota3, pontuacaoTotal]
-                } else {
-                    return [...data];
-                }
+            let organizedData = parsedCandidates.map(parsedResult => {
+                const row = [];
+                const dataMap = {};
+                parsedResult.headers.forEach((header, index) => {
+                    dataMap[header] = parsedResult.data[index];
+                });
+
+                finalColumnNames.forEach(header => {
+                    row.push(dataMap[header] !== undefined ? dataMap[header] : null);
+                });
+                return row;
             });
 
             if (addRankingColumn) {
-                const existingClassifOrPosicaoIndex = columnNames.findIndex(col => col === 'Classificação' || col === 'Posição');
-                if (existingClassifOrPosicaoIndex !== -1) {
-                    columnNames.splice(existingClassifOrPosicaoIndex, 1);
+                const existingClassifIndex = finalColumnNames.indexOf('Classificação');
+                if (existingClassifIndex !== -1) {
+                    finalColumnNames.splice(existingClassifIndex, 1);
                     organizedData = organizedData.map(row => {
                         const newRow = [...row];
-                        newRow.splice(existingClassifOrPosicaoIndex, 1);
+                        newRow.splice(existingClassifIndex, 1);
                         return newRow;
                     });
                 }
+                const existingPosicaoIndex = finalColumnNames.indexOf('Posição');
+                if (existingPosicaoIndex !== -1) {
+                    finalColumnNames.splice(existingPosicaoIndex, 1);
+                    organizedData = organizedData.map(row => {
+                        const newRow = [...row];
+                        newRow.splice(existingPosicaoIndex, 1);
+                        return newRow;
+                    });
+                }
+
                 organizedData = organizedData.map((candidateRow, index) => [index + 1, ...candidateRow]);
-                columnNames.unshift('Classificação');
+                finalColumnNames.unshift('Classificação');
             }
 
-            updateTable(columnNames, organizedData);
+            organizedData.sort((a, b) => {
+                const pontuacaoTotalIndex = finalColumnNames.indexOf('Pontuação Total');
+                const classificacaoIndex = finalColumnNames.indexOf('Classificação');
+                const notaIndex = finalColumnNames.findIndex(col => col.startsWith('Nota'));
+
+                let valA, valB;
+
+                if (classificacaoIndex !== -1 && a[classificacaoIndex] !== null && b[classificacaoIndex] !== null) {
+                    valA = a[classificacaoIndex];
+                    valB = b[classificacaoIndex];
+                    return (valA === undefined ? Infinity : valA) - (valB === undefined ? Infinity : valB);
+                } else if (pontuacaoTotalIndex !== -1 && a[pontuacaoTotalIndex] !== null && b[pontuacaoTotalIndex] !== null) {
+                    valA = a[pontuacaoTotalIndex];
+                    valB = b[pontuacaoTotalIndex];
+                    return (valB === undefined ? -Infinity : valB) - (valA === undefined ? -Infinity : valA);
+                } else if (notaIndex !== -1 && a[notaIndex] !== null && b[notaIndex] !== null) {
+                     valA = a[notaIndex];
+                     valB = b[notaIndex];
+                     return (valB === undefined ? -Infinity : valB) - (valA === undefined ? -Infinity : valA);
+                } else {
+                    valA = parseFloat(a[0]);
+                    valB = parseFloat(b[0]);
+                    if (!isNaN(valA) && !isNaN(valB)) {
+                         return (valB === undefined ? -Infinity : valB) - (valA === undefined ? -Infinity : valA);
+                    }
+                    return 0;
+                }
+            });
+
+            updateTable(finalColumnNames, organizedData);
+
+            document.getElementById('ContainerResult').scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
+
 
         function updateTable(columnNames, data) {
             const tableHeaders = document.getElementById('tableHeaders');
@@ -505,20 +555,20 @@
                     const isNumericColumn = columnNames[i].includes('Nota') || columnNames[i].includes('Pontuação Total');
                     const isGeneratedRankingColumn = (columnNames[i] === 'Classificação' && i === 0 && document.getElementById('addRankingColumn').checked);
 
-                    if ((isNumericColumn || isGeneratedRankingColumn || columnNames[i] === 'Classificação' || columnNames[i] === 'Posição') && row[i] !== null && row[i] !== undefined && !isNaN(parseFloat(row[i]))) {
-                         td.textContent = parseFloat(row[i]).toFixed(2);
-                         if (isGeneratedRankingColumn || columnNames[i] === 'Classificação' || columnNames[i] === 'Posição') {
-                             td.textContent = parseInt(row[i]).toString();
-                         }
+                    if (row[i] !== null && row[i] !== undefined) {
+                        if ((isNumericColumn || isGeneratedRankingColumn || columnNames[i] === 'Classificação') && !isNaN(parseFloat(row[i]))) {
+                            td.textContent = (isGeneratedRankingColumn || columnNames[i] === 'Classificação') ? parseInt(row[i]).toString() : parseFloat(row[i]).toFixed(2);
+                        } else {
+                            td.textContent = row[i];
+                        }
                     } else {
-                         td.textContent = row[i] !== null && row[i] !== undefined ? row[i] : '';
+                        td.textContent = '';
                     }
                     tr.appendChild(td);
                 }
                 tableBody.appendChild(tr);
             });
 
-            // Atualiza currentColumnNames com os nomes ATUAIS da tabela após ela ser renderizada
             currentColumnNames = Array.from(document.querySelectorAll('#tableHeaders th')).map(th => th.textContent);
 
             columnNames.forEach((col, index) => {
@@ -528,22 +578,6 @@
                     sortDirections[index] = true;
                 }
             });
-
-            const pontuacaoTotalIndex = columnNames.findIndex(col => col.includes('Pontuação Total'));
-            const notaIndex = columnNames.findIndex(col => col.includes('Nota'));
-            const classificacaoIndex = columnNames.findIndex(col => col.includes('Classificação'));
-            const posicaoIndex = columnNames.findIndex(col => col.includes('Posição'));
-
-
-            if (pontuacaoTotalIndex !== -1) {
-                sortTable(pontuacaoTotalIndex);
-            } else if (notaIndex !== -1) {
-                sortTable(notaIndex);
-            } else if (classificacaoIndex !== -1) {
-                sortTable(classificacaoIndex);
-            } else if (posicaoIndex !== -1) {
-                sortTable(posicaoIndex);
-            }
         }
 
         function sortTable(columnIndex) {
@@ -554,7 +588,10 @@
             if (sortDirections[columnIndex] === undefined) {
                 const headerText = table.querySelector(`th:nth-child(${columnIndex + 1})`).textContent;
                 sortDirections[columnIndex] = !(headerText.includes('Nota') || headerText.includes('Pontuação Total') || headerText === 'Classificação' || headerText === 'Posição');
+            } else {
+                sortDirections[columnIndex] = !sortDirections[columnIndex];
             }
+
 
             const sortedRows = rows.sort((a, b) => {
                 const textA = a.cells[columnIndex].textContent.trim();
@@ -570,14 +607,11 @@
                 }
             });
 
-            sortDirections[columnIndex] = !sortDirections[columnIndex];
-
             tbody.innerHTML = '';
             sortedRows.forEach(row => tbody.appendChild(row));
         }
 
         window.onload = function() {
-            // A inicialização de sortDirections e a ordenação inicial são tratadas dentro de updateTable.
         };
 
         function searchTable() {
@@ -590,11 +624,6 @@
                 let found = false;
                 for (let j = 0; j < td.length; j++) {
                     if (td[j] && td[j].innerHTML.toUpperCase().indexOf(input) > -1) {
-                        found = true;
-                        break;
-                    }
-                    // Adicionar uma verificação para os atributos 'title' também, se aplicável
-                    if (td[j] && td[j].title && td[j].title.toUpperCase().indexOf(input) > -1) {
                         found = true;
                         break;
                     }
@@ -627,10 +656,10 @@
                     return;
                 }
 
-                const headers = Array.from(document.querySelectorAll('#tableHeaders th')).map(th => th.textContent); // Pega nomes atuais
+                const headers = Array.from(document.querySelectorAll('#tableHeaders th')).map(th => th.textContent);
                 const rows = Array.from(table.querySelectorAll('tbody tr')).map(tr =>
-                    Array.from(tr.querySelectorAll('td')).map(td => 
-                        td.textContent.replace(/\s*\n\s*/g, ' ').trim()
+                    Array.from(tr.querySelectorAll('td')).map(td =>
+                         td.textContent.replace(/\s*\n\s*/g, ' ').trim()
                     )
                 );
 
@@ -644,28 +673,22 @@
                     alternateRowStyles: { fillColor: [224, 242, 241] },
                 });
 
-                const pdfBlob = doc.output('blob');
-                const pdfUrl = URL.createObjectURL(pdfBlob);
-                window.open(pdfUrl, '_blank');
+                doc.save("resultados_concurso.pdf");
             } catch (error) {
                 console.error("Erro ao gerar PDF:", error);
                 alert("Erro ao gerar PDF. Veja o console para detalhes.");
             }
         }
 
-        // --- Funções para Renomear Colunas ---
         function toggleColumnRename() {
             const renameContainer = document.getElementById('renameColumnsContainer');
             const columnRenameInputs = document.getElementById('columnRenameInputs');
-            
-            // Alterna a visibilidade
+
             if (renameContainer.style.display === 'none' || renameContainer.style.display === '') {
-                renameContainer.style.display = 'flex'; // Exibe o container
+                renameContainer.style.display = 'flex';
 
-                // Limpa inputs antigos
-                columnRenameInputs.innerHTML = ''; 
+                columnRenameInputs.innerHTML = '';
 
-                // Gera novos inputs com base nos currentColumnNames (que já contém os nomes atuais da tabela)
                 if (currentColumnNames.length > 0) {
                     currentColumnNames.forEach((name, index) => {
                         const div = document.createElement('div');
@@ -678,7 +701,7 @@
                         const input = document.createElement('input');
                         input.type = 'text';
                         input.id = `rename-col-${index}`;
-                        input.value = name; // Preenche com o nome ATUAL da coluna
+                        input.value = name;
                         input.placeholder = `Nome da Coluna ${index + 1}`;
 
                         div.appendChild(label);
@@ -688,39 +711,33 @@
                 } else {
                     columnRenameInputs.textContent = 'Organize os dados primeiro para renomear as colunas.';
                 }
-                
-                // --- Rola a página para o container de renomear ---
+
                 renameContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
             } else {
-                renameContainer.style.display = 'none'; // Oculta o container
+                renameContainer.style.display = 'none';
             }
         }
 
         function applyColumnRenames() {
             const newColumnNames = [];
             const inputElements = document.querySelectorAll('#columnRenameInputs input[type="text"]');
-            
+
             inputElements.forEach(input => {
                 newColumnNames.push(input.value.trim());
             });
 
-            // Atualiza os cabeçalhos da tabela com os novos nomes
             const tableHeaders = document.querySelectorAll('#tableHeaders th');
             tableHeaders.forEach((th, index) => {
-                if (newColumnNames[index] !== undefined && newColumnNames[index] !== null && newColumnNames[index] !== '') { 
-                    th.textContent = newColumnNames[index];
+                if (newColumnNames[index] !== undefined && newColumnNames[index] !== null && newColumnNames[index] !== '') {
+                     th.textContent = newColumnNames[index];
                 } else {
-                    // Se o campo estiver vazio, mantém o nome original da coluna
                     th.textContent = currentColumnNames[index];
                 }
             });
 
-            // --- ATUALIZA currentColumnNames COM OS NOVOS NOMES ---
-            // Pega os nomes da tabela novamente para garantir que 'currentColumnNames' reflita o que foi realmente aplicado (incluindo campos vazios que mantiveram o original).
             currentColumnNames = Array.from(document.querySelectorAll('#tableHeaders th')).map(th => th.textContent);
 
-            // Opcional: Ocultar o container de renomear após aplicar
             document.getElementById('renameColumnsContainer').style.display = 'none';
 
             alert('Nomes das colunas atualizados com sucesso!');
