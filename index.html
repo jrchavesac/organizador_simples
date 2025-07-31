@@ -13,52 +13,6 @@
             font-family: 'Inter', Arial, sans-serif; /* Usando Inter, como no exemplo */
         }
         
-        /* Ajuste do footer para ficar mais próximo e alinhado ao conteúdo */
-        .footer {
-            margin-top: 2rem; /* Aumenta um pouco a margem superior para espaçamento */
-            padding: 20px;
-            background-color: transparent; /* Mantém transparente */
-            /* REMOVIDO: width: 80%; */
-            /* REMOVIDO: max-width: 600px; */
-            width: 100%; /* AGORA: Ocupa toda a largura */
-            box-sizing: border-box;
-            border-top: none; /* Remove a borda, se desejar */
-            text-align: center; /* Já centraliza o conteúdo interno (texto e imagem) */
-            /* Centraliza o próprio footer na página (embora com 100% de largura, isso não terá efeito visual) */
-            margin-left: auto; 
-            margin-right: auto;
-            /* Adicionado para espaçamento interno adequado se padding não for suficiente */
-            padding-left: 1rem; /* Tailwind: px-4 */
-            padding-right: 1rem; /* Tailwind: px-4 */
-        }
-
-        .footer img {
-            width: 100px;
-            height: 100px; /* Garante que a imagem seja quadrada para border-radius */
-            border-radius: 50%;
-            object-fit: cover; /* Garante que a imagem preencha o círculo */
-            margin-bottom: 10px;
-            border: 3px solid #4CAF50; /* Adiciona uma borda na foto */
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Adiciona uma leve sombra */
-        }
-
-        .footer p {
-            margin: 0;
-            font-size: 14px;
-            color: #555;
-        }
-
-        .social-links a {
-            color: #4CAF50; /* Cor dos links sociais */
-            margin: 0 8px; /* Espaçamento entre os ícones */
-            font-size: 24px; /* Tamanho dos ícones (ajuste conforme necessário) */
-            transition: color 0.2s ease-in-out;
-        }
-
-        .social-links a:hover {
-            color: #388E3C; /* Cor ao passar o mouse */
-        }
-
         /* Estilos específicos para inputs e textareas para manter o visual */
         textarea, select, input[type="text"] {
             border-radius: 0.5rem; /* Tailwind: rounded-lg */
@@ -154,6 +108,22 @@
             font-size: 0.9em;
             color: #4CAF50;
         }
+
+        /* Estilos específicos para o footer */
+        .footer-img {
+            margin-bottom: 10px; /* Mantém um pequeno espaçamento abaixo da imagem em mobile */
+        }
+
+        .social-links a {
+            color: #4CAF50; /* Cor dos links sociais */
+            margin: 0 8px; /* Espaçamento entre os ícones */
+            font-size: 24px; /* Tamanho dos ícones (ajuste conforme necessário) */
+            transition: color 0.2s ease-in-out;
+        }
+
+        .social-links a:hover {
+            color: #388E3C; /* Cor ao passar o mouse */
+        }
     </style>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -216,17 +186,20 @@
         </div>
     </div>
 
-    <footer class="footer mt-12 bg-gray-50 text-gray-600 py-6 px-4 rounded-lg shadow-inner">
-        <div class="flex flex-col items-center space-y-4">
-            <img src="minha_foto.jpg" alt="Foto do Autor Júnior Chaves" class="w-24 h-24 rounded-full object-cover border-4 border-green-500 shadow-md">
-            <p class="font-bold text-lg text-gray-800">Desenvolvido por Júnior Chaves</p>
-            <p class="text-sm">Minhas redes sociais:</p>
-            <div class="social-links flex space-x-6">
-                <a href="https://github.com/jrchavesac" target="_blank" rel="noopener noreferrer" title="GitHub"><i class="fab fa-github"></i></a>
-                <a href="https://instagram.com/jrchavesac" target="_blank" rel="noopener noreferrer" title="Instagram"><i class="fab fa-instagram"></i></a>
+    <footer class="w-full mt-12 bg-gray-50 text-gray-600 py-6 px-4 rounded-lg shadow-inner">
+        <div class="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-8">
+            <img src="minha_foto.jpg" alt="Foto do Autor Júnior Chaves" class="footer-img w-24 h-24 rounded-full object-cover border-4 border-green-500 shadow-md">
+            
+            <div class="text-center sm:text-left space-y-2">
+                <p class="font-bold text-lg text-gray-800">Desenvolvido por Júnior Chaves</p>
+                <p class="text-sm">Conecte-se comigo nas redes sociais:</p>
+                <div class="social-links flex justify-center sm:justify-start space-x-6">
+                    <a href="https://github.com/jrchavesac" target="_blank" rel="noopener noreferrer" title="GitHub"><i class="fab fa-github"></i></a>
+                    <a href="https://instagram.com/jrchavesac" target="_blank" rel="noopener noreferrer" title="Instagram"><i class="fab fa-instagram"></i></a>
+                </div>
             </div>
-            <p class="text-xs text-gray-500 mt-4">&copy; <span id="currentYear"></span> Júnior Chaves. Todos os direitos reservados.</p>
         </div>
+        <p class="text-xs text-gray-500 mt-4 text-center">&copy; <span id="currentYear"></span> Júnior Chaves. Todos os direitos reservados.</p>
     </footer>
 
     <script>
