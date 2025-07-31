@@ -213,8 +213,8 @@
         <h1>Organizador de Dados de Concurso</h1>
         <form id="organizeForm">
             <div class="form-group">
-                <label for="dataInput" title="Insira a lista dos candidatos, separados por '/'.">Lista dos candidatos (do Diário Oficial ou da Banca):</label>
-                <textarea id="dataInput" name="dataInput" rows="4" cols="50" title="Insira a lista dos candidatos, separados por barra (/)."></textarea>
+                <label for="dataInput" title="Insira a lista dos candidatos. Tente usar um formato consistente, mas o sistema é mais flexível agora.">Lista dos candidatos:</label>
+                <textarea id="dataInput" name="dataInput" rows="4" cols="50" title="Insira a lista dos candidatos. Tente usar um formato consistente, mas o sistema é mais flexível agora."></textarea>
             </div>
             <div class="form-group">
                 <label for="pdfTitleInput" title="Título do cargo que aparecerá no PDF gerado.">Nome do Cargo (opcional):</label>
@@ -267,16 +267,15 @@
 
         // Mapeamento de nomes de colunas para tipos de dados para comportamento de ordenação/formatação
         const typeMapping = {
-            'classificacao': 'integer_numeric', // Classificação gerada/detectada
+            'classificacao': 'integer_numeric',
             'posicao': 'integer_numeric',
             'ranking': 'integer_numeric',
-            'inscricao': 'numeric_string', // Tratar como string numérica para manter zeros à esquerda
+            'inscricao': 'numeric_string', // Inscrição pode ser um número grande, mas tratado como string para evitar problemas de precisão.
             'matricula': 'numeric_string',
             'nota': 'numeric',
             'pontuacao': 'numeric',
             'total': 'numeric',
             'acertos': 'numeric'
-            // Adicione outros sinônimos que você possa precisar
         };
 
         // Função para determinar o tipo de uma coluna com base em seu nome
@@ -290,171 +289,155 @@
             if (lowerName.includes('nome')) {
                 return 'string';
             }
-            if (lowerName.includes('nota') || lowerName.includes('pontuação total') || lowerName.includes('total')) {
-                return 'numeric';
-            }
-            if (lowerName.includes('inscricao') || lowerName.includes('matricula')) {
-                return 'numeric_string';
-            }
-            if (lowerName.includes('classificacao') || lowerName.includes('posição') || lowerName.includes('ranking')) {
-                return 'integer_numeric'; // Retorna 'integer_numeric' para esses casos
-            }
-            return 'string'; // Padrão para string se nada for detectado
+            // Último recurso: tenta inferir pelo conteúdo se o nome não ajudar
+            return 'string'; // Padrão
         }
 
+        // Função para verificar se uma string é puramente numérica (inteiro ou decimal com ponto)
+        function isNumeric(str) {
+            if (str === null || str === undefined || str.trim() === '') return false;
+            return /^-?\d+(\.\d+)?$/.test(str.trim());
+        }
 
-        function parseCandidate(candidateStr) {
-            let cleanStr = candidateStr
-                .replace(/-\s*\n\s*/g, '')
-                .replace(/\s*\n\s*/g, ' ')
-                .replace(/\s+/g, ' ')
+        // Função para verificar se é um número inteiro
+        function isInteger(str) {
+            if (str === null || str === undefined || str.trim() === '') return false;
+            return /^-?\d+$/.test(str.trim());
+        }
+        
+        /**
+         * Inferir o padrão de colunas e dados a partir da string de entrada.
+         */
+        function inferAndApplyPattern(rawInputString) {
+            if (!rawInputString) {
+                return { columnNames: [], organizedData: [] };
+            }
+
+            // --- 1. Pré-processamento Global ---
+            let processedString = rawInputString
+                .replace(/\r\n|\r/g, ' ') // Normaliza quebras de linha para espaço
+                .replace(/º|°/g, '') // Remove caracteres de grau
+                .replace(/(\d+),(\d{1,2})(?![0-9])/g, '$1.$2') // Ajusta vírgulas decimais (ex: 61,00 -> 61.00)
                 .trim();
 
-            const data = {};
-            const detectedHeaders = [];
-            const rowData = [];
+            let candidateBlocks = [];
+            let fieldsPerCandidate = 0; 
+            let finalColumnNames = [];
 
-            // --- Prioridade 1: Formato "Classificação, Inscrição, Nome, Nota" (separado por vírgula) ---
-            const commaPatternMatch = cleanStr.match(/^(\d+)\s*,\s*(\d+)\s*,\s*([^,]+?)\s*,\s*(\d+[,.]\d+|\d+)$/);
-            if (commaPatternMatch) {
-                data.classificacao = parseInt(commaPatternMatch[1]);
-                data.inscricao = commaPatternMatch[2];
-                data.nome = commaPatternMatch[3].trim();
-                data.notas = [parseFloat(commaPatternMatch[4].replace(',', '.'))];
-                data.pontuacaoTotal = data.notas[0];
-
-                detectedHeaders.push('Classificação', 'Inscrição', 'Nome', 'Nota 1');
-                rowData.push(data.classificacao, data.inscricao, data.nome, data.notas[0]);
-                return { data: rowData, headers: detectedHeaders };
+            // --- Tentar identificar o padrão de acordo com a lógica do Júnior ---
+            
+            // Padrão 1: Nome, Inscrição, Nota / (NOVO PADRÃO PRIORITÁRIO)
+            // Ex: ALEXANDRO GUIMARAES FEITOSA LIMA, 5950022694, 52.00 /
+            // Regex: Captura qualquer coisa até a primeira vírgula (Nome), depois número (Inscrição), depois número (Nota)
+            const regexNameInscNota = /([A-ZÀ-Ÿ\s.-]+?),\s*(\d+),\s*(\d+\.?\d*)\s*(?:\/\s*|$)/gi;
+            let match;
+            let tempBlocks = [];
+            while ((match = regexNameInscNota.exec(processedString)) !== null) {
+                tempBlocks.push([match[1].trim(), match[2].trim(), match[3].trim()]);
             }
 
-            // --- Prioridade 2: Formato "Inscrição; Nome; Nota" (separado por ponto e vírgula) ---
-            const semicolonPatternMatch = cleanStr.match(/^(\d+)\s*;\s*([^;]+?)\s*;\s*(\d+[,.]\d+|\d+)$/);
-            if (semicolonPatternMatch) {
-                data.inscricao = semicolonPatternMatch[1];
-                data.nome = semicolonPatternMatch[2].trim();
-                data.notas = [parseFloat(semicolonPatternMatch[3].replace(',', '.'))];
-                data.pontuacaoTotal = data.notas[0];
-
-                detectedHeaders.push('Inscrição', 'Nome', 'Nota 1');
-                rowData.push(data.inscricao, data.nome, data.notas[0]);
-                return { data: rowData, headers: detectedHeaders };
-            }
-
-            // --- Prioridade 3: Lógica Genérica com Heurísticas ---
-            let workingStr = cleanStr.replace(/(\d+),(\d+)/g, '$1.$2');
-
-            // 1. Extrair NOTAS (números com ou sem decimal, geralmente menores que 1000)
-            const notesMatches = [...workingStr.matchAll(/\b(\d+(?:\.\d+)?)\b/g)]
-                                    .map(m => ({ value: m[1], index: m.index, length: m[0].length }))
-                                    .sort((a, b) => b.index - a.index);
-
-            let tempNotes = [];
-            for (const match of notesMatches) {
-                const numVal = parseFloat(match.value);
-                if (!isNaN(numVal) && numVal < 1000 && match.value.length < 7) {
-                    tempNotes.unshift(numVal);
-                    workingStr = workingStr.substring(0, match.index) + ' '.repeat(match.length) + workingStr.substring(match.index + match.length);
-                }
-            }
-            if (tempNotes.length > 0) {
-                data.notas = tempNotes;
-                data.pontuacaoTotal = data.notas.reduce((sum, current) => sum + current, 0);
-            }
-            workingStr = workingStr.replace(/\s+/g, ' ').trim();
-
-
-            // 2. Tentar identificar a INSCRIÇÃO: número inteiro mais longo restante
-            const potentialInscricoes = [...workingStr.matchAll(/\b(\d+)\b/g)]
-                                            .map(m => ({ value: m[1], index: m.index, length: m[0].length }));
-
-            let bestInscricaoMatch = null;
-            for (const num of potentialInscricoes) {
-                if (num.value.length >= 4 && num.value.length <= 15) {
-                    if (bestInscricaoMatch === null || num.value.length > bestInscricaoMatch.value.length) {
-                        bestInscricaoMatch = num;
-                    }
-                }
-            }
-
-            if (bestInscricaoMatch) {
-                data.inscricao = bestInscricaoMatch.value;
-                workingStr = workingStr.substring(0, bestInscricaoMatch.index) + ' '.repeat(bestInscricaoMatch.length) + workingStr.substring(bestInscricaoMatch.index + bestInscricaoMatch.length);
-                workingStr = workingStr.replace(/\s+/g, ' ').trim();
-            }
-
-            // 3. Tentar identificar a CLASSIFICAÇÃO: número inteiro no início, ou com 'º'/'°'
-            let classifMatch = workingStr.match(/^(\d+)(?:º|°)?\b/);
-            if (classifMatch) {
-                const classifValue = parseInt(classifMatch[1]);
-                if (!isNaN(classifValue) && classifValue < 10000 && (!data.inscricao || classifValue.toString().length < data.inscricao.length) ) {
-                    data.classificacao = classifValue;
-                    workingStr = workingStr.replace(classifMatch[0], ' ').trim();
-                }
+            if (tempBlocks.length > 0) {
+                fieldsPerCandidate = 3;
+                finalColumnNames = ['Nome', 'Inscrição', 'Nota'];
+                candidateBlocks = tempBlocks; 
             } else {
-                classifMatch = workingStr.match(/\b(\d+)(?:º|°)\b/);
-                if (classifMatch) {
-                    const classifValue = parseInt(classifMatch[1]);
-                    if (!isNaN(classifValue) && classifValue < 10000) {
-                        data.classificacao = classifValue;
-                        workingStr = workingStr.replace(classifMatch[0], ' ').trim();
-                    }
+                // Padrão 2: Separador de campo é ';' e separador de candidato é '/' (Ex: Jonatas)
+                // Ex: 7516959; JONATAS DOS SANTOS FONSECA; 93/
+                const regexPattern3Fields = /(\d+);\s*([A-ZÀ-Ÿ\s.-]+?);\s*(\d+\.?\d*)\s*(?:\/\s*|$)/gi;
+                tempBlocks = [];
+                while ((match = regexPattern3Fields.exec(processedString)) !== null) {
+                    tempBlocks.push([match[1].trim(), match[2].trim(), match[3].trim()]);
                 }
-            }
 
-            // 4. O que sobrou é o Nome (garantido como string)
-            data.nome = workingStr.replace(/[^a-zA-ZáéíóúÁÉÍÓÚâêîôûÂÊÎÔÛãõÃÕçÇ\s]/g, '').trim();
-            if (data.nome === "") data.nome = null;
-
-            // --- Montar os dados para a tabela de forma flexível ---
-            if (data.classificacao !== undefined) {
-                detectedHeaders.push('Classificação');
-                rowData.push(data.classificacao);
-            }
-            if (data.inscricao !== undefined) {
-                detectedHeaders.push('Inscrição');
-                rowData.push(data.inscricao);
-            }
-            if (data.nome !== undefined && data.nome !== null) {
-                detectedHeaders.push('Nome');
-                rowData.push(data.nome);
-            }
-            if (data.notas !== undefined && data.notas.length > 0) {
-                data.notas.forEach((nota, index) => {
-                    detectedHeaders.push(`Nota ${index + 1}`);
-                    rowData.push(nota);
-                });
-            }
-            if (data.pontuacaoTotal !== undefined) {
-                // Adiciona Pontuação Total apenas se houver mais de uma nota ou se for uma nota única mas detectada separadamente
-                const isSingleNoteAndTotalSame = data.notas && data.notas.length === 1 && data.pontuacaoTotal === data.notas[0];
-                if (!isSingleNoteAndTotalSame || !detectedHeaders.includes('Nota 1')) { // Evita duplicar se "Nota 1" já representa a única pontuação
-                    if (detectedHeaders.indexOf('Pontuação Total') === -1) { // Garante que não adicione duas vezes
-                        detectedHeaders.push('Pontuação Total');
-                        rowData.push(data.pontuacaoTotal);
+                if (tempBlocks.length > 0) {
+                    fieldsPerCandidate = 3;
+                    finalColumnNames = ['Inscrição', 'Nome', 'Nota'];
+                    candidateBlocks = tempBlocks;
+                } else {
+                    // Padrão 3: Separador de campo é ',' e separador de candidato é '/' (Ex: Saulo)
+                    // Ex: 1, 108, SAULO HENRIQUE SOUZA DE LIMA, 61.00 /
+                    const regexPattern4FieldsComma = /(\d+),\s*(\d+),\s*([A-ZÀ-Ÿ\s.-]+?),\s*(\d+\.?\d*)\s*(?:\/\s*|$)/gi;
+                    tempBlocks = [];
+                    while ((match = regexPattern4FieldsComma.exec(processedString)) !== null) {
+                        tempBlocks.push([match[1].trim(), match[2].trim(), match[3].trim(), match[4].trim()]);
                     }
-                }
-            }
 
-            // Fallback: se nada foi detectado
-            if (rowData.length === 0 && candidateStr.length > 0) {
-                const parts = cleanStr.split(/[\s,;]+/).filter(p => p.length > 0);
-                parts.forEach((part, index) => {
-                    if (!isNaN(parseFloat(part.replace(',', '.'))) && part.replace(',', '.').length >= 4) {
-                        detectedHeaders.push(`Campo Numérico ${index + 1}`);
-                    } else if (!isNaN(parseFloat(part.replace(',', '.'))) && parseFloat(part.replace(',', '.')) < 1000) {
-                        detectedHeaders.push(`Campo Nota ${index + 1}`);
+                    if (tempBlocks.length > 0) {
+                        fieldsPerCandidate = 4;
+                        finalColumnNames = ['Classificação', 'Inscrição', 'Nome', 'Nota'];
+                        candidateBlocks = tempBlocks;
                     } else {
-                        detectedHeaders.push(`Campo ${index + 1}`);
-                    }
-                    rowData.push(part);
-                });
-            }
+                        // Padrão 4: A barra '/' é o único separador para campos e candidatos (Ex: Gabriel)
+                        // Ex: 1562998 / GABRIEL MAIA SELHORST / 1 / 85 /
+                        const regexPattern4FieldsSlashOnly = /(\d+)\s*\/\s*([A-ZÀ-Ÿ\s.-]+?)\s*\/\s*(\d+)\s*\/\s*(\d+\.?\d*)\s*(?:\/\s*|$)/gi;
+                        tempBlocks = [];
+                        while ((match = regexPattern4FieldsSlashOnly.exec(processedString)) !== null) {
+                            tempBlocks.push([match[1].trim(), match[2].trim(), match[3].trim(), match[4].trim()]);
+                        }
 
-            return {
-                data: rowData,
-                headers: detectedHeaders.length > 0 ? detectedHeaders : ['Campo 1', 'Campo 2', 'Campo 3']
-            };
+                        if (tempBlocks.length > 0) {
+                            fieldsPerCandidate = 4;
+                            finalColumnNames = ['Inscrição', 'Nome', 'Posição', 'Nota'];
+                            candidateBlocks = tempBlocks;
+                        } else {
+                            // Padrão 5: Campos colados (sem separadores óbvios além de espaços/transições)
+                            // Ex: 1562998GABRIEL MAIA SELHORST185
+                            const regexConcatenated4 = /(\d+)(\d+)([A-ZÀ-Ÿ\s.-]+?)(\d+\.?\d*)/gi; 
+                            const regexConcatenated3 = /(\d+)([A-ZÀ-Ÿ\s.-]+?)(\d+\.?\d*)/gi;
+                            
+                            tempBlocks = [];
+                            // Tenta o padrão de 4 campos primeiro
+                            if (processedString.match(regexConcatenated4)) { 
+                                fieldsPerCandidate = 4;
+                                while ((match = regexConcatenated4.exec(processedString)) !== null) {
+                                    tempBlocks.push([match[1].trim(), match[2].trim(), match[3].trim(), match[4].trim()]);
+                                }
+                                finalColumnNames = ['Classificação', 'Inscrição', 'Nome', 'Nota'];
+                            } else if (processedString.match(regexConcatenated3)) { // Se 4 campos não funcionou, tenta 3
+                                fieldsPerCandidate = 3;
+                                while ((match = regexConcatenated3.exec(processedString)) !== null) {
+                                    tempBlocks.push([match[1].trim(), match[2].trim(), match[3].trim()]);
+                                }
+                                finalColumnNames = ['Inscrição', 'Nome', 'Nota'];
+                            }
+
+                            if (tempBlocks.length > 0) {
+                                candidateBlocks = tempBlocks;
+                            } else {
+                                // Fallback se NADA funcionou: trata a entrada inteira como um único campo
+                                candidateBlocks = [[processedString]];
+                                fieldsPerCandidate = 1;
+                                finalColumnNames = ['Dados Brutos'];
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // --- Processar Todos os Blocos de Candidatos com a Estrutura Inferida ---
+            const organizedData = [];
+            candidateBlocks.forEach(rowFields => {
+                const rowData = new Array(finalColumnNames.length).fill(null);
+                for (let i = 0; i < Math.min(rowFields.length, finalColumnNames.length); i++) {
+                    const value = rowFields[i];
+                    const colName = finalColumnNames[i];
+                    const inferredType = getColumnType(colName);
+
+                    if (value !== null && value !== undefined && value !== '') {
+                        let cleanedValue = value.replace(/º/g, '').trim(); 
+                        if (inferredType === 'numeric') {
+                            rowData[i] = parseFloat(cleanedValue);
+                        } else if (inferredType === 'integer_numeric') {
+                            rowData[i] = parseInt(cleanedValue, 10);
+                        } else {
+                            rowData[i] = cleanedValue;
+                        }
+                    }
+                }
+                organizedData.push(rowData);
+            });
+            
+            return { columnNames: finalColumnNames, organizedData };
         }
 
 
@@ -464,129 +447,101 @@
             const dataInput = document.getElementById('dataInput').value.trim();
             const addRankingColumn = document.getElementById('addRankingColumn').checked;
 
-            const parsedCandidates = dataInput.split('/')
-                .map(candidate => parseCandidate(candidate.trim()))
-                .filter(result => result.data.length > 0);
-
-            if (parsedCandidates.length === 0) {
+            if (dataInput === "") {
                 updateTable([], []);
                 return;
             }
 
-            let allDetectedHeaders = new Set();
-            parsedCandidates.forEach(pc => pc.headers.forEach(h => allDetectedHeaders.add(h)));
-            let finalColumnNames = Array.from(allDetectedHeaders);
+            // A string de entrada inteira será passada para inferAndApplyPattern
+            let { columnNames, organizedData } = inferAndApplyPattern(dataInput);
 
-            const preferredOrder = ['Classificação', 'Inscrição', 'Nome', 'Nota 1', 'Nota 2', 'Nota 3', 'Nota 4', 'Nota 5', 'Pontuação Total'];
-            finalColumnNames.sort((a, b) => {
-                const indexA = preferredOrder.indexOf(a);
-                const indexB = preferredOrder.indexOf(b);
-                if (indexA === -1 && indexB === -1) return a.localeCompare(b);
-                if (indexA === -1) return 1;
-                if (indexB === -1) return -1;
-                return indexA - indexB;
-            });
-
-            // Re-popula columnTypes com os nomes das colunas detectadas inicialmente
+            // Re-popula columnTypes com os nomes das colunas detectadas
             columnTypes = {};
-            finalColumnNames.forEach(name => {
+            columnNames.forEach(name => {
                 columnTypes[name] = getColumnType(name);
             });
 
+            // --- Lógica de Ordenação Padrão (SEMPRE APLICADA) ---
+            // Prioriza Nota (decrescente), depois Classificação (crescente)
+            organizedData.sort((a, b) => {
+                const notaIndex = columnNames.indexOf('Nota');
+                const classificacaoIndex = columnNames.indexOf('Classificação');
+                const campoNum1Index = columnNames.indexOf('Campo Num 1'); // Para caso seja genérico
+                const nomeIndex = columnNames.indexOf('Nome'); // Para desempate final
+                const inscricaoIndex = columnNames.indexOf('Inscrição'); // Para desempate se Inscrição for um campo relevante
+                const posicaoIndex = columnNames.indexOf('Posição'); // Para desempate se Posição for um campo relevante
 
-            let organizedData = parsedCandidates.map(parsedResult => {
-                const row = [];
-                const dataMap = {};
-                parsedResult.headers.forEach((header, index) => {
-                    dataMap[header] = parsedResult.data[index];
-                });
+                // Ordenar por Nota (decrescente) se a coluna "Nota" existir
+                if (notaIndex !== -1 && a[notaIndex] !== null && b[notaIndex] !== null) {
+                    const valA = parseFloat(a[notaIndex]);
+                    const valB = parseFloat(b[notaIndex]);
+                    const comp = (isNaN(valB) ? -Infinity : valB) - (isNaN(valA) ? -Infinity : valA);
+                    if (comp !== 0) return comp;
+                }
 
-                finalColumnNames.forEach(header => {
-                    if (header.toLowerCase().includes('nome')) {
-                        row.push(dataMap[header] !== undefined ? String(dataMap[header]) : '');
-                    } else {
-                        row.push(dataMap[header] !== undefined ? dataMap[header] : null);
-                    }
-                });
-                return row;
+                // Em seguida, ordenar por Classificação (crescente) ou Campo Num 1 se a coluna existir
+                if (classificacaoIndex !== -1 && a[classificacaoIndex] !== null && b[classificacaoIndex] !== null) {
+                    const valA = parseInt(a[classificacaoIndex]);
+                    const valB = parseInt(b[classificacaoIndex]);
+                    const comp = (isNaN(valA) ? Infinity : valA) - (isNaN(valB) ? Infinity : valB);
+                    if (comp !== 0) return comp;
+                } else if (campoNum1Index !== -1 && a[campoNum1Index] !== null && b[campoNum1Index] !== null) {
+                    const valA = parseInt(a[campoNum1Index]);
+                    const valB = parseInt(b[campoNum1Index]);
+                    const comp = (isNaN(valA) ? Infinity : valA) - (isNaN(valB) ? Infinity : valB);
+                    if (comp !== 0) return comp;
+                }
+                
+                // Desempate por Inscrição (crescente) se a coluna existir
+                if (inscricaoIndex !== -1 && a[inscricaoIndex] !== null && b[inscricaoIndex] !== null) {
+                    const valA = parseInt(a[inscricaoIndex]);
+                    const valB = parseInt(b[inscricaoIndex]);
+                    const comp = (isNaN(valA) ? Infinity : valA) - (isNaN(valB) ? Infinity : valB);
+                    if (comp !== 0) return comp;
+                }
+
+                // Desempate por Posição (crescente) se a coluna existir
+                if (posicaoIndex !== -1 && a[posicaoIndex] !== null && b[posicaoIndex] !== null) {
+                    const valA = parseInt(a[posicaoIndex]);
+                    const valB = parseInt(b[posicaoIndex]);
+                    const comp = (isNaN(valA) ? Infinity : valA) - (isNaN(valB) ? Infinity : valB);
+                    if (comp !== 0) return comp;
+                }
+
+                // Fallback para o Nome (crescente) para garantir uma ordem consistente
+                if (nomeIndex !== -1 && a[nomeIndex] !== null && b[nomeIndex] !== null) {
+                    const nomeA = a[nomeIndex] || '';
+                    const nomeB = b[nomeIndex] || '';
+                    return String(nomeA).localeCompare(String(nomeB), undefined, { numeric: true, sensitivity: 'base' });
+                }
+                
+                return 0;
             });
 
             // Lógica para adicionar e classificar a coluna de Classificação gerada
+            let finalColumnNamesForTable = [...columnNames];
             if (addRankingColumn) {
-                // Remove colunas de classificação/posição existentes para evitar duplicidade
-                const columnsToRemove = ['Classificação', 'Posição'];
+                // Remove colunas de classificação existentes se a nova classificação for gerada
+                const columnsToRemove = ['Classificação', 'Posição', 'Ranking', 'Campo Num 1'];
                 columnsToRemove.forEach(colName => {
-                    const existingIndex = finalColumnNames.indexOf(colName);
+                    const existingIndex = finalColumnNamesForTable.indexOf(colName);
                     if (existingIndex !== -1) {
-                        finalColumnNames.splice(existingIndex, 1);
-                        organizedData = organizedData.map(row => {
-                            const newRow = [...row];
-                            newRow.splice(existingIndex, 1);
-                            return newRow;
+                        finalColumnNamesForTable.splice(existingIndex, 1);
+                        organizedData.forEach(row => {
+                            row.splice(existingIndex, 1); // Remove o dado da coluna
                         });
                     }
                 });
 
-                // Ordena os dados *antes* de adicionar a nova coluna de classificação
-                // Prioriza Pontuação Total, depois Nota 1, ambos decrescente
-                organizedData.sort((a, b) => {
-                    const pontuacaoTotalIndex = finalColumnNames.indexOf('Pontuação Total');
-                    const nota1Index = finalColumnNames.indexOf('Nota 1');
-
-                    let valA, valB;
-
-                    if (pontuacaoTotalIndex !== -1 && a[pontuacaoTotalIndex] !== null && b[pontuacaoTotalIndex] !== null) {
-                        valA = parseFloat(a[pontuacaoTotalIndex]);
-                        valB = parseFloat(b[pontuacaoTotalIndex]);
-                        return (valB || 0) - (valA || 0); // Decrescente
-                    } else if (nota1Index !== -1 && a[nota1Index] !== null && b[nota1Index] !== null) {
-                        valA = parseFloat(a[nota1Index]);
-                        valB = parseFloat(b[nota1Index]);
-                        return (valB || 0) - (valA || 0); // Decrescente
-                    }
-                    // Fallback para o primeiro campo se não houver pontuação/notas
-                    valA = parseFloat(a[0]);
-                    valB = parseFloat(b[0]);
-                    if (!isNaN(valA) && !isNaN(valB)) {
-                         return (valB || 0) - (valA || 0); // Decrescente
-                    }
-                    return 0; // Se não for número, mantém ordem original
+                // Agora, adicione o ranking no início das linhas e no cabeçalho
+                organizedData.forEach((row, index) => {
+                    row.unshift(index + 1); // Adiciona a classificação no início da linha
                 });
-
-                // Adiciona a nova coluna de classificação com base na ordenação
-                organizedData = organizedData.map((candidateRow, index) => [index + 1, ...candidateRow]);
-                finalColumnNames.unshift('Classificação');
-                columnTypes['Classificação'] = 'integer_numeric'; // Garante que a classificação gerada seja inteira
-            } else {
-                // *** NOVA LÓGICA DE ORDENAÇÃO INICIAL QUANDO CLASSIFICAÇÃO NÃO É ADICIONADA ***
-                // Aplica a mesma lógica de ordenação por pontuação/nota
-                organizedData.sort((a, b) => {
-                    const pontuacaoTotalIndex = finalColumnNames.indexOf('Pontuação Total');
-                    const nota1Index = finalColumnNames.indexOf('Nota 1');
-
-                    let valA, valB;
-
-                    if (pontuacaoTotalIndex !== -1 && a[pontuacaoTotalIndex] !== null && b[pontuacaoTotalIndex] !== null) {
-                        valA = parseFloat(a[pontuacaoTotalIndex]);
-                        valB = parseFloat(b[pontuacaoTotalIndex]);
-                        return (valB || 0) - (valA || 0); // Decrescente
-                    } else if (nota1Index !== -1 && a[nota1Index] !== null && b[nota1Index] !== null) {
-                        valA = parseFloat(a[nota1Index]);
-                        valB = parseFloat(b[nota1Index]);
-                        return (valB || 0) - (valA || 0); // Decrescente
-                    }
-                    // Fallback para o primeiro campo se não houver pontuação/notas
-                    valA = parseFloat(a[0]);
-                    valB = parseFloat(b[0]);
-                    if (!isNaN(valA) && !isNaN(valB)) {
-                         return (valB || 0) - (valA || 0); // Decrescente
-                    }
-                    return 0; // Se não for número, mantém ordem original
-                });
+                finalColumnNamesForTable.unshift('Classificação'); // Adiciona 'Classificação' no início do cabeçalho
+                columnTypes['Classificação'] = 'integer_numeric'; // Define o tipo para a nova coluna
             }
 
-            updateTable(finalColumnNames, organizedData);
-
+            updateTable(finalColumnNamesForTable, organizedData);
             document.getElementById('ContainerResult').scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
 
@@ -597,8 +552,7 @@
             tableHeaders.innerHTML = '';
             tableBody.innerHTML = '';
 
-            // Reinicia sortDirections para corresponder às novas colunas
-            sortDirections = Array(columnNames.length).fill(true); // Default para ordem crescente
+            sortDirections = Array(columnNames.length).fill(true);
 
             columnNames.forEach(columnName => {
                 const th = document.createElement('th');
@@ -613,16 +567,16 @@
                     const td = document.createElement('td');
                     const value = row[i];
                     const colName = columnNames[i];
-                    const colType = columnTypes[colName] || getColumnType(colName); // Usa o tipo mapeado ou infere
+                    const colType = columnTypes[colName] || getColumnType(colName);
 
                     if (value !== null && value !== undefined) {
                         if (colType === 'numeric') {
                             td.textContent = parseFloat(value).toFixed(2);
-                        } else if (colType === 'integer_numeric') { // Novo tratamento para inteiros
+                        } else if (colType === 'integer_numeric') {
                             td.textContent = parseInt(value, 10);
                         } else if (colType === 'numeric_string') {
-                            td.textContent = String(value); // Mantém como string para não perder zeros à esquerda
-                        } else { // 'string' ou tipo desconhecido
+                            td.textContent = String(value);
+                        } else {
                             td.textContent = String(value);
                         }
                     } else {
@@ -642,7 +596,6 @@
             const rows = Array.from(tbody.getElementsByTagName('tr'));
             const headerText = table.querySelector(`th:nth-child(${columnIndex + 1})`).textContent;
 
-            // Inverte a direção de ordenação para a coluna clicada
             sortDirections[columnIndex] = !sortDirections[columnIndex];
 
             const colType = columnTypes[headerText] || getColumnType(headerText);
@@ -653,22 +606,20 @@
 
                 let valA, valB;
 
-                if (colType === 'numeric' || colType === 'integer_numeric') { // Inclui integer_numeric aqui
+                if (colType === 'numeric' || colType === 'integer_numeric') {
                     valA = parseFloat(textA.replace(',', '.'));
                     valB = parseFloat(textB.replace(',', '.'));
-                    // Trata NaN como infinitos para que valores ausentes vão para o final
                     valA = isNaN(valA) ? (sortDirections[columnIndex] ? Infinity : -Infinity) : valA;
                     valB = isNaN(valB) ? (sortDirections[columnIndex] ? Infinity : -Infinity) : valB;
                     return sortDirections[columnIndex] ? valA - valB : valB - valA;
                 } else if (colType === 'numeric_string') {
-                    // Compara como números, mas mantém a representação original da string
                     valA = parseInt(textA);
                     valB = parseInt(textB);
                     valA = isNaN(valA) ? (sortDirections[columnIndex] ? Infinity : -Infinity) : valA;
                     valB = isNaN(valB) ? (sortDirections[columnIndex] ? Infinity : -Infinity) : valB;
                     return sortDirections[columnIndex] ? valA - valB : valB - valA;
-                } else { // Trata como string
-                    return sortDirections[columnIndex] ? textA.localeCompare(textB, undefined, { numeric: true, sensitivity: 'base' }) : textB.localeCompare(textA, undefined, { numeric: true, sensitivity: 'base' });
+                } else {
+                    return sortDirections[columnIndex] ? textA.localeCompare(textB, undefined, { numeric: true, sensitivity: 'base' }) : textB.localeCompare(a, undefined, { numeric: true, sensitivity: 'base' });
                 }
             });
 
@@ -685,7 +636,7 @@
             let table = document.getElementById('resultTable');
             let tr = table.getElementsByTagName('tr');
 
-            for (let i = 1; i < tr.length; i++) { // Começa do 1 para pular o cabeçalho
+            for (let i = 1; i < tr.length; i++) {
                 let td = tr[i].getElementsByTagName('td');
                 let found = false;
                 for (let j = 0; j < td.length; j++) {
@@ -714,10 +665,9 @@
                 const customTitle = document.getElementById('pdfTitleInput').value.trim();
                 const title = customTitle === '' ? "Relatório de Resultados" : customTitle;
 
-                // Divide o título em linhas se for muito longo
                 const splitTitle = doc.splitTextToSize(title, pageWidth - 2 * margin);
-                doc.text(splitTitle, pageWidth / 2, y, { align: 'center' }); // Centraliza o título
-                y += (splitTitle.length * lineHeight) + lineHeight; // Ajusta 'y' para as linhas do título + um espaçamento
+                doc.text(splitTitle, pageWidth / 2, y, { align: 'center' });
+                y += (splitTitle.length * lineHeight) + lineHeight;
 
                 const table = document.getElementById('resultTable');
                 if (!table || table.querySelector('tbody').children.length === 0) {
@@ -737,12 +687,11 @@
                     body: rows,
                     startY: y,
                     margin: { left: margin, right: margin },
-                    styles: { fontSize: 10, cellPadding: 2, halign: 'center' }, // Centraliza o texto das células do corpo
-                    headStyles: { fillColor: [76, 175, 80], textColor: 255, halign: 'center' }, // Centraliza o texto do cabeçalho
+                    styles: { fontSize: 10, cellPadding: 2, halign: 'center' },
+                    headStyles: { fillColor: [76, 175, 80], textColor: 255, halign: 'center' },
                     alternateRowStyles: { fillColor: [224, 242, 241] },
                 });
 
-                // Abre o PDF em uma nova aba para visualização
                 window.open(doc.output('bloburl'), '_blank');
 
             } catch (error) {
@@ -794,12 +743,12 @@
             const newColumnNames = [];
             const inputElements = document.querySelectorAll('#columnRenameInputs input[type="text"]');
 
-            columnTypes = {}; // Reseta e recria os tipos com base nos novos nomes
+            columnTypes = {};
 
             inputElements.forEach(input => {
                 const newName = input.value.trim();
                 newColumnNames.push(newName);
-                columnTypes[newName] = getColumnType(newName); // Mapeia o novo nome para um tipo
+                columnTypes[newName] = getColumnType(newName);
             });
 
             const tableHeaders = document.querySelectorAll('#tableHeaders th');
