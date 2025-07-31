@@ -4,263 +4,235 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Organizador de Dados de Concurso</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
     <style>
+        /* CSS Customizado: Mantenha apenas o essencial ou sobreposições */
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Inter', Arial, sans-serif; /* Usando Inter, como no exemplo */
+        }
+        
+        /* Ajuste do footer para ficar mais próximo e alinhado ao conteúdo */
+        .footer {
+            margin-top: 2rem; /* Aumenta um pouco a margem superior para espaçamento */
+            padding: 20px;
+            background-color: transparent; /* Mantém transparente */
+            /* REMOVIDO: width: 80%; */
+            /* REMOVIDO: max-width: 600px; */
+            width: 100%; /* AGORA: Ocupa toda a largura */
+            box-sizing: border-box;
+            border-top: none; /* Remove a borda, se desejar */
+            text-align: center; /* Já centraliza o conteúdo interno (texto e imagem) */
+            /* Centraliza o próprio footer na página (embora com 100% de largura, isso não terá efeito visual) */
+            margin-left: auto; 
+            margin-right: auto;
+            /* Adicionado para espaçamento interno adequado se padding não for suficiente */
+            padding-left: 1rem; /* Tailwind: px-4 */
+            padding-right: 1rem; /* Tailwind: px-4 */
+        }
+
+        .footer img {
+            width: 100px;
+            height: 100px; /* Garante que a imagem seja quadrada para border-radius */
+            border-radius: 50%;
+            object-fit: cover; /* Garante que a imagem preencha o círculo */
+            margin-bottom: 10px;
+            border: 3px solid #4CAF50; /* Adiciona uma borda na foto */
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Adiciona uma leve sombra */
+        }
+
+        .footer p {
             margin: 0;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            align-items: center;
-            min-height: 100vh;
-            background-color: #e0f7fa;
+            font-size: 14px;
+            color: #555;
         }
-        .container {
-            background-color: #f9f9f9;
-            padding: 20px;
-            border-radius: 10px;
-            margin-top: 20px;
-            width: 80%;
-            max-width: 600px;
-            text-align: center;
+
+        .social-links a {
+            color: #4CAF50; /* Cor dos links sociais */
+            margin: 0 8px; /* Espaçamento entre os ícones */
+            font-size: 24px; /* Tamanho dos ícones (ajuste conforme necessário) */
+            transition: color 0.2s ease-in-out;
         }
-        .container2 {
-            background-color: #f9f9f9;
-            padding: 20px;
-            border-radius: 10px;
-            margin-top: 20px;
-            width: 70%;
-            max-width: 90%;
-            overflow-x:auto;
-            text-align: center;
-            align-items: center;
-            display: none; /* Inicia oculto */
+
+        .social-links a:hover {
+            color: #388E3C; /* Cor ao passar o mouse */
         }
-        .form-group {
-            margin-bottom: 15px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        .form-group label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-            text-align: center;
-            color: #4CAF50;
-        }
-        textarea, select, input[type="text"] { /* Ajustado para não incluir button aqui e ser mais específico */
-            border-radius: 10px;
+
+        /* Estilos específicos para inputs e textareas para manter o visual */
+        textarea, select, input[type="text"] {
+            border-radius: 0.5rem; /* Tailwind: rounded-lg */
             border: 1px solid #4CAF50;
-            padding: 10px;
-            width: 70%;
+            padding: 0.75rem; /* Tailwind: p-3 */
+            width: 70%; /* Mantém sua largura específica */
             box-sizing: border-box;
             color: #004d40;
+            outline: none; /* Remove o outline padrão */
+            transition: border-color 0.2s, box-shadow 0.2s; /* Transição suave */
         }
+        textarea:focus, select:focus, input[type="text"]:focus {
+            border-color: #388E3C; /* Cor da borda ao focar */
+            box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2); /* Sombra ao focar */
+        }
+
+        /* Ajustes dos botões para um visual mais coeso com o Tailwind */
         button {
             cursor: pointer;
             background-color: #4CAF50;
             color: white;
             border: none;
-            margin-top: 10px;
-            padding: 7px 10px;
-            width: auto;
-            display: inline-block;
-            max-width: 180px;
-            border-radius: 10px; /* Adicionado para consistência */
+            padding: 0.5rem 1rem; /* Tailwind: px-4 py-2 */
+            border-radius: 0.5rem; /* Tailwind: rounded-lg */
+            transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1); /* Sombra sutil */
         }
         button:hover {
             background-color: #388E3C;
+            transform: translateY(-1px); /* Leve efeito de "lift" */
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
         }
+        button:active {
+            transform: translateY(0);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+
+        /* Estilos da tabela */
         table {
             width: 100%;
             border-collapse: collapse;
-            align-items: center;
             text-align: center;
-            margin-top: 20px;
+            margin-top: 1rem;
             margin: auto;
-            border-radius: 10px;
-            overflow: hidden;
+            border-radius: 0.5rem;
+            overflow: hidden; /* Garante que o border-radius funcione */
         }
         th, td {
-            border: 1px solid #4CAF50;
-            padding: 8px;
+            border: 1px solid #e2e8f0; /* Cor da borda mais suave, como no Tailwind: border-gray-200 */
+            padding: 0.75rem; /* Tailwind: p-3 */
             text-align: center;
             cursor: pointer;
         }
         th {
             background-color: #4CAF50;
             color: white;
+            font-weight: 600; /* Tailwind: font-semibold */
         }
         td {
-            background-color: #f2f2f2;
+            background-color: #ffffff; /* Fundo branco para células */
         }
         tr:nth-child(even) td {
-            background-color: #e0f2f1;
+            background-color: #f8fafc; /* Tailwind: bg-gray-50 */
         }
-        #columnNames input {
-            margin-bottom: 5px;
+
+        /* Ajustes para os títulos das seções */
+        h1 {
+            font-size: 2.25rem; /* Tailwind: text-4xl */
+            font-weight: 700; /* Tailwind: font-bold */
+            color: #1a202c; /* Tailwind: text-gray-900 */
+            margin-bottom: 1.5rem;
         }
-        .checkbox-group {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            margin-bottom: 15px;
+        h2 {
+            font-size: 1.75rem; /* Tailwind: text-3xl */
+            font-weight: 600; /* Tailwind: font-semibold */
+            color: #2d3748; /* Tailwind: text-gray-800 */
         }
-        .searchContainer {
-            margin-top: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+        h4 {
+            font-size: 0.875rem; /* Tailwind: text-sm */
+            color: #718096; /* Tailwind: text-gray-600 */
+            margin-top: 1rem;
         }
-        .footer {
-            margin-top: auto;
-            margin-bottom: auto;
+
+        /* Classes de utilidade para manter a compatibilidade com o CSS existente */
+        .form-group label {
+            font-weight: bold;
             text-align: center;
-            padding: 20px;
-            background-color: transparent;
-            width: 80%;
-            max-width: 600px;
-            border-top: 1px solid #ddd;
-            box-sizing: border-box;
-        }
-        .footer img {
-            width: 100px;
-            border-radius: 50%;
-            margin-bottom: 10px;
-        }
-        .footer p {
-            margin: 0;
-            font-size: 14px;
-            color: #555;
-        }
-        /* Estilos para a nova seção de renomear colunas - CORES ATUALIZADAS */
-        #renameColumnsContainer {
-            background-color: #f9f9f9; /* Mesma cor do .container */
-            padding: 15px;
-            border-radius: 10px; /* Mesma borda do .container */
-            margin-top: 20px; /* Mesma margem do .container */
-            border: 1px solid #4CAF50; /* Mesma borda do .container */
-            display: none; /* Inicia oculto */
-            flex-direction: column; /* Para empilhar o título, inputs e botões */
-            align-items: center; /* Centraliza o conteúdo */
-            gap: 15px; /* Espaçamento entre os grupos de elementos */
-        }
-        #renameColumnsContainer h2 {
-            text-align: center; /* Centraliza o título */
             color: #4CAF50;
-            margin-top: 0;
-            margin-bottom: 5px;
-        }
-        #renameColumnsContainer #columnRenameInputs {
-            display: flex;
-            flex-wrap: wrap; /* Permite que os inputs quebrem linha */
-            justify-content: center;
-            gap: 10px; /* Espaçamento entre os campos */
-            width: 100%; /* Ocupa a largura total para centralizar os inputs */
-        }
-        #renameColumnsContainer .column-input-group {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start; /* Alinha o label e input à esquerda */
-            margin-bottom: 5px;
-            width: calc(33% - 20px); /* 3 colunas por linha em telas maiores, ajustado com gap */
-            min-width: 150px; /* Largura mínima para cada input */
         }
         #renameColumnsContainer label {
             font-weight: normal;
             margin-bottom: 3px;
             font-size: 0.9em;
-            color: #4CAF50; /* Cor do label do .container */
-        }
-        #renameColumnsContainer input[type="text"] {
-            width: 100%;
-            padding: 5px;
-            border-radius: 10px; /* Borda do input do .container */
-            border: 1px solid #4CAF50; /* Borda do input do .container */
-            color: #004d40; /* Cor do texto do input do .container */
-        }
-        /* Estilos para o grupo de botões */
-        #renameButtonsGroup {
-            display: flex;
-            justify-content: center; /* Centraliza os botões dentro do grupo */
-            gap: 15px; /* Espaçamento entre os botões */
-            margin-top: 10px; /* Margem superior para separar dos inputs */
-        }
-        #renameColumnsContainer button {
-            margin-top: 0; /* Zera a margem original, pois o grupo já tem margem */
-            background-color: #4CAF50; /* Mesma cor do botão do .container */
-        }
-        #renameColumnsContainer button:hover {
-            background-color: #388E3C; /* Mesma cor hover do botão do .container */
-        }
-        @media (max-width: 768px) {
-            #renameColumnsContainer .column-input-group {
-                width: calc(48% - 10px); /* 2 colunas por linha */
-            }
-        }
-        @media (max-width: 480px) {
-            #renameColumnsContainer .column-input-group {
-                width: 95%; /* 1 coluna por linha */
-            }
+            color: #4CAF50;
         }
     </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
-<body>
-    <div class="container">
-        <h1>Organizador de Dados de Concurso</h1>
-        <form id="organizeForm">
-            <div class="form-group">
-                <label for="dataInput" title="Insira a lista dos candidatos. Tente usar um formato consistente, mas o sistema é mais flexível agora.">Lista dos candidatos:</label>
-                <textarea id="dataInput" name="dataInput" rows="4" cols="50" title="Insira a lista dos candidatos. Tente usar um formato consistente, mas o sistema é mais flexível agora."></textarea>
+<body class="bg-gray-100 text-gray-800 font-sans antialiased min-h-screen flex flex-col items-center">
+    <header class="w-full bg-white shadow-md py-4 text-center">
+        <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Organizador de Dados de Concurso</h1>
+    </header>
+
+    <div class="max-w-4xl mx-auto w-full px-4 py-8 space-y-8 flex-grow">
+        <div class="bg-white shadow-lg rounded-lg p-6 text-center">
+            <form id="organizeForm" class="space-y-4">
+                <div class="form-group flex flex-col items-center">
+                    <label for="dataInput" class="text-lg font-semibold text-green-600 mb-2" title="Insira a lista dos candidatos. Tente usar um formato consistente, mas o sistema é mais flexível agora.">Lista dos candidatos:</label>
+                    <textarea id="dataInput" name="dataInput" rows="4" cols="50" class="w-full max-w-md" title="Insira a lista dos candidatos. Tente usar um formato consistente, mas o sistema é mais flexível agora."></textarea>
+                </div>
+                <div class="form-group flex flex-col items-center">
+                    <label for="pdfTitleInput" class="text-lg font-semibold text-green-600 mb-2" title="Título do cargo que aparecerá no PDF gerado.">Nome do Cargo (opcional):</label>
+                    <input type="text" id="pdfTitleInput" placeholder="Ex: Analista Administrativo" class="w-full max-w-md" title="Opcional: Digite o cargo que vai aparecer no PDF gerado.">
+                </div>
+                <label class="inline-flex items-center text-gray-700 mt-4">
+                    <input type="checkbox" id="addRankingColumn" name="addRankingColumn" class="form-checkbox h-5 w-5 text-green-600 rounded" title="Selecione para adicionar uma coluna de classificação.">
+                    <span class="ml-2 text-md">Adicionar coluna de classificação</span>
+                </label>
+                <div class="mt-6">
+                    <button type="button" onclick="organizeData()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg text-lg transition-all duration-200" title="Clique para organizar os dados.">Organizar</button>
+                </div>
+            </form>
+        </div>
+
+        <div id="renameColumnsContainer" class="bg-white shadow-lg rounded-lg p-6 border border-green-400" style="display: none;">
+            <h2 class="text-3xl font-semibold text-green-600 mb-4">Renomear Colunas</h2>
+            <div id="columnRenameInputs" class="flex flex-wrap justify-center gap-4 mb-6">
+                </div>
+            <div id="renameButtonsGroup" class="flex justify-center gap-4">
+                <button type="button" onclick="applyColumnRenames()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg">Aplicar Nomes</button>
+                <button type="button" onclick="toggleColumnRename()" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-6 rounded-lg">Fechar Edição</button>
             </div>
-            <div class="form-group">
-                <label for="pdfTitleInput" title="Título do cargo que aparecerá no PDF gerado.">Nome do Cargo (opcional):</label>
-                <input type="text" id="pdfTitleInput" placeholder="Ex: Analista Administrativo" title="Opcional: Digite o cargo que vai aparecer no PDF gerado.">
+        </div>
+
+        <div id="ContainerResult" class="bg-white shadow-lg rounded-lg p-6" style="display: none;">
+            <h1 class="text-3xl font-bold text-gray-900 mb-4 text-center">Resultado Organizado</h1>
+            <div class="searchContainer flex flex-col items-center mb-4">
+                <input type="text" id="searchInput" onkeyup="searchTable()" placeholder="Digite para pesquisar..." class="w-full max-w-sm" title="A tabela vai atualizando ao digitar...">
             </div>
-            <label>
-                <input type="checkbox" id="addRankingColumn" name="addRankingColumn" title="Selecione para adicionar uma coluna de classificação.">
-                <br>Adicionar coluna de classificação
-            </label>
-            <br>
-            <button type="button" onclick="organizeData()" title="Clique para organizar os dados.">Organizar</button>
-        </form>
-    </div>
-
-    <div class="container" id="renameColumnsContainer" style="display: none;">
-        <h2>Renomear Colunas</h2>
-        <div id="columnRenameInputs">
-        </div>
-        <div id="renameButtonsGroup">
-            <button type="button" onclick="applyColumnRenames()">Aplicar Nomes</button>
-            <button type="button" onclick="toggleColumnRename()">Fechar Edição</button>
+            <div class="flex flex-wrap justify-center gap-4 mb-6">
+                <button type="button" onclick="generatePDF()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg" title="Clique para gerar um PDF com os dados da tabela.">Gerar PDF</button>
+                <button type="button" onclick="toggleColumnRename()" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-6 rounded-lg" title="Clique para mudar os nomes dos cabeçalhos das colunas.">Renomear Colunas</button>
+            </div>
+            <h4 class="text-sm text-gray-600 italic mb-4"><i>Ao clicar no cabeçalho da tabela, os dados são organizados conforme a coluna clicada!</i></h4>
+            <div class="overflow-x-auto"> <table id="resultTable" class="min-w-full">
+                    <thead>
+                        <tr id="tableHeaders"></tr>
+                    </thead>
+                    <tbody id="tableBody"></tbody>
+                </table>
+            </div>
         </div>
     </div>
 
-    <div class="container2" id="ContainerResult">
-        <h1>Resultado Organizado</h1>
-        <div class="searchContainer">
-            <input type="text" id="searchInput" onkeyup="searchTable()" placeholder="Digite para pesquisar..." title="A tabela vai atualizando ao digitar...">
+    <footer class="footer mt-12 bg-gray-50 text-gray-600 py-6 px-4 rounded-lg shadow-inner">
+        <div class="flex flex-col items-center space-y-4">
+            <img src="minha_foto.jpg" alt="Foto do Autor Júnior Chaves" class="w-24 h-24 rounded-full object-cover border-4 border-green-500 shadow-md">
+            <p class="font-bold text-lg text-gray-800">Desenvolvido por Júnior Chaves</p>
+            <p class="text-sm">Minhas redes sociais:</p>
+            <div class="social-links flex space-x-6">
+                <a href="https://github.com/jrchavesac" target="_blank" rel="noopener noreferrer" title="GitHub"><i class="fab fa-github"></i></a>
+                <a href="https://instagram.com/jrchavesac" target="_blank" rel="noopener noreferrer" title="Instagram"><i class="fab fa-instagram"></i></a>
+            </div>
+            <p class="text-xs text-gray-500 mt-4">&copy; <span id="currentYear"></span> Júnior Chaves. Todos os direitos reservados.</p>
         </div>
-        <button type="button" onclick="generatePDF()" title="Clique para gerar um PDF com os dados da tabela.">Gerar PDF</button>
-        <button type="button" onclick="toggleColumnRename()" title="Clique para mudar os nomes dos cabeçalhos das colunas.">Renomear Colunas</button>
-        <h4><i>Ao clicar no cabeçalho da tabela, os dados são organizados conforme a coluna clicada!</i></h4>
-        <table border="1" id="resultTable">
-            <thead>
-                <tr id="tableHeaders"></tr>
-            </thead>
-            <tbody id="tableBody"></tbody>
-        </table>
-    </div>
-
-    <footer class="footer">
-        <img src="minha_foto.jpg" alt="Foto do Autor">
-        <p><b>Autor: Júnior Chaves</b></p>
     </footer>
 
     <script>
+        // Função para atualizar o ano no footer dinamicamente
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+
         let sortDirections = [];
         let currentColumnNames = [];
         let columnTypes = {}; // Objeto para armazenar o tipo de cada coluna (mapeado pelo nome)
@@ -316,7 +288,7 @@
             // --- 1. Pré-processamento Global ---
             let processedString = rawInputString
                 .replace(/\r\n|\r/g, ' ') // Normaliza quebras de linha para espaço
-                .replace(/º|°/g, '') // Remove caracteres de grau
+                .replace(/º|°/g, '', ' ') // Remove caracteres de grau
                 .replace(/(\d+),(\d{1,2})(?![0-9])/g, '$1.$2') // Ajusta vírgulas decimais (ex: 61,00 -> 61.00)
                 .trim();
 
@@ -687,9 +659,28 @@
                     body: rows,
                     startY: y,
                     margin: { left: margin, right: margin },
-                    styles: { fontSize: 10, cellPadding: 2, halign: 'center' },
-                    headStyles: { fillColor: [76, 175, 80], textColor: 255, halign: 'center' },
-                    alternateRowStyles: { fillColor: [224, 242, 241] },
+                    styles: { 
+                        fontSize: 10, 
+                        cellPadding: 2, 
+                        halign: 'center',
+                        valign: 'middle',
+                        lineColor: [226, 232, 240], // Cor da borda interna (similar ao gray-200 do Tailwind)
+                        lineWidth: 0.5 // Largura da borda interna
+                    },
+                    headStyles: { 
+                        fillColor: [76, 175, 80], // Cor de fundo do cabeçalho (verde)
+                        textColor: 255, // Cor do texto do cabeçalho (branco)
+                        fontStyle: 'bold', 
+                        halign: 'center',
+                        valign: 'middle'
+                    },
+                    alternateRowStyles: { 
+                        fillColor: [248, 250, 252] // Cor de fundo das linhas alternadas (gray-50 do Tailwind)
+                    },
+                    didDrawPage: function(data) {
+                        // Não é possível aplicar border-radius na tabela do PDF diretamente.
+                        // A autoTable já aplica um visual profissional.
+                    }
                 });
 
                 window.open(doc.output('bloburl'), '_blank');
