@@ -39,6 +39,12 @@
             border-radius: 0.5rem; /* Tailwind: rounded-lg */
             transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1); /* Sombra sutil */
+            display: flex; /* Para alinhar o ícone e o texto */
+            align-items: center; /* Alinha verticalmente */
+            justify-content: center; /* Centraliza conteúdo (ícone + texto) */
+        }
+        button i {
+            margin-right: 8px; /* Espaço entre o ícone e o texto */
         }
         button:hover {
             background-color: #388E3C;
@@ -160,8 +166,9 @@
                     <input type="checkbox" id="addRankingColumn" name="addRankingColumn" class="form-checkbox h-5 w-5 text-green-600 rounded" title="Selecione para adicionar uma coluna de classificação.">
                     <span class="ml-2 text-md">Adicionar coluna de classificação</span>
                 </label>
-                <div class="mt-6">
-                    <button type="button" onclick="organizeData()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg text-lg transition-all duration-200" title="Clique para organizar os dados.">Organizar</button>
+                <div class="mt-6 flex justify-center"> <button type="button" onclick="organizeData()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg text-lg transition-all duration-200" title="Clique para organizar os dados.">
+                        <i class="fas fa-sort-alpha-down"></i> Organizar
+                    </button>
                 </div>
             </form>
         </div>
@@ -171,8 +178,12 @@
             <div id="columnRenameInputs" class="flex flex-col items-center gap-4 mb-6">
                 </div>
             <div id="renameButtonsGroup" class="flex justify-center gap-4">
-                <button type="button" onclick="applyColumnRenames()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg text-lg transition-all duration-200">Aplicar Nomes</button>
-                <button type="button" onclick="toggleColumnRename()" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-6 rounded-lg text-lg transition-all duration-200">Fechar Edição</button>
+                <button type="button" onclick="applyColumnRenames()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg text-lg transition-all duration-200">
+                    <i class="fas fa-check-circle"></i> Aplicar Nomes
+                </button>
+                <button type="button" onclick="toggleColumnRename()" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-6 rounded-lg text-lg transition-all duration-200">
+                    <i class="fas fa-times-circle"></i> Fechar Edição
+                </button>
             </div>
         </div>
 
@@ -182,8 +193,12 @@
                 <input type="text" id="searchInput" onkeyup="searchTable()" placeholder="Digite para pesquisar..." class="w-full max-w-sm" title="A tabela vai atualizando ao digitar...">
             </div>
             <div class="flex flex-wrap justify-center gap-4 mb-6">
-                <button type="button" onclick="generatePDF()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg" title="Clique para gerar um PDF com os dados da tabela.">Gerar PDF</button>
-                <button type="button" onclick="toggleColumnRename()" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-6 rounded-lg" title="Clique para mudar os nomes dos cabeçalhos das colunas.">Renomear Colunas</button>
+                <button type="button" onclick="generatePDF()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg" title="Clique para gerar um PDF com os dados da tabela.">
+                    <i class="fas fa-file-pdf"></i> Gerar PDF
+                </button>
+                <button type="button" onclick="toggleColumnRename()" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-6 rounded-lg" title="Clique para mudar os nomes dos cabeçalhos das colunas.">
+                    <i class="fas fa-pencil-alt"></i> Renomear Colunas
+                </button>
             </div>
             <h4 class="text-sm text-gray-600 italic mb-4"><i>Ao clicar no cabeçalho da tabela, os dados são organizados conforme a coluna clicada!</i></h4>
             <div class="overflow-x-auto"> <table id="resultTable" class="min-w-full">
