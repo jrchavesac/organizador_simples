@@ -5,14 +5,31 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Organizador de Dados de Concurso</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        // Configuração para habilitar o modo escuro baseado em classe
+        tailwind.config = {
+            darkMode: 'class', // Habilita o dark mode baseado na presença da classe 'dark' no html
+            theme: {
+                extend: {},
+            }
+        }
+    </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
     <style>
         /* CSS Customizado: Mantenha apenas o essencial ou sobreposições */
+        /* Cores base para o modo claro */
         body {
-            font-family: 'Inter', Arial, sans-serif; /* Usando Inter, como no exemplo */
+            font-family: 'Inter', Arial, sans-serif;
+            background-color: #f3f4f6; /* bg-gray-100 */
+            color: #1f2937; /* text-gray-800 */
         }
-        
+        /* Cores para o modo escuro, aplicadas quando a classe 'dark' está presente */
+        html.dark body {
+            background-color: #1a202c; /* bg-gray-900 */
+            color: #e2e8f0; /* text-gray-200 */
+        }
+
         /* Estilos específicos para inputs e textareas para manter o visual */
         textarea, select, input[type="text"] {
             border-radius: 0.5rem; /* Tailwind: rounded-lg */
@@ -23,10 +40,25 @@
             color: #004d40;
             outline: none; /* Remove o outline padrão */
             transition: border-color 0.2s, box-shadow 0.2s; /* Transição suave */
+            background-color: #ffffff; /* Fundo claro para inputs */
+        }
+        /* Ajuste de cores para inputs no modo escuro */
+        html.dark textarea,
+        html.dark select,
+        html.dark input[type="text"] {
+            background-color: #2d3748; /* bg-gray-700 */
+            color: #e2e8f0; /* text-gray-200 */
+            border-color: #48bb78; /* green-500 */
         }
         textarea:focus, select:focus, input[type="text"]:focus {
             border-color: #388E3C; /* Cor da borda ao focar */
             box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2); /* Sombra ao focar */
+        }
+        html.dark textarea:focus,
+        html.dark select:focus,
+        html.dark input[type="text"]:focus {
+            border-color: #68d391; /* green-400 */
+            box-shadow: 0 0 0 3px rgba(72, 187, 120, 0.4); /* Sombra verde mais forte */
         }
 
         /* Ajustes dos botões para um visual mais coeso com o Tailwind */
@@ -37,7 +69,7 @@
             border: none;
             padding: 0.5rem 1rem; /* Tailwind: px-4 py-2 */
             border-radius: 0.5rem; /* Tailwind: rounded-lg */
-            transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out;
+            transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out, color 0.2s ease-in-out;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1); /* Sombra sutil */
             display: flex; /* Para alinhar o ícone e o texto */
             align-items: center; /* Alinha verticalmente */
@@ -54,6 +86,18 @@
         button:active {
             transform: translateY(0);
             box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+
+        /* Cores dos botões no modo escuro */
+        html.dark button {
+            background-color: #48bb78; /* green-500 */
+            color: #1a202c; /* text-gray-900 para contraste */
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        html.dark button:hover {
+            background-color: #68d391; /* green-400 */
+            color: #1a202c;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.4);
         }
 
         /* Estilos da tabela */
@@ -84,6 +128,22 @@
             background-color: #f8fafc; /* Tailwind: bg-gray-50 */
         }
 
+        /* Estilos da tabela no modo escuro */
+        html.dark th {
+            background-color: #48bb78; /* green-500 */
+            color: #1a202c; /* text-gray-900 */
+            border-color: #2d3748; /* gray-700 */
+        }
+        html.dark td {
+            background-color: #2d3748; /* gray-700 */
+            color: #e2e8f0; /* gray-200 */
+            border-color: #4a5568; /* gray-600 */
+        }
+        html.dark tr:nth-child(even) td {
+            background-color: #4a5568; /* gray-600 */
+        }
+
+
         /* Ajustes para os títulos das seções */
         h1 {
             font-size: 2.25rem; /* Tailwind: text-4xl */
@@ -91,14 +151,19 @@
             color: #1a202c; /* Tailwind: text-gray-900 */
             margin-bottom: 1.5rem;
         }
-        h2 {
-            /* Removido o estilo 'text-3xl font-semibold text-green-600 mb-4' para padronizar com h1 */
-            /* Essas propriedades serão aplicadas diretamente no elemento agora */
+        /* Ajuste de cores para h1 no modo escuro */
+        html.dark h1 {
+            color: #e2e8f0; /* text-gray-200 */
         }
+
         h4 {
             font-size: 0.875rem; /* Tailwind: text-sm */
             color: #718096; /* Tailwind: text-gray-600 */
             margin-top: 1rem;
+        }
+        /* Ajuste de cores para h4 no modo escuro */
+        html.dark h4 {
+            color: #a0aec0; /* text-gray-400 */
         }
 
         /* Classes de utilidade para manter a compatibilidade com o CSS existente */
@@ -107,6 +172,11 @@
             text-align: center;
             color: #4CAF50;
         }
+        /* Ajuste de cores para labels no modo escuro */
+        html.dark .form-group label {
+            color: #68d391; /* green-400 */
+        }
+
         /* Ajuste para as labels do container de renomear colunas */
         #renameColumnsContainer .form-group label {
             font-weight: normal; /* Voltando para normal conforme o padrão do input */
@@ -116,6 +186,11 @@
             text-align: center; /* Centraliza o texto */
             width: 100%; /* Ocupa a largura total para centralizar */
         }
+        /* Ajuste de cores para labels do renomear no modo escuro */
+        html.dark #renameColumnsContainer .form-group label {
+            color: #68d391; /* green-400 */
+        }
+
         /* Ajuste para os inputs dentro do container de renomear */
         #renameColumnsContainer .form-group input[type="text"] {
             width: 100%; /* Ocupa a largura total do grupo */
@@ -136,9 +211,17 @@
             font-size: 24px; /* Tamanho dos ícones (ajuste conforme necessário) */
             transition: color 0.2s ease-in-out;
         }
+        /* Cores dos links sociais no modo escuro */
+        html.dark .social-links a {
+            color: #68d391; /* green-400 */
+        }
 
         .social-links a:hover {
             color: #388E3C; /* Cor ao passar o mouse */
+        }
+        /* Cores dos links sociais no modo escuro */
+        html.dark .social-links a:hover {
+            color: #48bb78; /* green-500 */
         }
     </style>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -147,60 +230,66 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body class="bg-gray-100 text-gray-800 font-sans antialiased items-center">
-    <header class="w-full bg-white shadow-md py-4 text-center">
-        <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Organizador de Dados de Concurso</h1>
+    <header class="w-full bg-white shadow-md py-4 text-center dark:bg-gray-800 dark:text-gray-100">
+        <div class="relative max-w-4xl mx-auto flex items-center justify-center px-4">
+            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-gray-100 mr-4">Organizador de Dados de Concurso</h1>
+            <button id="themeToggle" class="bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-200 px-3 py-1 rounded-full text-lg shadow-sm hover:shadow-md transition-all duration-200" title="Mudar para modo escuro">
+                <i class="fas fa-moon" id="themeIcon"></i>
+            </button>
+        </div>
     </header>
 
     <div class="max-w-4xl mx-auto w-full px-4 py-8 space-y-8">
-        <div class="bg-white shadow-lg rounded-lg p-6 text-center">
+        <div class="bg-white shadow-lg rounded-lg p-6 text-center dark:bg-gray-700 dark:text-gray-100">
             <form id="organizeForm" class="space-y-4">
                 <div class="form-group flex flex-col items-center">
-                    <label for="dataInput" class="text-lg font-semibold text-green-600 mb-2" title="Insira a lista dos candidatos. Tente usar um formato consistente, mas o sistema é mais flexível agora.">Lista dos candidatos:</label>
+                    <label for="dataInput" class="text-lg font-semibold text-green-600 mb-2 dark:text-green-400" title="Insira a lista dos candidatos. Tente usar um formato consistente, mas o sistema é mais flexível agora.">Lista dos candidatos:</label>
                     <textarea id="dataInput" name="dataInput" rows="4" cols="50" class="w-full max-w-md" title="Insira a lista dos candidatos. Tente usar um formato consistente, mas o sistema é mais flexível agora."></textarea>
                 </div>
                 <div class="form-group flex flex-col items-center">
-                    <label for="pdfTitleInput" class="text-lg font-semibold text-green-600 mb-2" title="Título do cargo que aparecerá no PDF gerado.">Nome do Cargo (opcional):</label>
+                    <label for="pdfTitleInput" class="text-lg font-semibold text-green-600 mb-2 dark:text-green-400" title="Título do cargo que aparecerá no PDF gerado.">Nome do Cargo (opcional):</label>
                     <input type="text" id="pdfTitleInput" placeholder="Ex: Analista Administrativo" class="w-full max-w-md" title="Opcional: Digite o cargo que vai aparecer no PDF gerado.">
                 </div>
-                <label class="inline-flex items-center text-gray-700 mt-4">
+                <label class="inline-flex items-center text-gray-700 mt-4 dark:text-gray-300">
                     <input type="checkbox" id="addRankingColumn" name="addRankingColumn" class="form-checkbox h-5 w-5 text-green-600 rounded" title="Selecione para adicionar uma coluna de classificação.">
                     <span class="ml-2 text-md">Adicionar coluna de classificação</span>
                 </label>
-                <div class="mt-6 flex justify-center"> <button type="button" onclick="organizeData()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg text-lg transition-all duration-200" title="Clique para organizar os dados.">
+                <div class="mt-6 flex justify-center">
+                    <button type="button" onclick="organizeData()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg text-lg transition-all duration-200 dark:bg-green-500 dark:hover:bg-green-400 dark:text-gray-900" title="Clique para organizar os dados.">
                         <i class="fas fa-sort-alpha-down"></i> Organizar
                     </button>
                 </div>
             </form>
         </div>
 
-        <div id="renameColumnsContainer" class="bg-white shadow-lg rounded-lg p-6 text-center space-y-4" style="display: none;">
-            <h1 class="text-3xl font-bold text-gray-900 mb-4 text-center">Renomear Colunas</h1>
+        <div id="renameColumnsContainer" class="bg-white shadow-lg rounded-lg p-6 text-center space-y-4 dark:bg-gray-700 dark:text-gray-100" style="display: none;">
+            <h1 class="text-3xl font-bold text-gray-900 mb-4 text-center dark:text-gray-100">Renomear Colunas</h1>
             <div id="columnRenameInputs" class="flex flex-col items-center gap-4 mb-6">
                 </div>
             <div id="renameButtonsGroup" class="flex justify-center gap-4">
-                <button type="button" onclick="applyColumnRenames()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg text-lg transition-all duration-200">
+                <button type="button" onclick="applyColumnRenames()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg text-lg transition-all duration-200 dark:bg-green-500 dark:hover:bg-green-400 dark:text-gray-900">
                     <i class="fas fa-check-circle"></i> Aplicar Nomes
                 </button>
-                <button type="button" onclick="toggleColumnRename()" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-6 rounded-lg text-lg transition-all duration-200">
+                <button type="button" onclick="toggleColumnRename()" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-6 rounded-lg text-lg transition-all duration-200 dark:bg-gray-600 dark:hover:bg-gray-500 dark:text-gray-100">
                     <i class="fas fa-times-circle"></i> Fechar Edição
                 </button>
             </div>
         </div>
 
-        <div id="ContainerResult" class="bg-white shadow-lg rounded-lg p-6" style="display: none;">
-            <h1 class="text-3xl font-bold text-gray-900 mb-4 text-center">Resultado Organizado</h1>
+        <div id="ContainerResult" class="bg-white shadow-lg rounded-lg p-6 dark:bg-gray-700 dark:text-gray-100" style="display: none;">
+            <h1 class="text-3xl font-bold text-gray-900 mb-4 text-center dark:text-gray-100">Resultado Organizado</h1>
             <div class="searchContainer flex flex-col items-center mb-4">
-                <input type="text" id="searchInput" onkeyup="searchTable()" placeholder="Digite para pesquisar..." class="w-full max-w-sm" title="A tabela vai atualizando ao digitar...">
+                <input type="text" id="searchInput" onkeyup="searchTable()" placeholder="Digite para pesquisar..." class="w-full max-w-sm dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600" title="A tabela vai atualizando ao digitar...">
             </div>
             <div class="flex flex-wrap justify-center gap-4 mb-6">
-                <button type="button" onclick="generatePDF()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg" title="Clique para gerar um PDF com os dados da tabela.">
+                <button type="button" onclick="generatePDF()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg dark:bg-blue-500 dark:hover:bg-blue-400 dark:text-gray-900" title="Clique para gerar um PDF com os dados da tabela.">
                     <i class="fas fa-file-pdf"></i> Gerar PDF
                 </button>
-                <button type="button" onclick="toggleColumnRename()" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-6 rounded-lg" title="Clique para mudar os nomes dos cabeçalhos das colunas.">
+                <button type="button" onclick="toggleColumnRename()" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-6 rounded-lg dark:bg-purple-500 dark:hover:bg-purple-400 dark:text-gray-900" title="Clique para mudar os nomes dos cabeçalhos das colunas.">
                     <i class="fas fa-pencil-alt"></i> Renomear Colunas
                 </button>
             </div>
-            <h4 class="text-sm text-gray-600 italic mb-4"><i>Ao clicar no cabeçalho da tabela, os dados são organizados conforme a coluna clicada!</i></h4>
+            <h4 class="text-sm text-gray-600 italic mb-4 dark:text-gray-400"><i>Ao clicar no cabeçalho da tabela, os dados são organizados conforme a coluna clicada!</i></h4>
             <div class="overflow-x-auto"> <table id="resultTable" class="min-w-full">
                     <thead>
                         <tr id="tableHeaders"></tr>
@@ -211,12 +300,12 @@
         </div>
     </div>
 
-    <footer class="w-full mt-12 bg-gray-50 text-gray-600 py-6 px-4 rounded-lg shadow-inner">
+    <footer class="w-full mt-12 bg-gray-50 text-gray-600 py-6 px-4 rounded-lg shadow-inner dark:bg-gray-900 dark:text-gray-400">
         <div class="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-8">
             <img src="minha_foto.jpg" alt="Foto do Autor Júnior Chaves" class="footer-img w-48 h-48 rounded-full object-cover border-4 border-green-500 shadow-md">
             
             <div class="text-center sm:text-left space-y-2">
-                <p class="font-bold text-lg text-gray-800">Desenvolvido por Júnior Chaves</p>
+                <p class="font-bold text-lg text-gray-800 dark:text-gray-200">Desenvolvido por Júnior Chaves</p>
                 <p class="text-sm">Conecte-se comigo nas redes sociais:</p>
                 <div class="social-links flex justify-center sm:justify-start space-x-6">
                     <a href="https://youtube.com/seu_canal" target="_blank" rel="noopener noreferrer" title="YouTube"><i class="fab fa-youtube"></i></a>
@@ -225,7 +314,7 @@
                 </div>
             </div>
         </div>
-        <p class="text-xs text-gray-500 mt-4 text-center">© <span id="currentYear"></span> Júnior Chaves. Todos os direitos reservados.</p>
+        <p class="text-xs text-gray-500 mt-4 text-center dark:text-gray-500">© <span id="currentYear"></span> Júnior Chaves. Todos os direitos reservados.</p>
     </footer>
 
     <script>
@@ -603,6 +692,60 @@
             tbody.innerHTML = '';
             sortedRows.forEach(row => tbody.appendChild(row));
         }
+
+        // --- Lógica de Tema Claro/Escuro ---
+        const themeToggle = document.getElementById('themeToggle');
+        const themeIcon = document.getElementById('themeIcon');
+        const htmlElement = document.documentElement; // Representa a tag <html>
+
+        // Função para atualizar o ícone e tooltip do botão
+        function updateThemeToggle(isDark) {
+            if (isDark) {
+                themeIcon.classList.remove('fa-moon');
+                themeIcon.classList.add('fa-sun');
+                themeToggle.title = 'Mudar para modo claro';
+            } else {
+                themeIcon.classList.remove('fa-sun');
+                themeIcon.classList.add('fa-moon');
+                themeToggle.title = 'Mudar para modo escuro';
+            }
+        }
+
+        // Função para aplicar o tema
+        function applyTheme(theme) {
+            if (theme === 'dark') {
+                htmlElement.classList.add('dark');
+                updateThemeToggle(true);
+            } else {
+                htmlElement.classList.remove('dark');
+                updateThemeToggle(false);
+            }
+        }
+
+        // Ao carregar a página:
+        // 1. Tenta carregar a preferência do usuário do localStorage
+        const savedTheme = localStorage.getItem('theme');
+        // 2. Se não houver preferência salva, verifica a preferência do sistema
+        if (savedTheme) {
+            applyTheme(savedTheme);
+        } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            applyTheme('dark'); // Aplica o tema escuro se o sistema preferir
+        } else {
+            applyTheme('light'); // Padrão para claro
+        }
+
+        // Adiciona o evento de clique ao botão
+        themeToggle.addEventListener('click', () => {
+            if (htmlElement.classList.contains('dark')) {
+                applyTheme('light');
+                localStorage.setItem('theme', 'light');
+            } else {
+                applyTheme('dark');
+                localStorage.setItem('theme', 'dark');
+            }
+        });
+        // --- Fim da Lógica de Tema Claro/Escuro ---
+
 
         window.onload = function() {
             // Oculta os containers de resultado e renomear colunas ao carregar a página
