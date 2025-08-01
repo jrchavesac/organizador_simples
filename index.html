@@ -204,27 +204,6 @@
             color: #68d391; /* green-400 */
         }
 
-        /* Ajuste para as labels do container de renomear colunas */
-        #renameColumnsContainer .form-group label {
-            font-weight: normal; /* Voltando para normal conforme o padrão do input */
-            margin-bottom: 0.5rem; /* Espaçamento entre label e input */
-            font-size: 1rem; /* Tamanho da fonte padrão */
-            color: #4CAF50; /* Cor verde */
-            text-align: center; /* Centraliza o texto */
-            width: 100%; /* Ocupa a largura total para centralizar */
-        }
-        /* Ajuste de cores para labels do renomear no modo escuro */
-        html.dark #renameColumnsContainer .form-group label {
-            color: #68d391; /* green-400 */
-        }
-
-        /* Ajuste para os inputs dentro do container de renomear */
-        #renameColumnsContainer .form-group input[type="text"] {
-            width: 100%; /* Ocupa a largura total do grupo */
-            max-width: 320px; /* Limita a largura para ficar parecido com o input de cima */
-        }
-
-
         /* Estilos específicos para o footer */
         .footer-img {
             margin-bottom: 10px; /* Mantém um pequeno espaçamento abaixo da imagem em mobile */
@@ -864,7 +843,6 @@
         window.onload = function() {
             document.getElementById('currentYear').textContent = new Date().getFullYear();
             document.getElementById('ContainerResult').style.display = 'none';
-            // #renameColumnsContainer foi removido do HTML, então não precisamos ocultá-lo no onload
         };
 
         function searchTable() {
@@ -958,9 +936,6 @@
                 alert("Erro ao gerar PDF. Veja o console para detalhes.");
             }
         }
-
-        // Novo estado para controlar o modo de edição dos cabeçalhos
-        // let isRenamingColumns = false; // Já declarado globalmente
 
         function toggleColumnRename() {
             const tableHeaders = document.querySelectorAll('#tableHeaders th');
