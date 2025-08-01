@@ -314,7 +314,7 @@
         <div class="bg-white shadow-lg rounded-lg p-6 text-center dark:bg-gray-700 dark:text-gray-100">
             <form id="organizeForm" class="space-y-4">
                 <div class="form-group flex flex-col items-center tooltip-container">
-                    <label for="dataInput" class="text-lg font-semibold text-green-600 mb-2 dark:text-green-400">Lista dos Candidatos:</label>
+                    <label for="dataInput" class="text-lg font-semibold text-green-600 mb-2 dark:text-green-400">Lista dos candidatos:</label>
                     <textarea id="dataInput" name="dataInput" rows="4" cols="50" class="w-full max-w-md"></textarea>
                     <span class="tooltip-text">Insira a lista dos candidatos. Tente usar um formato consistente, mas o sistema é mais flexível agora.</span>
                 </div>
@@ -1265,7 +1265,8 @@
 
             if (isRenamingColumns) {
                 // Entra no modo de edição
-                toggleRenameButton.innerHTML = '<i class="fas fa-check-circle"></i> Confirmar Renomeação'; // Muda o texto do botão
+                // Atualiza o innerHTML do botão para incluir o novo tooltip
+                toggleRenameButton.innerHTML = '<i class="fas fa-check-circle"></i> Confirmar Renomeação<span class="tooltip-text">Clique para confirmar a renomeação.</span>'; 
                 toggleRenameButton.classList.remove('bg-purple-600', 'hover:bg-purple-700', 'dark:bg-purple-500', 'dark:hover:bg-purple-400');
                 toggleRenameButton.classList.add('bg-green-600', 'hover:bg-green-700', 'dark:bg-green-500', 'dark:hover:bg-green-400');
 
@@ -1313,17 +1314,12 @@
                     th.onclick = null; 
                 });
 
-                // Remove o tooltip do botão de renomear enquanto estiver ativo
-                const tooltipSpan = toggleRenameButton.querySelector('.tooltip-text');
-                if (tooltipSpan) {
-                    tooltipSpan.style.display = 'none';
-                }
-
                 alert('Clique nos cabeçalhos da tabela para renomeá-los. Clique no botão "Confirmar Renomeação" para finalizar.');
 
             } else {
                 // Sai do modo de edição (Confirma Renomeação)
-                toggleRenameButton.innerHTML = '<i class="fas fa-pencil-alt"></i> Renomear Cabeçalhos'; // Volta o texto original
+                // Restaura o innerHTML do botão para incluir o tooltip original
+                toggleRenameButton.innerHTML = '<i class="fas fa-pencil-alt"></i> Renomear Cabeçalhos<span class="tooltip-text">Clique para mudar os nomes dos cabeçalhos das colunas.</span>'; 
                 toggleRenameButton.classList.remove('bg-green-600', 'hover:bg-green-700', 'dark:bg-green-500', 'dark:hover:bg-green-400');
                 toggleRenameButton.classList.add('bg-purple-600', 'hover:bg-purple-700', 'dark:bg-purple-500', 'dark:hover:bg-purple-400');
 
@@ -1371,12 +1367,6 @@
                 currentColumnNames = newColumnNames; // Atualiza os nomes das colunas globais
                 sortDirections = newSortDirections; // Atualiza as direções de ordenação
                 columnTypes = newColumnTypes; // Atualiza os tipos de coluna
-
-                // Restaura o tooltip do botão de renomear
-                const tooltipSpan = toggleRenameButton.querySelector('.tooltip-text');
-                if (tooltipSpan) {
-                    tooltipSpan.style.display = ''; // Volta a exibir
-                }
 
                 alert('Nomes dos cabeçalhos atualizados com sucesso!');
             }
