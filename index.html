@@ -1287,7 +1287,6 @@
             // Adiciona o BOM (Byte Order Mark) para UTF-8.
             const bom = "\uFEFF"; 
             const blob = new Blob([bom + csvContent], { type: 'text/csv;charset=utf-8;' });
-            
             const link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
             link.download = 'dados_organizados.csv';
@@ -1300,3 +1299,4 @@
     </script>
 </body>
 </html>
+
