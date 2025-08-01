@@ -349,6 +349,10 @@
                     <i class="fas fa-file-pdf"></i> Gerar PDF
                     <span class="tooltip-text">Clique para gerar um PDF com os dados da tabela.</span>
                 </button>
+                <button type="button" onclick="exportToCSV()" class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-6 rounded-lg dark:bg-teal-500 dark:hover:bg-teal-400 dark:text-gray-900 tooltip-container">
+                    <i class="fas fa-file-csv"></i> Exportar CSV
+                    <span class="tooltip-text">Clique para exportar os dados da tabela para um arquivo CSV.</span>
+                </button>
                 <button type="button" id="toggleRenameHeadersButton" onclick="toggleColumnRename()" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-6 rounded-lg dark:bg-purple-500 dark:hover:bg-purple-400 dark:text-gray-900 tooltip-container">
                     <i class="fas fa-pencil-alt"></i> Renomear Cabeçalhos
                     <span class="tooltip-text">Clique para mudar os nomes dos cabeçalhos das colunas.</span>
@@ -1371,6 +1375,36 @@
                 alert('Nomes dos cabeçalhos atualizados com sucesso!');
             }
         }
+
+        // NOVO: Função para exportar dados da tabela para CSV
+        function exportToCSV() {
+            // Desabilita o modo de renomeação se estiver ativo antes de exportar
+            if (isRenamingColumns) {
+                toggleColumnRename(); 
+            }
+
+            const table = document.getElementById('resultTable');
+            const headers = Array.from(table.querySelectorAll('thead th'))
+                               .map(th => `"${th.textContent.replace(/[\u2191\u2193]/g, '').trim().replace(/"/g, '""')}"`); // Remove setas e escapa aspas
+            
+            const rows = Array.from(table.querySelectorAll('tbody tr')).map(tr => {
+                return Array.from(tr.querySelectorAll('td'))
+                            .map(td => `"${td.textContent.replace(/"/g, '""')}"`) // Escapa aspas em dados
+                            .join(';'); // Delimitador ponto e vírgula
+            });
+
+            const csvContent = headers.join(';') + '\n' + rows.join('\n'); // Junta cabeçalhos e linhas
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'dados_organizados.csv';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(link.href); // Libera o objeto URL
+        }
+
     </script>
 </body>
 </html>
