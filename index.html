@@ -303,6 +303,18 @@
             border-color: #f8fafc transparent transparent transparent;
         }
 
+        /* Estilo para cabeçalhos em modo de edição */
+        .editable-header {
+            cursor: text !important; /* Muda o cursor para indicar editável */
+            border: 1px dashed #68d391; /* Borda tracejada verde para indicar edição */
+            background-color: rgba(72, 187, 120, 0.2); /* Fundo levemente verde */
+            padding: 0.75rem 25px; /* Manter padding-right para a seta, se ela for visível */
+        }
+        html.dark .editable-header {
+            border: 1px dashed #9AE6B4; /* Borda mais clara no dark mode */
+            background-color: rgba(104, 211, 145, 0.2);
+        }
+
     </style>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -347,20 +359,6 @@
             </form>
         </div>
 
-        <div id="renameColumnsContainer" class="bg-white shadow-lg rounded-lg p-6 text-center space-y-4 dark:bg-gray-700 dark:text-gray-100" style="display: none;">
-            <h1 class="text-3xl font-bold text-gray-900 mb-4 text-center dark:text-gray-100">Renomear Colunas</h1>
-            <div id="columnRenameInputs" class="flex flex-col items-center gap-4 mb-6">
-                </div>
-            <div id="renameButtonsGroup" class="flex justify-center gap-4">
-                <button type="button" onclick="applyColumnRenames()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg text-lg transition-all duration-200 dark:bg-green-500 dark:hover:bg-green-400 dark:text-gray-900">
-                    <i class="fas fa-check-circle"></i> Aplicar Nomes
-                </button>
-                <button type="button" onclick="toggleColumnRename()" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-6 rounded-lg text-lg transition-all duration-200 dark:bg-gray-600 dark:hover:bg-gray-500 dark:text-gray-100">
-                    <i class="fas fa-times-circle"></i> Fechar Edição
-                </button>
-            </div>
-        </div>
-
         <div id="ContainerResult" class="bg-white shadow-lg rounded-lg p-6 dark:bg-gray-700 dark:text-gray-100" style="display: none;">
             <h1 class="text-3xl font-bold text-gray-900 mb-4 text-center dark:text-gray-100">Resultado Organizado</h1>
             <div class="searchContainer flex flex-col items-center mb-4 tooltip-container">
@@ -372,7 +370,7 @@
                     <i class="fas fa-file-pdf"></i> Gerar PDF
                     <span class="tooltip-text">Clique para gerar um PDF com os dados da tabela.</span>
                 </button>
-                <button type="button" onclick="toggleColumnRename()" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-6 rounded-lg dark:bg-purple-500 dark:hover:bg-purple-400 dark:text-gray-900 tooltip-container">
+                <button type="button" id="toggleRenameButton" onclick="toggleColumnRename()" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-6 rounded-lg dark:bg-purple-500 dark:hover:bg-purple-400 dark:text-gray-900 tooltip-container">
                     <i class="fas fa-pencil-alt"></i> Renomear Colunas
                     <span class="tooltip-text">Clique para mudar os nomes dos cabeçalhos das colunas.</span>
                 </button>
@@ -409,17 +407,17 @@
         // Função para atualizar o ano no footer dinamicamente
         document.getElementById('currentYear').textContent = new Date().getFullYear();
 
-        // sortDirections agora é um objeto para armazenar a direção de cada coluna pelo seu índice
         let sortDirections = {}; 
-        let currentColumnNames = []; // Armazena os nomes atuais das colunas para referenciar
-        let columnTypes = {}; // Objeto para armazenar o tipo de cada coluna (mapeado pelo nome)
+        let currentColumnNames = [];
+        let columnTypes = {}; 
+        let isRenamingColumns = false; // Novo estado para controlar o modo de edição
 
         // Mapeamento de nomes de colunas para tipos de dados para comportamento de ordenação/formatação
         const typeMapping = {
             'classificacao': 'integer_numeric',
             'posicao': 'integer_numeric',
             'ranking': 'integer_numeric',
-            'inscricao': 'numeric_string', // Inscrição pode ser um número grande, mas tratado como string para evitar problemas de precisão.
+            'inscricao': 'numeric_string', 
             'matricula': 'numeric_string',
             'nota': 'numeric',
             'pontuacao': 'numeric',
@@ -438,17 +436,14 @@
             if (lowerName.includes('nome')) {
                 return 'string';
             }
-            // Último recurso: tenta inferir pelo conteúdo se o nome não ajudar
             return 'string'; // Padrão
         }
 
-        // Função para verificar se uma string é puramente numérica (inteiro ou decimal com ponto)
         function isNumeric(str) {
             if (str === null || str === undefined || str.trim() === '') return false;
             return /^-?\d+(\.\d+)?$/.test(str.trim());
         }
 
-        // Função para verificar se é um número inteiro
         function isInteger(str) {
             if (str === null || str === undefined || str.trim() === '') return false;
             return /^-?\d+$/.test(str.trim());
@@ -594,50 +589,44 @@
             const dataInput = document.getElementById('dataInput').value.trim();
             const addRankingColumn = document.getElementById('addRankingColumn').checked;
             const containerResult = document.getElementById('ContainerResult');
-            const renameColumnsContainer = document.getElementById('renameColumnsContainer');
             const organizeButton = document.getElementById('organizeButton');
             const loadingSpinner = document.getElementById('loadingSpinner');
             const organizeText = document.getElementById('organizeText');
+            
+            // Ocultar o modo de edição se estiver ativo
+            if (isRenamingColumns) {
+                toggleColumnRename(); 
+            }
 
             if (dataInput === "") {
-                // Se a entrada estiver vazia, oculta os containers e exibe um aviso
                 containerResult.style.display = 'none';
-                renameColumnsContainer.style.display = 'none'; // Garante que este também esteja oculto
                 alert("Por favor, digite algum dado na 'Lista dos candidatos' para organizar.");
                 return;
             }
 
-            // Exibir spinner e desabilitar botão
             organizeText.style.display = 'none';
             loadingSpinner.style.display = 'inline-block';
             organizeButton.disabled = true;
 
-            // Usar setTimeout para permitir que o navegador atualize a UI antes de iniciar o processamento pesado
             setTimeout(() => {
                 try {
-                    // Se houver dados, procede com a organização e mostra o container de resultados
                     containerResult.style.display = 'block';
 
-                    // A string de entrada inteira será passada para inferAndApplyPattern
                     let { columnNames, organizedData } = inferAndApplyPattern(dataInput);
 
-                    // Re-popula columnTypes com os nomes das colunas detectadas
                     columnTypes = {};
                     columnNames.forEach(name => {
                         columnTypes[name] = getColumnType(name);
                     });
 
-                    // --- Lógica de Ordenação Padrão (SEMPRE APLICADA) ---
-                    // Prioriza Nota (decrescente), depois Classificação (crescente)
                     organizedData.sort((a, b) => {
                         const notaIndex = columnNames.indexOf('Nota');
                         const classificacaoIndex = columnNames.indexOf('Classificação');
-                        const campoNum1Index = columnNames.indexOf('Campo Num 1'); // Para caso seja genérico
-                        const nomeIndex = columnNames.indexOf('Nome'); // Para desempate final
-                        const inscricaoIndex = columnNames.indexOf('Inscrição'); // Para desempate se Inscrição for um campo relevante
-                        const posicaoIndex = columnNames.indexOf('Posição'); // Para desempate se Posição for um campo relevante
+                        const campoNum1Index = columnNames.indexOf('Campo Num 1'); 
+                        const nomeIndex = columnNames.indexOf('Nome'); 
+                        const inscricaoIndex = columnNames.indexOf('Inscrição'); 
+                        const posicaoIndex = columnNames.indexOf('Posição'); 
 
-                        // Ordenar por Nota (decrescente) se a coluna "Nota" existir
                         if (notaIndex !== -1 && a[notaIndex] !== null && b[notaIndex] !== null) {
                             const valA = parseFloat(a[notaIndex]);
                             const valB = parseFloat(b[notaIndex]);
@@ -645,7 +634,6 @@
                             if (comp !== 0) return comp;
                         }
 
-                        // Em seguida, ordenar por Classificação (crescente) ou Campo Num 1 se a coluna existir
                         if (classificacaoIndex !== -1 && a[classificacaoIndex] !== null && b[classificacaoIndex] !== null) {
                             const valA = parseInt(a[classificacaoIndex]);
                             const valB = parseInt(b[classificacaoIndex]);
@@ -658,7 +646,6 @@
                             if (comp !== 0) return comp;
                         }
                         
-                        // Desempate por Inscrição (crescente) se a coluna existir
                         if (inscricaoIndex !== -1 && a[inscricaoIndex] !== null && b[inscricaoIndex] !== null) {
                             const valA = parseInt(a[inscricaoIndex]);
                             const valB = parseInt(b[inscricaoIndex]);
@@ -666,7 +653,6 @@
                             if (comp !== 0) return comp;
                         }
 
-                        // Desempate por Posição (crescente) se a coluna existir
                         if (posicaoIndex !== -1 && a[posicaoIndex] !== null && b[posicaoIndex] !== null) {
                             const valA = parseInt(a[posicaoIndex]);
                             const valB = parseInt(b[posicaoIndex]);
@@ -674,7 +660,6 @@
                             if (comp !== 0) return comp;
                         }
 
-                        // Fallback para o Nome (crescente) para garantir uma ordem consistente
                         if (nomeIndex !== -1 && a[nomeIndex] !== null && b[nomeIndex] !== null) {
                             const nomeA = a[nomeIndex] || '';
                             const nomeB = b[nomeIndex] || '';
@@ -684,41 +669,36 @@
                         return 0;
                     });
 
-                    // Lógica para adicionar e classificar a coluna de Classificação gerada
                     let finalColumnNamesForTable = [...columnNames];
                     if (addRankingColumn) {
-                        // Remove colunas de classificação existentes se a nova classificação for gerada
                         const columnsToRemove = ['Classificação', 'Posição', 'Ranking', 'Campo Num 1'];
                         columnsToRemove.forEach(colName => {
                             const existingIndex = finalColumnNamesForTable.indexOf(colName);
                             if (existingIndex !== -1) {
                                 finalColumnNamesForTable.splice(existingIndex, 1);
                                 organizedData.forEach(row => {
-                                    row.splice(existingIndex, 1); // Remove o dado da coluna
+                                    row.splice(existingIndex, 1);
                                 });
                             }
                         });
 
-                        // Agora, adicione o ranking no início das linhas e no cabeçalho
                         organizedData.forEach((row, index) => {
-                            row.unshift(index + 1); // Adiciona a classificação no início da linha
+                            row.unshift(index + 1);
                         });
-                        finalColumnNamesForTable.unshift('Classificação'); // Adiciona 'Classificação' no início do cabeçalho
-                        columnTypes['Classificação'] = 'integer_numeric'; // Define o tipo para a nova coluna
+                        finalColumnNamesForTable.unshift('Classificação'); 
+                        columnTypes['Classificação'] = 'integer_numeric'; 
                     }
 
                     updateTable(finalColumnNamesForTable, organizedData);
                     document.getElementById('ContainerResult').scrollIntoView({ behavior: 'smooth', block: 'start' });
 
                 } finally {
-                    // Ocultar spinner e reabilitar botão, mesmo se houver erro
                     organizeText.style.display = 'inline';
                     loadingSpinner.style.display = 'none';
                     organizeButton.disabled = false;
                 }
-            }, 100); // Pequeno atraso para o spinner aparecer visivelmente
+            }, 100); 
         }
-
 
         function updateTable(columnNames, data) {
             const tableHeaders = document.getElementById('tableHeaders');
@@ -726,29 +706,25 @@
             tableHeaders.innerHTML = '';
             tableBody.innerHTML = '';
 
-            // Reinicializa sortDirections para todas as colunas como ascendente (true)
-            // Se o nome da coluna for o mesmo, mantemos a direção anterior para um clique inicial
             const oldColumnNames = currentColumnNames;
-            currentColumnNames = columnNames; // Atualiza currentColumnNames para a nova estrutura
+            currentColumnNames = columnNames; 
             
             const newSortDirections = {};
             currentColumnNames.forEach((name, index) => {
-                // Tenta encontrar o índice da coluna antiga com o mesmo nome
                 const oldIndex = oldColumnNames.indexOf(name);
                 if (oldIndex !== -1 && sortDirections[oldIndex] !== undefined) {
-                    // Se encontrou e tinha um estado, mantém. Caso contrário, começa ascendente.
                     newSortDirections[index] = sortDirections[oldIndex];
                 } else {
-                    newSortDirections[index] = true; // true = ascendente por padrão
+                    newSortDirections[index] = true; 
                 }
             });
-            sortDirections = newSortDirections; // Aplica as novas direções
+            sortDirections = newSortDirections; 
 
             columnNames.forEach((columnName, index) => {
                 const th = document.createElement('th');
                 th.textContent = columnName;
-                th.onclick = () => sortTable(index); // Passa o índice diretamente
-                
+                th.onclick = () => sortTable(index); // Mantém a ordenação normal
+
                 // Adiciona o elemento para a seta de ordenação (oculto por padrão)
                 const arrowSpan = document.createElement('span');
                 arrowSpan.className = 'sort-arrow ml-1 text-gray-400 opacity-0 transition-opacity duration-200';
@@ -771,7 +747,7 @@
                         } else if (colType === 'integer_numeric') {
                             td.textContent = parseInt(value, 10);
                         } else if (colType === 'numeric_string') {
-                            td.textContent = String(value); // Garante que a apresentação continua como string
+                            td.textContent = String(value); 
                         } else {
                             td.textContent = String(value);
                         }
@@ -785,6 +761,11 @@
         }
 
         function sortTable(columnIndex) {
+            // Se estiver no modo de edição, não permite ordenar
+            if (isRenamingColumns) {
+                return; 
+            }
+
             const table = document.getElementById('resultTable');
             const tbody = table.getElementsByTagName('tbody')[0];
             const rows = Array.from(tbody.getElementsByTagName('tr'));
@@ -792,14 +773,12 @@
             const headerText = headerCell.textContent.replace(/[\u2191\u2193]/g, '').trim(); 
             const currentArrow = headerCell.querySelector('.sort-arrow');
 
-            // Resetar todas as setas
             document.querySelectorAll('#tableHeaders th .sort-arrow').forEach(arrow => {
                 arrow.classList.remove('opacity-100');
                 arrow.classList.add('opacity-0');
                 arrow.innerHTML = '';
             });
 
-            // Inverte a direção de ordenação para a coluna clicada
             sortDirections[columnIndex] = !sortDirections[columnIndex]; 
 
             const colType = columnTypes[headerText] || getColumnType(headerText);
@@ -811,22 +790,18 @@
                 let valA, valB;
 
                 if (colType === 'numeric' || colType === 'integer_numeric') {
-                    // Trata vazios/nulos como o menor ou maior valor possível para ordenar no fim ou início
                     valA = parseFloat(textA.replace(',', '.'));
                     valB = parseFloat(textB.replace(',', '.'));
                     valA = isNaN(valA) ? (sortDirections[columnIndex] ? Infinity : -Infinity) : valA;
                     valB = isNaN(valB) ? (sortDirections[columnIndex] ? Infinity : -Infinity) : valB;
                     return sortDirections[columnIndex] ? valA - valB : valB - valA;
                 } else if (colType === 'numeric_string') {
-                    // Para numeric_string, compare como números inteiros para ordenação correta
-                    // Trata vazios/nulos como o menor ou maior valor possível
                     valA = parseInt(textA);
                     valB = parseInt(textB);
                     valA = isNaN(valA) ? (sortDirections[columnIndex] ? Infinity : -Infinity) : valA;
                     valB = isNaN(valB) ? (sortDirections[columnIndex] ? Infinity : -Infinity) : valB;
                     return sortDirections[columnIndex] ? valA - valB : valB - valA;
                 } else {
-                    // Para strings, use localeCompare com numeric: true para garantir "10" > "2"
                     return sortDirections[columnIndex] ? textA.localeCompare(textB, undefined, { numeric: true, sensitivity: 'base' }) : textB.localeCompare(textA, undefined, { numeric: true, sensitivity: 'base' });
                 }
             });
@@ -834,7 +809,6 @@
             tbody.innerHTML = '';
             sortedRows.forEach(row => tbody.appendChild(row));
 
-            // Atualiza a seta da coluna clicada
             currentArrow.classList.add('opacity-100');
             currentArrow.innerHTML = sortDirections[columnIndex] ? '<i class="fas fa-arrow-up"></i>' : '<i class="fas fa-arrow-down"></i>';
         }
@@ -842,9 +816,8 @@
         // --- Lógica de Tema Claro/Escuro ---
         const themeToggle = document.getElementById('themeToggle');
         const themeIcon = document.getElementById('themeIcon');
-        const htmlElement = document.documentElement; // Representa a tag <html>
+        const htmlElement = document.documentElement; 
 
-        // Função para atualizar o ícone e tooltip do botão
         function updateThemeToggle(isDark) {
             if (isDark) {
                 themeIcon.classList.remove('fa-moon');
@@ -857,7 +830,6 @@
             }
         }
 
-        // Função para aplicar o tema
         function applyTheme(theme) {
             if (theme === 'dark') {
                 htmlElement.classList.add('dark');
@@ -868,19 +840,15 @@
             }
         }
 
-        // Ao carregar a página:
-        // 1. Tenta carregar a preferência do usuário do localStorage
         const savedTheme = localStorage.getItem('theme');
-        // 2. Se não houver preferência salva, verifica a preferência do sistema
         if (savedTheme) {
             applyTheme(savedTheme);
         } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-            applyTheme('dark'); // Aplica o tema escuro se o sistema preferir
+            applyTheme('dark'); 
         } else {
-            applyTheme('light'); // Padrão para claro
+            applyTheme('light'); 
         }
 
-        // Adiciona o evento de clique ao botão
         themeToggle.addEventListener('click', () => {
             if (htmlElement.classList.contains('dark')) {
                 applyTheme('light');
@@ -894,10 +862,9 @@
 
 
         window.onload = function() {
-            // Oculta os containers de resultado e renomear colunas ao carregar a página
             document.getElementById('currentYear').textContent = new Date().getFullYear();
             document.getElementById('ContainerResult').style.display = 'none';
-            document.getElementById('renameColumnsContainer').style.display = 'none';
+            // #renameColumnsContainer foi removido do HTML, então não precisamos ocultá-lo no onload
         };
 
         function searchTable() {
@@ -919,6 +886,11 @@
         }
 
         function generatePDF() {
+            // Desabilita o modo de renomeação se estiver ativo antes de gerar PDF
+            if (isRenamingColumns) {
+                toggleColumnRename(); 
+            }
+
             try {
                 const { jsPDF } = window.jspdf;
                 const doc = new jsPDF();
@@ -944,7 +916,8 @@
                     return;
                 }
 
-                const headers = Array.from(document.querySelectorAll('#tableHeaders th')).map(th => th.textContent.replace(/[\u2191\u2193]/g, '').trim()); // Limpa as setas dos cabeçalhos para o PDF
+                // Assegura que os cabeçalhos usados para o PDF são os valores textuais atuais
+                const headers = Array.from(document.querySelectorAll('#tableHeaders th')).map(th => th.textContent.replace(/[\u2191\u2193]/g, '').trim()); 
                 const rows = Array.from(table.querySelectorAll('tbody tr')).map(tr =>
                     Array.from(tr.querySelectorAll('td')).map(td =>
                          td.textContent.replace(/\s*\n\s*/g, ' ').trim()
@@ -961,22 +934,20 @@
                         cellPadding: 2, 
                         halign: 'center',
                         valign: 'middle',
-                        lineColor: [226, 232, 240], // Cor da borda interna (similar ao gray-200 do Tailwind)
-                        lineWidth: 0.5 // Largura da borda interna
+                        lineColor: [226, 232, 240], 
+                        lineWidth: 0.5 
                     },
                     headStyles: { 
-                        fillColor: [76, 175, 80], // Cor de fundo do cabeçalho (verde)
-                        textColor: 255, // Cor do texto do cabeçalho (branco)
+                        fillColor: [76, 175, 80], 
+                        textColor: 255, 
                         fontStyle: 'bold', 
                         halign: 'center',
                         valign: 'middle'
                     },
                     alternateRowStyles: { 
-                        fillColor: [248, 250, 252] // Cor de fundo das linhas alternadas (gray-50 do Tailwind)
+                        fillColor: [248, 250, 252] 
                     },
                     didDrawPage: function(data) {
-                        // Não é possível aplicar border-radius na tabela do PDF diretamente.
-                        // A autoTable já aplica um visual profissional.
                     }
                 });
 
@@ -988,105 +959,139 @@
             }
         }
 
-        function toggleColumnRename() {
-            const renameContainer = document.getElementById('renameColumnsContainer');
-            const columnRenameInputs = document.getElementById('columnRenameInputs');
+        // Novo estado para controlar o modo de edição dos cabeçalhos
+        // let isRenamingColumns = false; // Já declarado globalmente
 
-            // Garante que o container de renomear esteja sempre oculto se não houver dados na tabela
+        function toggleColumnRename() {
+            const tableHeaders = document.querySelectorAll('#tableHeaders th');
+            const toggleRenameButton = document.getElementById('toggleRenameButton');
+            
+            // Verifica se a tabela está vazia
             const tableBody = document.getElementById('tableBody');
             if (tableBody.children.length === 0) {
-                renameContainer.style.display = 'none';
                 alert("Organize os dados primeiro para poder renomear as colunas.");
                 return;
             }
 
-            if (renameContainer.style.display === 'none' || renameContainer.style.display === '') {
-                renameContainer.style.display = 'block'; // Usar block para permitir margin-auto e text-center
+            isRenamingColumns = !isRenamingColumns; // Alterna o estado de edição
 
-                columnRenameInputs.innerHTML = '';
+            if (isRenamingColumns) {
+                // Entra no modo de edição
+                toggleRenameButton.innerHTML = '<i class="fas fa-check-circle"></i> Confirmar Renomeação'; // Muda o texto do botão
+                toggleRenameButton.classList.remove('bg-purple-600', 'hover:bg-purple-700', 'dark:bg-purple-500', 'dark:hover:bg-purple-400');
+                toggleRenameButton.classList.add('bg-green-600', 'hover:bg-green-700', 'dark:bg-green-500', 'dark:hover:bg-green-400');
 
-                if (currentColumnNames.length > 0) {
-                    currentColumnNames.forEach((name, index) => {
-                        const div = document.createElement('div');
-                        // Adiciona as classes para alinhar label acima do input e centralizar
-                        div.className = 'form-group flex flex-col items-center'; 
+                tableHeaders.forEach(th => {
+                    const currentName = th.textContent.replace(/[\u2191\u2193]/g, '').trim(); // Remove setas
+                    const arrow = th.querySelector('.sort-arrow');
+                    if (arrow) {
+                        arrow.style.display = 'none'; // Esconde a seta durante a edição
+                    }
 
-                        const label = document.createElement('label');
-                        label.textContent = `Coluna ${index + 1}:`;
-                        label.htmlFor = `rename-col-${index}`;
+                    // Cria um input para editar o texto
+                    const input = document.createElement('input');
+                    input.type = 'text';
+                    input.value = currentName;
+                    input.className = 'w-full px-2 py-1 rounded-sm text-center bg-transparent border-none focus:outline-none'; // Estilo inline
 
-                        const input = document.createElement('input');
-                        input.type = 'text';
-                        input.id = `rename-col-${index}`;
-                        input.value = name;
-                        input.placeholder = `Nome da Coluna ${index + 1}`;
-                        // Adiciona classes para o input ter a mesma largura máxima dos outros
-                        input.className = 'w-full max-w-md'; 
+                    // Aplica classe de edição e remove o cursor de ordenação
+                    th.classList.add('editable-header');
+                    th.style.cursor = 'text'; // Garante o cursor de texto
 
-                        div.appendChild(label);
-                        div.appendChild(input);
-                        columnRenameInputs.appendChild(div);
+                    // Substitui o conteúdo do TH pelo input
+                    th.innerHTML = ''; 
+                    th.appendChild(input);
+
+                    // Adiciona listeners para focar e para capturar a tecla Enter ou blur
+                    input.focus();
+                    input.select(); // Seleciona o texto atual
+
+                    input.addEventListener('blur', (event) => {
+                        // Quando o input perde o foco, atualiza o nome
+                        const newName = event.target.value.trim();
+                        if (newName === '') {
+                            event.target.value = currentName; // Volta ao nome original se vazio
+                        }
                     });
-                } else {
-                    // Este caso agora só deveria acontecer se a tabela estivesse vazia,
-                    // mas o alert acima já trataria isso. Mantendo para robustez.
-                    columnRenameInputs.textContent = 'Organize os dados primeiro para renomear as colunas.';
+
+                    input.addEventListener('keydown', (event) => {
+                        if (event.key === 'Enter') {
+                            event.preventDefault(); // Evita quebra de linha no input
+                            event.target.blur(); // Tira o foco do input, acionando o blur
+                        }
+                    });
+
+                    // Remove o evento de ordenação enquanto estiver no modo de edição
+                    th.onclick = null; 
+                });
+
+                // Remove o tooltip do botão de renomear enquanto estiver ativo
+                const tooltipSpan = toggleRenameButton.querySelector('.tooltip-text');
+                if (tooltipSpan) {
+                    tooltipSpan.style.display = 'none';
                 }
 
-                renameContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                alert('Clique nos cabeçalhos da tabela para renomeá-los. Clique no botão "Confirmar Renomeação" para finalizar.');
 
             } else {
-                renameContainer.style.display = 'none';
+                // Sai do modo de edição (Confirma Renomeação)
+                toggleRenameButton.innerHTML = '<i class="fas fa-pencil-alt"></i> Renomear Colunas'; // Volta o texto original
+                toggleRenameButton.classList.remove('bg-green-600', 'hover:bg-green-700', 'dark:bg-green-500', 'dark:hover:bg-green-400');
+                toggleRenameButton.classList.add('bg-purple-600', 'hover:bg-purple-700', 'dark:bg-purple-500', 'dark:hover:bg-purple-400');
+
+                const newColumnNames = [];
+                const newSortDirections = {};
+                const newColumnTypes = {};
+
+                tableHeaders.forEach((th, index) => {
+                    const input = th.querySelector('input[type="text"]');
+                    let newName = '';
+                    if (input) {
+                        newName = input.value.trim();
+                        if (newName === '') {
+                            newName = currentColumnNames[index]; // Garante que o nome não fique vazio
+                        }
+                    } else {
+                        // Caso o TH não tenha um input (algo deu errado, pega o texto atual)
+                        newName = th.textContent.replace(/[\u2191\u2193]/g, '').trim();
+                    }
+
+                    newColumnNames.push(newName);
+                    newColumnTypes[newName] = getColumnType(newName); // Atualiza o tipo para o novo nome
+
+                    // Restaura o TH para seu estado original (texto + seta)
+                    th.textContent = newName;
+                    th.classList.remove('editable-header');
+                    th.style.cursor = 'pointer'; // Restaura o cursor de ordenação
+
+                    const arrowSpan = document.createElement('span');
+                    arrowSpan.className = 'sort-arrow ml-1 text-gray-400 opacity-0 transition-opacity duration-200';
+                    th.appendChild(arrowSpan);
+
+                    // Re-adiciona o evento de ordenação
+                    th.onclick = () => sortTable(index);
+
+                    // Mantém a direção de ordenação anterior se o nome da coluna permaneceu o mesmo
+                    const oldIndex = currentColumnNames.indexOf(newName);
+                    if (oldIndex !== -1 && sortDirections[oldIndex] !== undefined) {
+                        newSortDirections[index] = sortDirections[oldIndex];
+                    } else {
+                        newSortDirections[index] = true; // Novo nome ou coluna, reinicia para ascendente
+                    }
+                });
+
+                currentColumnNames = newColumnNames; // Atualiza os nomes das colunas globais
+                sortDirections = newSortDirections; // Atualiza as direções de ordenação
+                columnTypes = newColumnTypes; // Atualiza os tipos de coluna
+
+                // Restaura o tooltip do botão de renomear
+                const tooltipSpan = toggleRenameButton.querySelector('.tooltip-text');
+                if (tooltipSpan) {
+                    tooltipSpan.style.display = ''; // Volta a exibir
+                }
+
+                alert('Nomes das colunas atualizados com sucesso!');
             }
-        }
-
-        function applyColumnRenames() {
-            const newColumnNames = [];
-            const inputElements = document.querySelectorAll('#columnRenameInputs input[type="text"]');
-
-            // Recria columnTypes com base nos novos nomes e seus tipos inferidos
-            columnTypes = {};
-            inputElements.forEach(input => {
-                const newName = input.value.trim();
-                newColumnNames.push(newName);
-                columnTypes[newName] = getColumnType(newName);
-            });
-
-            // Re-mapeia as direções de ordenação para os novos nomes de coluna
-            const newSortDirections = {};
-            newColumnNames.forEach((newName, newIndex) => {
-                const oldIndex = currentColumnNames.indexOf(newName); // Encontra o índice antigo da coluna com este nome
-                if (oldIndex !== -1 && sortDirections[oldIndex] !== undefined) {
-                    newSortDirections[newIndex] = sortDirections[oldIndex]; // Mantém a direção se o nome existe
-                } else {
-                    newSortDirections[newIndex] = true; // Começa ascendente para novas ou renomeadas
-                }
-            });
-            sortDirections = newSortDirections;
-
-
-            const tableHeaders = document.querySelectorAll('#tableHeaders th');
-            tableHeaders.forEach((th, index) => {
-                if (newColumnNames[index] !== undefined && newColumnNames[index] !== null && newColumnNames[index] !== '') {
-                     th.textContent = newColumnNames[index];
-                } else {
-                    th.textContent = currentColumnNames[index];
-                }
-                // Remover a seta existente e adicionar uma nova se necessário
-                const existingArrow = th.querySelector('.sort-arrow');
-                if (existingArrow) {
-                    existingArrow.remove();
-                }
-                const arrowSpan = document.createElement('span');
-                arrowSpan.className = 'sort-arrow ml-1 text-gray-400 opacity-0 transition-opacity duration-200';
-                th.appendChild(arrowSpan);
-            });
-
-            currentColumnNames = Array.from(document.querySelectorAll('#tableHeaders th')).map(th => th.textContent.replace(/[\u2191\u2193]/g, '').trim());
-
-            document.getElementById('renameColumnsContainer').style.display = 'none';
-
-            alert('Nomes das colunas atualizados com sucesso!');
         }
     </script>
 </body>
