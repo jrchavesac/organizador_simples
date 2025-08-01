@@ -23,6 +23,7 @@
             font-family: 'Inter', Arial, sans-serif;
             background-color: #f3f4f6; /* bg-gray-100 */
             color: #1f2937; /* text-gray-800 */
+            transition: background-color 0.3s ease, color 0.3s ease; /* Transição suave para o tema */
         }
         /* Cores para o modo escuro, aplicadas quando a classe 'dark' está presente */
         html.dark body {
@@ -39,7 +40,7 @@
             box-sizing: border-box;
             color: #004d40;
             outline: none; /* Remove o outline padrão */
-            transition: border-color 0.2s, box-shadow 0.2s; /* Transição suave */
+            transition: border-color 0.2s, box-shadow 0.2s, background-color 0.3s ease, color 0.3s ease; /* Transição suave */
             background-color: #ffffff; /* Fundo claro para inputs */
         }
         /* Ajuste de cores para inputs no modo escuro */
@@ -69,7 +70,7 @@
             border: none;
             padding: 0.5rem 1rem; /* Tailwind: px-4 py-2 */
             border-radius: 0.5rem; /* Tailwind: rounded-lg */
-            transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out, color 0.2s ease-in-out;
+            transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out, color 0.2s ease-in-out, box-shadow 0.2s ease-in-out; /* Adicionado transições */
             box-shadow: 0 2px 4px rgba(0,0,0,0.1); /* Sombra sutil */
             display: flex; /* Para alinhar o ícone e o texto */
             align-items: center; /* Alinha verticalmente */
@@ -87,6 +88,12 @@
             transform: translateY(0);
             box-shadow: 0 1px 2px rgba(0,0,0,0.1);
         }
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
 
         /* Cores dos botões no modo escuro */
         html.dark button {
@@ -94,11 +101,15 @@
             color: #1a202c; /* text-gray-900 para contraste */
             box-shadow: 0 2px 4px rgba(0,0,0,0.3);
         }
-        html.dark button:hover {
+        html.dark button:hover:not(:disabled) { /* Não aplica hover se desabilitado */
             background-color: #68d391; /* green-400 */
             color: #1a202c;
             box-shadow: 0 4px 8px rgba(0,0,0,0.4);
         }
+        html.dark button:disabled {
+            background-color: #2f855a; /* Um verde mais escuro para desabilitado */
+        }
+
 
         /* Estilos da tabela */
         table {
@@ -114,12 +125,22 @@
             border: 1px solid #e2e8f0; /* Cor da borda mais suave, como no Tailwind: border-gray-200 */
             padding: 0.75rem; /* Tailwind: p-3 */
             text-align: center;
-            cursor: pointer;
+            cursor: pointer; /* Apenas para TH, mas não interfere em TD */
         }
         th {
             background-color: #4CAF50;
             color: white;
             font-weight: 600; /* Tailwind: font-semibold */
+            position: relative; /* Para posicionar a seta */
+            padding-right: 25px; /* Espaço para a seta */
+        }
+        th .sort-arrow {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 0.8em;
+            color: rgba(255, 255, 255, 0.7); /* Seta mais discreta */
         }
         td {
             background-color: #ffffff; /* Fundo branco para células */
@@ -133,6 +154,9 @@
             background-color: #48bb78; /* green-500 */
             color: #1a202c; /* text-gray-900 */
             border-color: #2d3748; /* gray-700 */
+        }
+        html.dark th .sort-arrow {
+            color: rgba(0, 0, 0, 0.5); /* Seta mais discreta no modo escuro */
         }
         html.dark td {
             background-color: #2d3748; /* gray-700 */
@@ -150,6 +174,7 @@
             font-weight: 700; /* Tailwind: font-bold */
             color: #1a202c; /* Tailwind: text-gray-900 */
             margin-bottom: 1.5rem;
+            transition: color 0.3s ease;
         }
         /* Ajuste de cores para h1 no modo escuro */
         html.dark h1 {
@@ -160,6 +185,7 @@
             font-size: 0.875rem; /* Tailwind: text-sm */
             color: #718096; /* Tailwind: text-gray-600 */
             margin-top: 1rem;
+            transition: color 0.3s ease;
         }
         /* Ajuste de cores para h4 no modo escuro */
         html.dark h4 {
@@ -171,6 +197,7 @@
             font-weight: bold;
             text-align: center;
             color: #4CAF50;
+            transition: color 0.3s ease;
         }
         /* Ajuste de cores para labels no modo escuro */
         html.dark .form-group label {
@@ -223,6 +250,59 @@
         html.dark .social-links a:hover {
             color: #48bb78; /* green-500 */
         }
+
+        /* --- Estilos para Tooltip Customizado --- */
+        .tooltip-container {
+            position: relative;
+            display: inline-block; /* Ou block, dependendo do elemento pai */
+        }
+
+        .tooltip-text {
+            visibility: hidden;
+            opacity: 0;
+            width: max-content; /* Ajusta largura ao conteúdo */
+            background-color: #333; /* Fundo escuro */
+            color: #fff; /* Texto claro */
+            text-align: center;
+            border-radius: 6px;
+            padding: 5px 8px;
+            position: absolute;
+            z-index: 100; /* Acima de outros elementos */
+            bottom: 125%; /* Acima do elemento pai */
+            left: 50%;
+            transform: translateX(-50%);
+            transition: opacity 0.3s, visibility 0.3s;
+            font-size: 0.85rem;
+            pointer-events: none; /* Garante que o tooltip não bloqueie eventos do mouse no elemento pai */
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .tooltip-text::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: #333 transparent transparent transparent; /* Seta para baixo */
+        }
+
+        .tooltip-container:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        /* Estilos para tooltip no modo escuro */
+        html.dark .tooltip-text {
+            background-color: #f8fafc; /* light gray for dark mode tooltip */
+            color: #1a202c; /* dark text for dark mode tooltip */
+            box-shadow: 0 2px 5px rgba(255,255,255,0.1);
+        }
+        html.dark .tooltip-text::after {
+            border-color: #f8fafc transparent transparent transparent;
+        }
+
     </style>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -242,21 +322,26 @@
     <div class="max-w-4xl mx-auto w-full px-4 py-8 space-y-8">
         <div class="bg-white shadow-lg rounded-lg p-6 text-center dark:bg-gray-700 dark:text-gray-100">
             <form id="organizeForm" class="space-y-4">
-                <div class="form-group flex flex-col items-center">
-                    <label for="dataInput" class="text-lg font-semibold text-green-600 mb-2 dark:text-green-400" title="Insira a lista dos candidatos. Tente usar um formato consistente, mas o sistema é mais flexível agora.">Lista dos candidatos:</label>
-                    <textarea id="dataInput" name="dataInput" rows="4" cols="50" class="w-full max-w-md" title="Insira a lista dos candidatos. Tente usar um formato consistente, mas o sistema é mais flexível agora."></textarea>
+                <div class="form-group flex flex-col items-center tooltip-container">
+                    <label for="dataInput" class="text-lg font-semibold text-green-600 mb-2 dark:text-green-400">Lista dos candidatos:</label>
+                    <textarea id="dataInput" name="dataInput" rows="4" cols="50" class="w-full max-w-md"></textarea>
+                    <span class="tooltip-text">Insira a lista dos candidatos. Tente usar um formato consistente, mas o sistema é mais flexível agora.</span>
                 </div>
-                <div class="form-group flex flex-col items-center">
-                    <label for="pdfTitleInput" class="text-lg font-semibold text-green-600 mb-2 dark:text-green-400" title="Título do cargo que aparecerá no PDF gerado.">Nome do Cargo (opcional):</label>
-                    <input type="text" id="pdfTitleInput" placeholder="Ex: Analista Administrativo" class="w-full max-w-md" title="Opcional: Digite o cargo que vai aparecer no PDF gerado.">
+                <div class="form-group flex flex-col items-center tooltip-container">
+                    <label for="pdfTitleInput" class="text-lg font-semibold text-green-600 mb-2 dark:text-green-400">Nome do Cargo (opcional):</label>
+                    <input type="text" id="pdfTitleInput" placeholder="Ex: Analista Administrativo" class="w-full max-w-md">
+                    <span class="tooltip-text">Opcional: Digite o cargo que vai aparecer no PDF gerado.</span>
                 </div>
-                <label class="inline-flex items-center text-gray-700 mt-4 dark:text-gray-300">
-                    <input type="checkbox" id="addRankingColumn" name="addRankingColumn" class="form-checkbox h-5 w-5 text-green-600 rounded" title="Selecione para adicionar uma coluna de classificação.">
+                <label class="inline-flex items-center text-gray-700 mt-4 tooltip-container dark:text-gray-300">
+                    <input type="checkbox" id="addRankingColumn" name="addRankingColumn" class="form-checkbox h-5 w-5 text-green-600 rounded">
                     <span class="ml-2 text-md">Adicionar coluna de classificação</span>
+                    <span class="tooltip-text">Selecione para adicionar uma coluna de classificação.</span>
                 </label>
                 <div class="mt-6 flex justify-center">
-                    <button type="button" onclick="organizeData()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg text-lg transition-all duration-200 dark:bg-green-500 dark:hover:bg-green-400 dark:text-gray-900" title="Clique para organizar os dados.">
-                        <i class="fas fa-sort-alpha-down"></i> Organizar
+                    <button type="button" id="organizeButton" onclick="organizeData()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg text-lg transition-all duration-200 dark:bg-green-500 dark:hover:bg-green-400 dark:text-gray-900 tooltip-container">
+                        <i class="fas fa-sort-alpha-down"></i> <span id="organizeText">Organizar</span>
+                        <i class="fas fa-spinner fa-spin ml-2" id="loadingSpinner" style="display: none;"></i>
+                        <span class="tooltip-text">Clique para organizar os dados.</span>
                     </button>
                 </div>
             </form>
@@ -278,15 +363,18 @@
 
         <div id="ContainerResult" class="bg-white shadow-lg rounded-lg p-6 dark:bg-gray-700 dark:text-gray-100" style="display: none;">
             <h1 class="text-3xl font-bold text-gray-900 mb-4 text-center dark:text-gray-100">Resultado Organizado</h1>
-            <div class="searchContainer flex flex-col items-center mb-4">
-                <input type="text" id="searchInput" onkeyup="searchTable()" placeholder="Digite para pesquisar..." class="w-full max-w-sm dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600" title="A tabela vai atualizando ao digitar...">
+            <div class="searchContainer flex flex-col items-center mb-4 tooltip-container">
+                <input type="text" id="searchInput" onkeyup="searchTable()" placeholder="Digite para pesquisar..." class="w-full max-w-sm dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600">
+                <span class="tooltip-text">A tabela vai atualizando ao digitar...</span>
             </div>
             <div class="flex flex-wrap justify-center gap-4 mb-6">
-                <button type="button" onclick="generatePDF()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg dark:bg-blue-500 dark:hover:bg-blue-400 dark:text-gray-900" title="Clique para gerar um PDF com os dados da tabela.">
+                <button type="button" onclick="generatePDF()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg dark:bg-blue-500 dark:hover:bg-blue-400 dark:text-gray-900 tooltip-container">
                     <i class="fas fa-file-pdf"></i> Gerar PDF
+                    <span class="tooltip-text">Clique para gerar um PDF com os dados da tabela.</span>
                 </button>
-                <button type="button" onclick="toggleColumnRename()" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-6 rounded-lg dark:bg-purple-500 dark:hover:bg-purple-400 dark:text-gray-900" title="Clique para mudar os nomes dos cabeçalhos das colunas.">
+                <button type="button" onclick="toggleColumnRename()" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-6 rounded-lg dark:bg-purple-500 dark:hover:bg-purple-400 dark:text-gray-900 tooltip-container">
                     <i class="fas fa-pencil-alt"></i> Renomear Colunas
+                    <span class="tooltip-text">Clique para mudar os nomes dos cabeçalhos das colunas.</span>
                 </button>
             </div>
             <h4 class="text-sm text-gray-600 italic mb-4 dark:text-gray-400"><i>Ao clicar no cabeçalho da tabela, os dados são organizados conforme a coluna clicada!</i></h4>
@@ -321,8 +409,9 @@
         // Função para atualizar o ano no footer dinamicamente
         document.getElementById('currentYear').textContent = new Date().getFullYear();
 
-        let sortDirections = [];
-        let currentColumnNames = [];
+        // sortDirections agora é um objeto para armazenar a direção de cada coluna pelo seu índice
+        let sortDirections = {}; 
+        let currentColumnNames = []; // Armazena os nomes atuais das colunas para referenciar
         let columnTypes = {}; // Objeto para armazenar o tipo de cada coluna (mapeado pelo nome)
 
         // Mapeamento de nomes de colunas para tipos de dados para comportamento de ordenação/formatação
@@ -506,6 +595,9 @@
             const addRankingColumn = document.getElementById('addRankingColumn').checked;
             const containerResult = document.getElementById('ContainerResult');
             const renameColumnsContainer = document.getElementById('renameColumnsContainer');
+            const organizeButton = document.getElementById('organizeButton');
+            const loadingSpinner = document.getElementById('loadingSpinner');
+            const organizeText = document.getElementById('organizeText');
 
             if (dataInput === "") {
                 // Se a entrada estiver vazia, oculta os containers e exibe um aviso
@@ -515,100 +607,116 @@
                 return;
             }
 
-            // Se houver dados, procede com a organização e mostra o container de resultados
-            containerResult.style.display = 'block';
+            // Exibir spinner e desabilitar botão
+            organizeText.style.display = 'none';
+            loadingSpinner.style.display = 'inline-block';
+            organizeButton.disabled = true;
 
-            // A string de entrada inteira será passada para inferAndApplyPattern
-            let { columnNames, organizedData } = inferAndApplyPattern(dataInput);
+            // Usar setTimeout para permitir que o navegador atualize a UI antes de iniciar o processamento pesado
+            setTimeout(() => {
+                try {
+                    // Se houver dados, procede com a organização e mostra o container de resultados
+                    containerResult.style.display = 'block';
 
-            // Re-popula columnTypes com os nomes das colunas detectadas
-            columnTypes = {};
-            columnNames.forEach(name => {
-                columnTypes[name] = getColumnType(name);
-            });
+                    // A string de entrada inteira será passada para inferAndApplyPattern
+                    let { columnNames, organizedData } = inferAndApplyPattern(dataInput);
 
-            // --- Lógica de Ordenação Padrão (SEMPRE APLICADA) ---
-            // Prioriza Nota (decrescente), depois Classificação (crescente)
-            organizedData.sort((a, b) => {
-                const notaIndex = columnNames.indexOf('Nota');
-                const classificacaoIndex = columnNames.indexOf('Classificação');
-                const campoNum1Index = columnNames.indexOf('Campo Num 1'); // Para caso seja genérico
-                const nomeIndex = columnNames.indexOf('Nome'); // Para desempate final
-                const inscricaoIndex = columnNames.indexOf('Inscrição'); // Para desempate se Inscrição for um campo relevante
-                const posicaoIndex = columnNames.indexOf('Posição'); // Para desempate se Posição for um campo relevante
+                    // Re-popula columnTypes com os nomes das colunas detectadas
+                    columnTypes = {};
+                    columnNames.forEach(name => {
+                        columnTypes[name] = getColumnType(name);
+                    });
 
-                // Ordenar por Nota (decrescente) se a coluna "Nota" existir
-                if (notaIndex !== -1 && a[notaIndex] !== null && b[notaIndex] !== null) {
-                    const valA = parseFloat(a[notaIndex]);
-                    const valB = parseFloat(b[notaIndex]);
-                    const comp = (isNaN(valB) ? -Infinity : valB) - (isNaN(valA) ? -Infinity : valA);
-                    if (comp !== 0) return comp;
-                }
+                    // --- Lógica de Ordenação Padrão (SEMPRE APLICADA) ---
+                    // Prioriza Nota (decrescente), depois Classificação (crescente)
+                    organizedData.sort((a, b) => {
+                        const notaIndex = columnNames.indexOf('Nota');
+                        const classificacaoIndex = columnNames.indexOf('Classificação');
+                        const campoNum1Index = columnNames.indexOf('Campo Num 1'); // Para caso seja genérico
+                        const nomeIndex = columnNames.indexOf('Nome'); // Para desempate final
+                        const inscricaoIndex = columnNames.indexOf('Inscrição'); // Para desempate se Inscrição for um campo relevante
+                        const posicaoIndex = columnNames.indexOf('Posição'); // Para desempate se Posição for um campo relevante
 
-                // Em seguida, ordenar por Classificação (crescente) ou Campo Num 1 se a coluna existir
-                if (classificacaoIndex !== -1 && a[classificacaoIndex] !== null && b[classificacaoIndex] !== null) {
-                    const valA = parseInt(a[classificacaoIndex]);
-                    const valB = parseInt(b[classificacaoIndex]);
-                    const comp = (isNaN(valA) ? Infinity : valA) - (isNaN(valB) ? Infinity : valB);
-                    if (comp !== 0) return comp;
-                } else if (campoNum1Index !== -1 && a[campoNum1Index] !== null && b[campoNum1Index] !== null) {
-                    const valA = parseInt(a[campoNum1Index]);
-                    const valB = parseInt(b[campoNum1Index]);
-                    const comp = (isNaN(valA) ? Infinity : valA) - (isNaN(valB) ? Infinity : valB);
-                    if (comp !== 0) return comp;
-                }
-                
-                // Desempate por Inscrição (crescente) se a coluna existir
-                if (inscricaoIndex !== -1 && a[inscricaoIndex] !== null && b[inscricaoIndex] !== null) {
-                    const valA = parseInt(a[inscricaoIndex]);
-                    const valB = parseInt(b[inscricaoIndex]);
-                    const comp = (isNaN(valA) ? Infinity : valA) - (isNaN(valB) ? Infinity : valB);
-                    if (comp !== 0) return comp;
-                }
+                        // Ordenar por Nota (decrescente) se a coluna "Nota" existir
+                        if (notaIndex !== -1 && a[notaIndex] !== null && b[notaIndex] !== null) {
+                            const valA = parseFloat(a[notaIndex]);
+                            const valB = parseFloat(b[notaIndex]);
+                            const comp = (isNaN(valB) ? -Infinity : valB) - (isNaN(valA) ? -Infinity : valA);
+                            if (comp !== 0) return comp;
+                        }
 
-                // Desempate por Posição (crescente) se a coluna existir
-                if (posicaoIndex !== -1 && a[posicaoIndex] !== null && b[posicaoIndex] !== null) {
-                    const valA = parseInt(a[posicaoIndex]);
-                    const valB = parseInt(b[posicaoIndex]);
-                    const comp = (isNaN(valA) ? Infinity : valA) - (isNaN(valB) ? Infinity : valB);
-                    if (comp !== 0) return comp;
-                }
+                        // Em seguida, ordenar por Classificação (crescente) ou Campo Num 1 se a coluna existir
+                        if (classificacaoIndex !== -1 && a[classificacaoIndex] !== null && b[classificacaoIndex] !== null) {
+                            const valA = parseInt(a[classificacaoIndex]);
+                            const valB = parseInt(b[classificacaoIndex]);
+                            const comp = (isNaN(valA) ? Infinity : valA) - (isNaN(valB) ? Infinity : valB);
+                            if (comp !== 0) return comp;
+                        } else if (campoNum1Index !== -1 && a[campoNum1Index] !== null && b[campoNum1Index] !== null) {
+                            const valA = parseInt(a[campoNum1Index]);
+                            const valB = parseInt(b[campoNum1Index]);
+                            const comp = (isNaN(valA) ? Infinity : valA) - (isNaN(valB) ? Infinity : valB);
+                            if (comp !== 0) return comp;
+                        }
+                        
+                        // Desempate por Inscrição (crescente) se a coluna existir
+                        if (inscricaoIndex !== -1 && a[inscricaoIndex] !== null && b[inscricaoIndex] !== null) {
+                            const valA = parseInt(a[inscricaoIndex]);
+                            const valB = parseInt(b[inscricaoIndex]);
+                            const comp = (isNaN(valA) ? Infinity : valA) - (isNaN(valB) ? Infinity : valB);
+                            if (comp !== 0) return comp;
+                        }
 
-                // Fallback para o Nome (crescente) para garantir uma ordem consistente
-                if (nomeIndex !== -1 && a[nomeIndex] !== null && b[nomeIndex] !== null) {
-                    const nomeA = a[nomeIndex] || '';
-                    const nomeB = b[nomeIndex] || '';
-                    return String(nomeA).localeCompare(String(nomeB), undefined, { numeric: true, sensitivity: 'base' });
-                }
-                
-                return 0;
-            });
+                        // Desempate por Posição (crescente) se a coluna existir
+                        if (posicaoIndex !== -1 && a[posicaoIndex] !== null && b[posicaoIndex] !== null) {
+                            const valA = parseInt(a[posicaoIndex]);
+                            const valB = parseInt(b[posicaoIndex]);
+                            const comp = (isNaN(valA) ? Infinity : valA) - (isNaN(valB) ? Infinity : valB);
+                            if (comp !== 0) return comp;
+                        }
 
-            // Lógica para adicionar e classificar a coluna de Classificação gerada
-            let finalColumnNamesForTable = [...columnNames];
-            if (addRankingColumn) {
-                // Remove colunas de classificação existentes se a nova classificação for gerada
-                const columnsToRemove = ['Classificação', 'Posição', 'Ranking', 'Campo Num 1'];
-                columnsToRemove.forEach(colName => {
-                    const existingIndex = finalColumnNamesForTable.indexOf(colName);
-                    if (existingIndex !== -1) {
-                        finalColumnNamesForTable.splice(existingIndex, 1);
-                        organizedData.forEach(row => {
-                            row.splice(existingIndex, 1); // Remove o dado da coluna
+                        // Fallback para o Nome (crescente) para garantir uma ordem consistente
+                        if (nomeIndex !== -1 && a[nomeIndex] !== null && b[nomeIndex] !== null) {
+                            const nomeA = a[nomeIndex] || '';
+                            const nomeB = b[nomeIndex] || '';
+                            return String(nomeA).localeCompare(String(nomeB), undefined, { numeric: true, sensitivity: 'base' });
+                        }
+                        
+                        return 0;
+                    });
+
+                    // Lógica para adicionar e classificar a coluna de Classificação gerada
+                    let finalColumnNamesForTable = [...columnNames];
+                    if (addRankingColumn) {
+                        // Remove colunas de classificação existentes se a nova classificação for gerada
+                        const columnsToRemove = ['Classificação', 'Posição', 'Ranking', 'Campo Num 1'];
+                        columnsToRemove.forEach(colName => {
+                            const existingIndex = finalColumnNamesForTable.indexOf(colName);
+                            if (existingIndex !== -1) {
+                                finalColumnNamesForTable.splice(existingIndex, 1);
+                                organizedData.forEach(row => {
+                                    row.splice(existingIndex, 1); // Remove o dado da coluna
+                                });
+                            }
                         });
+
+                        // Agora, adicione o ranking no início das linhas e no cabeçalho
+                        organizedData.forEach((row, index) => {
+                            row.unshift(index + 1); // Adiciona a classificação no início da linha
+                        });
+                        finalColumnNamesForTable.unshift('Classificação'); // Adiciona 'Classificação' no início do cabeçalho
+                        columnTypes['Classificação'] = 'integer_numeric'; // Define o tipo para a nova coluna
                     }
-                });
 
-                // Agora, adicione o ranking no início das linhas e no cabeçalho
-                organizedData.forEach((row, index) => {
-                    row.unshift(index + 1); // Adiciona a classificação no início da linha
-                });
-                finalColumnNamesForTable.unshift('Classificação'); // Adiciona 'Classificação' no início do cabeçalho
-                columnTypes['Classificação'] = 'integer_numeric'; // Define o tipo para a nova coluna
-            }
+                    updateTable(finalColumnNamesForTable, organizedData);
+                    document.getElementById('ContainerResult').scrollIntoView({ behavior: 'smooth', block: 'start' });
 
-            updateTable(finalColumnNamesForTable, organizedData);
-            document.getElementById('ContainerResult').scrollIntoView({ behavior: 'smooth', block: 'start' });
+                } finally {
+                    // Ocultar spinner e reabilitar botão, mesmo se houver erro
+                    organizeText.style.display = 'inline';
+                    loadingSpinner.style.display = 'none';
+                    organizeButton.disabled = false;
+                }
+            }, 100); // Pequeno atraso para o spinner aparecer visivelmente
         }
 
 
@@ -618,12 +726,34 @@
             tableHeaders.innerHTML = '';
             tableBody.innerHTML = '';
 
-            sortDirections = Array(columnNames.length).fill(true);
+            // Reinicializa sortDirections para todas as colunas como ascendente (true)
+            // Se o nome da coluna for o mesmo, mantemos a direção anterior para um clique inicial
+            const oldColumnNames = currentColumnNames;
+            currentColumnNames = columnNames; // Atualiza currentColumnNames para a nova estrutura
+            
+            const newSortDirections = {};
+            currentColumnNames.forEach((name, index) => {
+                // Tenta encontrar o índice da coluna antiga com o mesmo nome
+                const oldIndex = oldColumnNames.indexOf(name);
+                if (oldIndex !== -1 && sortDirections[oldIndex] !== undefined) {
+                    // Se encontrou e tinha um estado, mantém. Caso contrário, começa ascendente.
+                    newSortDirections[index] = sortDirections[oldIndex];
+                } else {
+                    newSortDirections[index] = true; // true = ascendente por padrão
+                }
+            });
+            sortDirections = newSortDirections; // Aplica as novas direções
 
-            columnNames.forEach(columnName => {
+            columnNames.forEach((columnName, index) => {
                 const th = document.createElement('th');
                 th.textContent = columnName;
-                th.onclick = () => sortTable(columnNames.indexOf(columnName));
+                th.onclick = () => sortTable(index); // Passa o índice diretamente
+                
+                // Adiciona o elemento para a seta de ordenação (oculto por padrão)
+                const arrowSpan = document.createElement('span');
+                arrowSpan.className = 'sort-arrow ml-1 text-gray-400 opacity-0 transition-opacity duration-200';
+                th.appendChild(arrowSpan);
+
                 tableHeaders.appendChild(th);
             });
 
@@ -641,7 +771,7 @@
                         } else if (colType === 'integer_numeric') {
                             td.textContent = parseInt(value, 10);
                         } else if (colType === 'numeric_string') {
-                            td.textContent = String(value);
+                            td.textContent = String(value); // Garante que a apresentação continua como string
                         } else {
                             td.textContent = String(value);
                         }
@@ -652,17 +782,25 @@
                 }
                 tableBody.appendChild(tr);
             });
-
-            currentColumnNames = Array.from(document.querySelectorAll('#tableHeaders th')).map(th => th.textContent);
         }
 
         function sortTable(columnIndex) {
             const table = document.getElementById('resultTable');
             const tbody = table.getElementsByTagName('tbody')[0];
             const rows = Array.from(tbody.getElementsByTagName('tr'));
-            const headerText = table.querySelector(`th:nth-child(${columnIndex + 1})`).textContent;
+            const headerCell = table.querySelector(`th:nth-child(${columnIndex + 1})`);
+            const headerText = headerCell.textContent.replace(/[\u2191\u2193]/g, '').trim(); 
+            const currentArrow = headerCell.querySelector('.sort-arrow');
 
-            sortDirections[columnIndex] = !sortDirections[columnIndex];
+            // Resetar todas as setas
+            document.querySelectorAll('#tableHeaders th .sort-arrow').forEach(arrow => {
+                arrow.classList.remove('opacity-100');
+                arrow.classList.add('opacity-0');
+                arrow.innerHTML = '';
+            });
+
+            // Inverte a direção de ordenação para a coluna clicada
+            sortDirections[columnIndex] = !sortDirections[columnIndex]; 
 
             const colType = columnTypes[headerText] || getColumnType(headerText);
 
@@ -673,24 +811,32 @@
                 let valA, valB;
 
                 if (colType === 'numeric' || colType === 'integer_numeric') {
+                    // Trata vazios/nulos como o menor ou maior valor possível para ordenar no fim ou início
                     valA = parseFloat(textA.replace(',', '.'));
                     valB = parseFloat(textB.replace(',', '.'));
                     valA = isNaN(valA) ? (sortDirections[columnIndex] ? Infinity : -Infinity) : valA;
                     valB = isNaN(valB) ? (sortDirections[columnIndex] ? Infinity : -Infinity) : valB;
                     return sortDirections[columnIndex] ? valA - valB : valB - valA;
                 } else if (colType === 'numeric_string') {
+                    // Para numeric_string, compare como números inteiros para ordenação correta
+                    // Trata vazios/nulos como o menor ou maior valor possível
                     valA = parseInt(textA);
                     valB = parseInt(textB);
                     valA = isNaN(valA) ? (sortDirections[columnIndex] ? Infinity : -Infinity) : valA;
                     valB = isNaN(valB) ? (sortDirections[columnIndex] ? Infinity : -Infinity) : valB;
                     return sortDirections[columnIndex] ? valA - valB : valB - valA;
                 } else {
-                    return sortDirections[columnIndex] ? textA.localeCompare(textB, undefined, { numeric: true, sensitivity: 'base' }) : textB.localeCompare(a, undefined, { numeric: true, sensitivity: 'base' });
+                    // Para strings, use localeCompare com numeric: true para garantir "10" > "2"
+                    return sortDirections[columnIndex] ? textA.localeCompare(textB, undefined, { numeric: true, sensitivity: 'base' }) : textB.localeCompare(textA, undefined, { numeric: true, sensitivity: 'base' });
                 }
             });
 
             tbody.innerHTML = '';
             sortedRows.forEach(row => tbody.appendChild(row));
+
+            // Atualiza a seta da coluna clicada
+            currentArrow.classList.add('opacity-100');
+            currentArrow.innerHTML = sortDirections[columnIndex] ? '<i class="fas fa-arrow-up"></i>' : '<i class="fas fa-arrow-down"></i>';
         }
 
         // --- Lógica de Tema Claro/Escuro ---
@@ -798,7 +944,7 @@
                     return;
                 }
 
-                const headers = Array.from(document.querySelectorAll('#tableHeaders th')).map(th => th.textContent);
+                const headers = Array.from(document.querySelectorAll('#tableHeaders th')).map(th => th.textContent.replace(/[\u2191\u2193]/g, '').trim()); // Limpa as setas dos cabeçalhos para o PDF
                 const rows = Array.from(table.querySelectorAll('tbody tr')).map(tr =>
                     Array.from(tr.querySelectorAll('td')).map(td =>
                          td.textContent.replace(/\s*\n\s*/g, ' ').trim()
@@ -898,13 +1044,26 @@
             const newColumnNames = [];
             const inputElements = document.querySelectorAll('#columnRenameInputs input[type="text"]');
 
+            // Recria columnTypes com base nos novos nomes e seus tipos inferidos
             columnTypes = {};
-
             inputElements.forEach(input => {
                 const newName = input.value.trim();
                 newColumnNames.push(newName);
                 columnTypes[newName] = getColumnType(newName);
             });
+
+            // Re-mapeia as direções de ordenação para os novos nomes de coluna
+            const newSortDirections = {};
+            newColumnNames.forEach((newName, newIndex) => {
+                const oldIndex = currentColumnNames.indexOf(newName); // Encontra o índice antigo da coluna com este nome
+                if (oldIndex !== -1 && sortDirections[oldIndex] !== undefined) {
+                    newSortDirections[newIndex] = sortDirections[oldIndex]; // Mantém a direção se o nome existe
+                } else {
+                    newSortDirections[newIndex] = true; // Começa ascendente para novas ou renomeadas
+                }
+            });
+            sortDirections = newSortDirections;
+
 
             const tableHeaders = document.querySelectorAll('#tableHeaders th');
             tableHeaders.forEach((th, index) => {
@@ -913,9 +1072,17 @@
                 } else {
                     th.textContent = currentColumnNames[index];
                 }
+                // Remover a seta existente e adicionar uma nova se necessário
+                const existingArrow = th.querySelector('.sort-arrow');
+                if (existingArrow) {
+                    existingArrow.remove();
+                }
+                const arrowSpan = document.createElement('span');
+                arrowSpan.className = 'sort-arrow ml-1 text-gray-400 opacity-0 transition-opacity duration-200';
+                th.appendChild(arrowSpan);
             });
 
-            currentColumnNames = Array.from(document.querySelectorAll('#tableHeaders th')).map(th => th.textContent);
+            currentColumnNames = Array.from(document.querySelectorAll('#tableHeaders th')).map(th => th.textContent.replace(/[\u2191\u2193]/g, '').trim());
 
             document.getElementById('renameColumnsContainer').style.display = 'none';
 
