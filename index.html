@@ -1250,133 +1250,7 @@
             }
         }
 
-        function toggleColumnRename() {
-            const tableHeaders = document.querySelectorAll('#tableHeaders th');
-            const toggleRenameButton = document.getElementById('toggleRenameHeadersButton');
-            
-            // Oculta a área de mapeamento manual se estiver visível
-            document.getElementById('patternWarning').style.display = 'none';
-            document.getElementById('manualMappingArea').style.display = 'none';
-
-            // Verifica se a tabela está vazia
-            const tableBody = document.getElementById('tableBody');
-            if (tableBody.children.length === 0) {
-                alert("Organize os dados primeiro para poder renomear os cabeçalhos.");
-                return;
-            }
-
-            isRenamingColumns = !isRenamingColumns; // Alterna o estado de edição
-
-            if (isRenamingColumns) {
-                // Entra no modo de edição
-                // Atualiza o innerHTML do botão para incluir o novo tooltip
-                toggleRenameButton.innerHTML = '<i class="fas fa-check-circle"></i> Confirmar Renomeação<span class="tooltip-text">Clique para confirmar a renomeação.</span>'; 
-                toggleRenameButton.classList.remove('bg-purple-600', 'hover:bg-purple-700', 'dark:bg-purple-500', 'dark:hover:bg-purple-400');
-                toggleRenameButton.classList.add('bg-green-600', 'hover:bg-green-700', 'dark:bg-green-500', 'dark:hover:bg-green-400');
-
-                tableHeaders.forEach(th => {
-                    const currentName = th.textContent.replace(/[\u2191\u2193]/g, '').trim(); // Remove setas
-                    const arrow = th.querySelector('.sort-arrow');
-                    if (arrow) {
-                        arrow.style.display = 'none'; // Esconde a seta durante a edição
-                    }
-
-                    // Cria um input para editar o texto
-                    const input = document.createElement('input');
-                    input.type = 'text';
-                    input.value = currentName;
-                    input.className = 'w-full px-2 py-1 rounded-sm text-center bg-transparent border-none focus:outline-none'; // Estilo inline
-
-                    // Aplica classe de edição e remove o cursor de ordenação
-                    th.classList.add('editable-header');
-                    th.style.cursor = 'text'; // Garante o cursor de texto
-
-                    // Substitui o conteúdo do TH pelo input
-                    th.innerHTML = ''; 
-                    th.appendChild(input);
-
-                    // Adiciona listeners para focar e para capturar a tecla Enter ou blur
-                    input.focus();
-                    input.select(); // Seleciona o texto atual
-
-                    input.addEventListener('blur', (event) => {
-                        // Quando o input perde o foco, atualiza o nome
-                        const newName = event.target.value.trim();
-                        if (newName === '') {
-                            event.target.value = currentName; // Volta ao nome original se vazio
-                        }
-                    });
-
-                    input.addEventListener('keydown', (event) => {
-                        if (event.key === 'Enter') {
-                            event.preventDefault(); // Evita quebra de linha no input
-                            event.target.blur(); // Tira o foco do input, acionando o blur
-                        }
-                    });
-
-                    // Remove o evento de ordenação enquanto estiver no modo de edição
-                    th.onclick = null; 
-                });
-
-                alert('Clique nos cabeçalhos da tabela para renomeá-los. Clique no botão "Confirmar Renomeação" para finalizar.');
-
-            } else {
-                // Sai do modo de edição (Confirma Renomeação)
-                // Restaura o innerHTML do botão para incluir o tooltip original
-                toggleRenameButton.innerHTML = '<i class="fas fa-pencil-alt"></i> Renomear Cabeçalhos<span class="tooltip-text">Clique para mudar os nomes dos cabeçalhos das colunas.</span>'; 
-                toggleRenameButton.classList.remove('bg-green-600', 'hover:bg-green-700', 'dark:bg-green-500', 'dark:hover:bg-green-400');
-                toggleRenameButton.classList.add('bg-purple-600', 'hover:bg-purple-700', 'dark:bg-purple-500', 'dark:hover:bg-purple-400');
-
-                const newColumnNames = [];
-                const newSortDirections = {};
-                const newColumnTypes = {};
-
-                tableHeaders.forEach((th, index) => {
-                    const input = th.querySelector('input[type="text"]');
-                    let newName = '';
-                    if (input) {
-                        newName = input.value.trim();
-                        if (newName === '') {
-                            newName = currentColumnNames[index]; // Garante que o nome não fique vazio
-                        }
-                    } else {
-                        // Caso o TH não tenha um input (algo deu errado, pega o texto atual)
-                        newName = th.textContent.replace(/[\u2191\u2193]/g, '').trim();
-                    }
-
-                    newColumnNames.push(newName);
-                    newColumnTypes[newName] = getColumnType(newName); // Atualiza o tipo para o novo nome
-
-                    // Restaura o TH para seu estado original (texto + seta)
-                    th.textContent = newName;
-                    th.classList.remove('editable-header');
-                    th.style.cursor = 'pointer'; // Restaura o cursor de ordenação
-
-                    const arrowSpan = document.createElement('span');
-                    arrowSpan.className = 'sort-arrow ml-1 text-gray-400 opacity-0 transition-opacity duration-200';
-                    th.appendChild(arrowSpan);
-
-                    // Re-adiciona o evento de ordenação
-                    th.onclick = () => sortTable(index);
-
-                    // Mantém a direção de ordenação anterior se o nome da coluna permaneceu o mesmo
-                    const oldIndex = currentColumnNames.indexOf(newName);
-                    if (oldIndex !== -1 && sortDirections[oldIndex] !== undefined) {
-                        newSortDirections[index] = sortDirections[oldIndex];
-                    } else {
-                        newSortDirections[index] = true; // Novo nome ou coluna, reinicia para ascendente
-                    }
-                });
-
-                currentColumnNames = newColumnNames; // Atualiza os nomes das colunas globais
-                sortDirections = newSortDirections; // Atualiza as direções de ordenação
-                columnTypes = newColumnTypes; // Atualiza os tipos de coluna
-
-                alert('Nomes dos cabeçalhos atualizados com sucesso!');
-            }
-        }
-
-        // NOVO: Função para exportar dados da tabela para CSV
+        // FUNÇÃO: Exportar dados da tabela para CSV com BOM e tratamento de quebra de linha
         function exportToCSV() {
             // Desabilita o modo de renomeação se estiver ativo antes de exportar
             if (isRenamingColumns) {
@@ -1385,17 +1259,31 @@
 
             const table = document.getElementById('resultTable');
             const headers = Array.from(table.querySelectorAll('thead th'))
-                               .map(th => `"${th.textContent.replace(/[\u2191\u2193]/g, '').trim().replace(/"/g, '""')}"`); // Remove setas e escapa aspas
+                               .map(th => {
+                                   let headerText = th.textContent.replace(/[\u2191\u2193]/g, '').trim();
+                                   // Substitui quebras de linha por espaço nos cabeçalhos também, por segurança
+                                   headerText = headerText.replace(/[\r\n]+/g, ' ').trim();
+                                   return `"${headerText.replace(/"/g, '""')}"`; // Remove setas, normaliza, e escapa aspas
+                               });
             
             const rows = Array.from(table.querySelectorAll('tbody tr')).map(tr => {
                 return Array.from(tr.querySelectorAll('td'))
-                            .map(td => `"${td.textContent.replace(/"/g, '""')}"`) // Escapa aspas em dados
+                            .map(td => {
+                                let cellText = td.textContent;
+                                // *** AQUI ESTÁ A MUDANÇA PRINCIPAL ***
+                                // Remove todas as quebras de linha e substitui por um espaço
+                                cellText = cellText.replace(/[\r\n]+/g, ' ').trim(); 
+                                return `"${cellText.replace(/"/g, '""')}"`; // Escapa aspas em dados
+                            })
                             .join(';'); // Delimitador ponto e vírgula
             });
 
             const csvContent = headers.join(';') + '\n' + rows.join('\n'); // Junta cabeçalhos e linhas
 
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            // Adiciona o BOM (Byte Order Mark) para UTF-8.
+            const bom = "\uFEFF"; 
+            const blob = new Blob([bom + csvContent], { type: 'text/csv;charset=utf-8;' });
+            
             const link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
             link.download = 'dados_organizados.csv';
