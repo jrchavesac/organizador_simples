@@ -314,7 +314,7 @@
         <div class="bg-white shadow-lg rounded-lg p-6 text-center dark:bg-gray-700 dark:text-gray-100">
             <form id="organizeForm" class="space-y-4">
                 <div class="form-group flex flex-col items-center tooltip-container">
-                    <label for="dataInput" class="text-lg font-semibold text-green-600 mb-2 dark:text-green-400">Lista dos candidatos:</label>
+                    <label for="dataInput" class="text-lg font-semibold text-green-600 mb-2 dark:text-green-400">Lista dos Candidatos:</label>
                     <textarea id="dataInput" name="dataInput" rows="4" cols="50" class="w-full max-w-md"></textarea>
                     <span class="tooltip-text">Insira a lista dos candidatos. Tente usar um formato consistente, mas o sistema é mais flexível agora.</span>
                 </div>
@@ -349,11 +349,31 @@
                     <i class="fas fa-file-pdf"></i> Gerar PDF
                     <span class="tooltip-text">Clique para gerar um PDF com os dados da tabela.</span>
                 </button>
-                <button type="button" id="toggleRenameButton" onclick="toggleColumnRename()" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-6 rounded-lg dark:bg-purple-500 dark:hover:bg-purple-400 dark:text-gray-900 tooltip-container">
-                    <i class="fas fa-pencil-alt"></i> Renomear Colunas
+                <button type="button" id="toggleRenameHeadersButton" onclick="toggleColumnRename()" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-6 rounded-lg dark:bg-purple-500 dark:hover:bg-purple-400 dark:text-gray-900 tooltip-container">
+                    <i class="fas fa-pencil-alt"></i> Renomear Cabeçalhos
                     <span class="tooltip-text">Clique para mudar os nomes dos cabeçalhos das colunas.</span>
                 </button>
+                <button type="button" onclick="showManualMapping()" id="mapColumnsButton" class="bg-orange-600 hover:bg-orange-700 text-white font-bold py-2 px-6 rounded-lg dark:bg-orange-500 dark:hover:bg-orange-400 dark:text-gray-900 tooltip-container" style="display: none;">
+                    <i class="fas fa-columns"></i> Mapear Campos
+                    <span class="tooltip-text">Clique aqui se os nomes das colunas não estiverem corretos ou se quiser redefiní-los.</span>
+                </button>
             </div>
+            <div id="patternWarning" class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-4" role="alert" style="display: none;">
+                <p class="font-bold">Atenção:</p>
+                <p>O sistema não conseguiu identificar as colunas como você esperava? Use os menus abaixo para nomeá-las corretamente.</p>
+                <p class="mt-2 text-sm italic">As primeiras linhas são mostradas para referência. Após mapear, clique em "Aplicar Mapeamento".</p>
+            </div>
+
+            <div id="manualMappingArea" class="mt-4 p-4 border border-gray-300 rounded-lg bg-gray-50 dark:bg-gray-800 dark:border-gray-600" style="display: none;">
+                <p class="font-semibold text-center mb-3 text-gray-800 dark:text-gray-200">Defina os Nomes das Colunas:</p>
+                <div id="columnMappingInputs" class="flex flex-wrap justify-center gap-4 mb-4">
+                    </div>
+                <button type="button" id="applyMappingButton" onclick="applyManualMapping()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg mx-auto block tooltip-container">
+                    <i class="fas fa-check"></i> Aplicar Mapeamento
+                    <span class="tooltip-text">Reorganize os dados com base nos nomes de coluna que você selecionou.</span>
+                </button>
+            </div>
+
             <h4 class="text-sm text-gray-600 italic mb-4 text-center dark:text-gray-400"><i>Ao clicar no cabeçalho da tabela, os dados são organizados conforme a coluna clicada!</i></h4>
             <div class="overflow-x-auto"> <table id="resultTable" class="min-w-full">
                     <thead>
@@ -389,7 +409,8 @@
         let sortDirections = {}; 
         let currentColumnNames = [];
         let columnTypes = {}; 
-        let isRenamingColumns = false; // Novo estado para controlar o modo de edição
+        let isRenamingColumns = false; // Estado para controlar o modo de edição dos cabeçalhos
+        let lastInferredData = null; // Armazena os últimos dados brutos inferidos para reprocessamento manual
 
         // Mapeamento de nomes de colunas para tipos de dados para comportamento de ordenação/formatação
         const typeMapping = {
@@ -401,8 +422,24 @@
             'nota': 'numeric',
             'pontuacao': 'numeric',
             'total': 'numeric',
-            'acertos': 'numeric'
+            'acertos': 'numeric',
+            'idade': 'integer_numeric' 
         };
+
+        // Opções de nomes de coluna para o dropdown de mapeamento manual
+        const predefinedColumnOptions = [
+            { value: '', text: 'Selecione...' },
+            { value: 'Classificação', text: 'Classificação' },
+            { value: 'Nome', text: 'Nome' },
+            { value: 'Inscrição', text: 'Inscrição' },
+            { value: 'Nota', text: 'Nota' },
+            { value: 'Pontuação', text: 'Pontuação' },
+            { value: 'Posição', text: 'Posição' },
+            { value: 'Matrícula', text: 'Matrícula' },
+            { value: 'Acertos', text: 'Acertos' },
+            { value: 'Idade', text: 'Idade' }, 
+            { value: 'Outro', text: 'Outro (digite abaixo)' } 
+        ];
 
         // Função para determinar o tipo de uma coluna com base em seu nome
         function getColumnType(columnName) {
@@ -430,28 +467,24 @@
         
         /**
          * Inferir o padrão de colunas e dados a partir da string de entrada.
+         * Retorna { columnNames, organizedData, patternDetected: boolean }
          */
         function inferAndApplyPattern(rawInputString) {
             if (!rawInputString) {
-                return { columnNames: [], organizedData: [] };
+                return { columnNames: [], organizedData: [], patternDetected: true }; 
             }
 
-            // --- 1. Pré-processamento Global ---
             let processedString = rawInputString
-                .replace(/\r\n|\r/g, ' ') // Normaliza quebras de linha para espaço
-                .replace(/º|°/g, '', ' ') // Remove caracteres de grau
-                .replace(/(\d+),(\d{1,2})(?![0-9])/g, '$1.$2') // Ajusta vírgulas decimais (ex: 61,00 -> 61.00)
+                .replace(/\r\n|\r/g, ' ') 
+                .replace(/º|°/g, '', ' ') 
+                .replace(/(\d+),(\d{1,2})(?![0-9])/g, '$1.$2') 
                 .trim();
 
             let candidateBlocks = [];
-            let fieldsPerCandidate = 0; 
             let finalColumnNames = [];
+            let patternFound = false;
 
-            // --- Tentar identificar o padrão de acordo com a lógica do Júnior ---
-            
-            // Padrão 1: Nome, Inscrição, Nota / (NOVO PADRÃO PRIORITÁRIO)
-            // Ex: ALEXANDRO GUIMARAES FEITOSA LIMA, 5950022694, 52.00 /
-            // Regex: Captura qualquer coisa até a primeira vírgula (Nome), depois número (Inscrição), depois número (Nota)
+            // Padrão 1: Nome, Inscrição, Nota /
             const regexNameInscNota = /([A-ZÀ-Ÿ\s.-]+?),\s*(\d+),\s*(\d+\.?\d*)\s*(?:\/\s*|$)/gi;
             let match;
             let tempBlocks = [];
@@ -460,12 +493,11 @@
             }
 
             if (tempBlocks.length > 0) {
-                fieldsPerCandidate = 3;
                 finalColumnNames = ['Nome', 'Inscrição', 'Nota'];
-                candidateBlocks = tempBlocks; 
+                candidateBlocks = tempBlocks;
+                patternFound = true;
             } else {
                 // Padrão 2: Separador de campo é ';' e separador de candidato é '/' (Ex: Jonatas)
-                // Ex: 7516959; JONATAS DOS SANTOS FONSECA; 93/
                 const regexPattern3Fields = /(\d+);\s*([A-ZÀ-Ÿ\s.-]+?);\s*(\d+\.?\d*)\s*(?:\/\s*|$)/gi;
                 tempBlocks = [];
                 while ((match = regexPattern3Fields.exec(processedString)) !== null) {
@@ -473,12 +505,11 @@
                 }
 
                 if (tempBlocks.length > 0) {
-                    fieldsPerCandidate = 3;
                     finalColumnNames = ['Inscrição', 'Nome', 'Nota'];
                     candidateBlocks = tempBlocks;
+                    patternFound = true;
                 } else {
                     // Padrão 3: Separador de campo é ',' e separador de candidato é '/' (Ex: Saulo)
-                    // Ex: 1, 108, SAULO HENRIQUE SOUZA DE LIMA, 61.00 /
                     const regexPattern4FieldsComma = /(\d+),\s*(\d+),\s*([A-ZÀ-Ÿ\s.-]+?),\s*(\d+\.?\d*)\s*(?:\/\s*|$)/gi;
                     tempBlocks = [];
                     while ((match = regexPattern4FieldsComma.exec(processedString)) !== null) {
@@ -486,12 +517,11 @@
                     }
 
                     if (tempBlocks.length > 0) {
-                        fieldsPerCandidate = 4;
                         finalColumnNames = ['Classificação', 'Inscrição', 'Nome', 'Nota'];
                         candidateBlocks = tempBlocks;
+                        patternFound = true;
                     } else {
                         // Padrão 4: A barra '/' é o único separador para campos e candidatos (Ex: Gabriel)
-                        // Ex: 1562998 / GABRIEL MAIA SELHORST / 1 / 85 /
                         const regexPattern4FieldsSlashOnly = /(\d+)\s*\/\s*([A-ZÀ-Ÿ\s.-]+?)\s*\/\s*(\d+)\s*\/\s*(\d+\.?\d*)\s*(?:\/\s*|$)/gi;
                         tempBlocks = [];
                         while ((match = regexPattern4FieldsSlashOnly.exec(processedString)) !== null) {
@@ -499,51 +529,94 @@
                         }
 
                         if (tempBlocks.length > 0) {
-                            fieldsPerCandidate = 4;
                             finalColumnNames = ['Inscrição', 'Nome', 'Posição', 'Nota'];
                             candidateBlocks = tempBlocks;
+                            patternFound = true;
                         } else {
                             // Padrão 5: Campos colados (sem separadores óbvios além de espaços/transições)
-                            // Ex: 1562998GABRIEL MAIA SELHORST185
                             const regexConcatenated4 = /(\d+)(\d+)([A-ZÀ-Ÿ\s.-]+?)(\d+\.?\d*)/gi; 
                             const regexConcatenated3 = /(\d+)([A-ZÀ-Ÿ\s.-]+?)(\d+\.?\d*)/gi;
                             
                             tempBlocks = [];
-                            // Tenta o padrão de 4 campos primeiro
                             if (processedString.match(regexConcatenated4)) { 
-                                fieldsPerCandidate = 4;
                                 while ((match = regexConcatenated4.exec(processedString)) !== null) {
                                     tempBlocks.push([match[1].trim(), match[2].trim(), match[3].trim(), match[4].trim()]);
                                 }
-                                finalColumnNames = ['Classificação', 'Inscrição', 'Nome', 'Nota'];
-                            } else if (processedString.match(regexConcatenated3)) { // Se 4 campos não funcionou, tenta 3
-                                fieldsPerCandidate = 3;
+                                if (tempBlocks.length > 0) {
+                                    finalColumnNames = ['Classificação', 'Inscrição', 'Nome', 'Nota'];
+                                    candidateBlocks = tempBlocks;
+                                    patternFound = true;
+                                }
+                            } else if (processedString.match(regexConcatenated3)) { 
+                                tempBlocks = [];
                                 while ((match = regexConcatenated3.exec(processedString)) !== null) {
                                     tempBlocks.push([match[1].trim(), match[2].trim(), match[3].trim()]);
                                 }
-                                finalColumnNames = ['Inscrição', 'Nome', 'Nota'];
+                                if (tempBlocks.length > 0) {
+                                    finalColumnNames = ['Inscrição', 'Nome', 'Nota'];
+                                    candidateBlocks = tempBlocks;
+                                    patternFound = true;
+                                }
                             }
 
-                            if (tempBlocks.length > 0) {
-                                candidateBlocks = tempBlocks;
-                            } else {
-                                // Fallback se NADA funcionou: trata a entrada inteira como um único campo
-                                candidateBlocks = [[processedString]];
-                                fieldsPerCandidate = 1;
-                                finalColumnNames = ['Dados Brutos'];
+                            // NOVO PADRÃO 6: Nome, Idade / Nome, Idade (dois campos)
+                            if (!patternFound) {
+                                const regexNameAge = /([A-ZÀ-Ÿ\s.-]+?),\s*(\d+)\s*(?:\/\s*|$)/gi;
+                                tempBlocks = [];
+                                while ((match = regexNameAge.exec(processedString)) !== null) {
+                                    tempBlocks.push([match[1].trim(), match[2].trim()]);
+                                }
+                                if (tempBlocks.length > 0) {
+                                    finalColumnNames = ['Nome', 'Idade'];
+                                    candidateBlocks = tempBlocks;
+                                    patternFound = true;
+                                }
+                            }
+                            
+                            if (!patternFound && processedString.length > 0) {
+                                // Fallback se NADA funcionou: tenta dividir por espaços/múltiplos espaços/tabuladores
+                                // e assume uma linha por candidato
+                                const lines = processedString.split('/').map(line => line.trim()).filter(line => line.length > 0);
+                                if (lines.length > 0) {
+                                    // Tenta dividir a primeira linha para inferir o número de colunas
+                                    const sampleLine = lines[0];
+                                    let fields = sampleLine.split(/[\s,;]+/).filter(f => f.length > 0);
+                                    
+                                    if (fields.length > 1) { 
+                                        finalColumnNames = Array.from({ length: fields.length }, (_, i) => `Campo ${i + 1}`);
+                                        candidateBlocks = lines.map(line => line.split(/[\s,;]+/).filter(f => f.length > 0));
+                                        // Filtra linhas que não têm o número esperado de campos
+                                        candidateBlocks = candidateBlocks.filter(block => block.length === fields.length);
+                                        if (candidateBlocks.length > 0) {
+                                            patternFound = false; // Indica que o padrão é genérico, requer mapeamento
+                                        } else {
+                                            // Se mesmo com espaços não funcionou bem para múltiplas linhas
+                                            candidateBlocks = [[processedString]]; // Trata tudo como 1 campo
+                                            finalColumnNames = ['Dados Brutos'];
+                                            patternFound = false; // Ainda não detectado automaticamente
+                                        }
+                                    } else { // Se só tem um campo (ou não conseguiu dividir)
+                                        candidateBlocks = [[processedString]];
+                                        finalColumnNames = ['Dados Brutos'];
+                                        patternFound = false;
+                                    }
+                                } else {
+                                    candidateBlocks = [];
+                                    finalColumnNames = [];
+                                    patternFound = true; // Entrada vazia tratada como padrão "detectado" (sem dados)
+                                }
                             }
                         }
                     }
                 }
             }
             
-            // --- Processar Todos os Blocos de Candidatos com a Estrutura Inferida ---
             const organizedData = [];
             candidateBlocks.forEach(rowFields => {
                 const rowData = new Array(finalColumnNames.length).fill(null);
                 for (let i = 0; i < Math.min(rowFields.length, finalColumnNames.length); i++) {
                     const value = rowFields[i];
-                    const colName = finalColumnNames[i];
+                    const colName = finalColumnNames[i]; 
                     const inferredType = getColumnType(colName);
 
                     if (value !== null && value !== undefined && value !== '') {
@@ -560,7 +633,7 @@
                 organizedData.push(rowData);
             });
             
-            return { columnNames: finalColumnNames, organizedData };
+            return { columnNames: finalColumnNames, organizedData, patternDetected: patternFound };
         }
 
 
@@ -571,14 +644,22 @@
             const organizeButton = document.getElementById('organizeButton');
             const loadingSpinner = document.getElementById('loadingSpinner');
             const organizeText = document.getElementById('organizeText');
-            
-            // Ocultar o modo de edição se estiver ativo
+            const patternWarning = document.getElementById('patternWarning');
+            const manualMappingArea = document.getElementById('manualMappingArea');
+            const mapColumnsButton = document.getElementById('mapColumnsButton'); // Novo botão
+
+            // Garante que o modo de renomeação de cabeçalhos esteja desativado
             if (isRenamingColumns) {
                 toggleColumnRename(); 
             }
 
+            // Oculta avisos e áreas de mapeamento manual (serão exibidos pelo novo botão, se necessário)
+            patternWarning.style.display = 'none';
+            manualMappingArea.style.display = 'none';
+
             if (dataInput === "") {
                 containerResult.style.display = 'none';
+                mapColumnsButton.style.display = 'none'; // Esconde o novo botão se não há dados
                 alert("Por favor, digite algum dado na 'Lista dos candidatos' para organizar.");
                 return;
             }
@@ -589,26 +670,38 @@
 
             setTimeout(() => {
                 try {
-                    containerResult.style.display = 'block';
+                    let { columnNames, organizedData, patternDetected } = inferAndApplyPattern(dataInput);
+                    lastInferredData = { columnNames, organizedData, patternDetected }; // Salva para possível mapeamento manual
 
-                    let { columnNames, organizedData } = inferAndApplyPattern(dataInput);
+                    // Sempre exibe o container de resultados e o botão de Mapear Campos após a organização
+                    containerResult.style.display = 'block';
+                    mapColumnsButton.style.display = 'flex'; // Exibe o novo botão "Mapear Campos"
 
                     columnTypes = {};
                     columnNames.forEach(name => {
                         columnTypes[name] = getColumnType(name);
                     });
 
+                    // Aplica a ordenação inicial (mantido do código anterior)
                     organizedData.sort((a, b) => {
                         const notaIndex = columnNames.indexOf('Nota');
                         const classificacaoIndex = columnNames.indexOf('Classificação');
-                        const campoNum1Index = columnNames.indexOf('Campo Num 1'); 
+                        const campoNum1Index = columnNames.indexOf('Campo 1'); 
                         const nomeIndex = columnNames.indexOf('Nome'); 
                         const inscricaoIndex = columnNames.indexOf('Inscrição'); 
                         const posicaoIndex = columnNames.indexOf('Posição'); 
+                        const idadeIndex = columnNames.indexOf('Idade'); 
 
                         if (notaIndex !== -1 && a[notaIndex] !== null && b[notaIndex] !== null) {
                             const valA = parseFloat(a[notaIndex]);
                             const valB = parseFloat(b[notaIndex]);
+                            const comp = (isNaN(valB) ? -Infinity : valB) - (isNaN(valA) ? -Infinity : valA);
+                            if (comp !== 0) return comp;
+                        }
+                        
+                        if (idadeIndex !== -1 && a[idadeIndex] !== null && b[idadeIndex] !== null) { 
+                            const valA = parseInt(a[idadeIndex]);
+                            const valB = parseInt(b[idadeIndex]);
                             const comp = (isNaN(valB) ? -Infinity : valB) - (isNaN(valA) ? -Infinity : valA);
                             if (comp !== 0) return comp;
                         }
@@ -650,7 +743,7 @@
 
                     let finalColumnNamesForTable = [...columnNames];
                     if (addRankingColumn) {
-                        const columnsToRemove = ['Classificação', 'Posição', 'Ranking', 'Campo Num 1'];
+                        const columnsToRemove = ['Classificação', 'Posição', 'Ranking', 'Campo Num 1', 'Campo 1']; 
                         columnsToRemove.forEach(colName => {
                             const existingIndex = finalColumnNamesForTable.indexOf(colName);
                             if (existingIndex !== -1) {
@@ -679,6 +772,222 @@
             }, 100); 
         }
 
+        // NOVA FUNÇÃO: Exibe a área de mapeamento manual e o aviso
+        function showManualMapping() {
+            if (isRenamingColumns) { // Sai do modo de renomeação de cabeçalhos se estiver ativo
+                toggleColumnRename();
+            }
+            if (!lastInferredData || lastInferredData.organizedData.length === 0) {
+                alert("Por favor, organize os dados primeiro para poder mapear os campos.");
+                return;
+            }
+
+            // Exibe o aviso e a área de mapeamento
+            document.getElementById('patternWarning').style.display = 'block';
+            document.getElementById('manualMappingArea').style.display = 'block';
+            
+            // AGORA PASSA currentColumnNames para a pré-seleção dos dropdowns
+            displayManualMappingOptions(lastInferredData.columnNames, lastInferredData.organizedData, currentColumnNames);
+            
+            // Rola para a área de mapeamento
+            document.getElementById('manualMappingArea').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+
+        // Função para exibir as opções de mapeamento manual
+        // Adicionado o parâmetro `tableCurrentHeaders` para pré-selecionar os dropdowns
+        function displayManualMappingOptions(inferredColumnNames, inferredData, tableCurrentHeaders) {
+            const columnMappingInputsDiv = document.getElementById('columnMappingInputs');
+            columnMappingInputsDiv.innerHTML = ''; // Limpa os inputs anteriores
+
+            // Limita a exibição para as primeiras N colunas se houver muitas
+            const displayLimit = inferredColumnNames.length; 
+
+            inferredColumnNames.slice(0, displayLimit).forEach((colName, index) => {
+                const div = document.createElement('div');
+                div.className = 'flex flex-col items-center';
+
+                const label = document.createElement('label');
+                label.className = 'mb-1 text-sm dark:text-gray-300';
+                label.textContent = `Coluna ${index + 1}:`;
+                div.appendChild(label);
+
+                const select = document.createElement('select');
+                select.className = 'p-2 border rounded-md dark:bg-gray-700 dark:text-gray-100';
+                select.setAttribute('data-col-index', index); // Armazena o índice da coluna original
+
+                const currentHeaderName = tableCurrentHeaders[index] || colName; // Pega o nome atual da tabela ou o inferido
+
+                predefinedColumnOptions.forEach(option => {
+                    const opt = document.createElement('option');
+                    opt.value = option.value;
+                    opt.textContent = option.text;
+                    
+                    // Tenta pré-selecionar com base no currentHeaderName
+                    if (option.value === currentHeaderName) {
+                        opt.selected = true;
+                    } else if (option.value === colName && !predefinedColumnOptions.some(p => p.value === currentHeaderName && p.value !== '')) {
+                        // Fallback: se o currentHeaderName não está nas opções predefinidas,
+                        // e o inferido (colName) está, pré-seleciona o inferido.
+                        opt.selected = true;
+                    }
+                    select.appendChild(opt);
+                });
+
+                div.appendChild(select);
+
+                const customInput = document.createElement('input');
+                customInput.type = 'text';
+                customInput.placeholder = 'Nome personalizado';
+                customInput.className = 'mt-2 p-2 border rounded-md w-32 dark:bg-gray-700 dark:text-gray-100';
+                // Define o valor do customInput se a opção 'Outro' for selecionada ou se o nome atual não for predefinido
+                if (!predefinedColumnOptions.some(opt => opt.value === currentHeaderName && opt.value !== '')) {
+                    customInput.value = currentHeaderName;
+                    select.value = 'Outro'; // Força a seleção de "Outro"
+                    customInput.style.display = 'block';
+                } else {
+                    customInput.style.display = 'none'; // Inicialmente oculto
+                }
+                div.appendChild(customInput);
+
+                select.addEventListener('change', (event) => {
+                    if (event.target.value === 'Outro') {
+                        customInput.style.display = 'block';
+                        customInput.focus();
+                    } else {
+                        customInput.style.display = 'none';
+                        customInput.value = ''; // Limpa o valor se não for "Outro"
+                    }
+                });
+
+                columnMappingInputsDiv.appendChild(div);
+            });
+            // Oculta a tabela real e mostra uma prévia das primeiras linhas para ajudar o usuário
+            document.getElementById('resultTable').style.display = 'none';
+            document.getElementById('tableHeaders').innerHTML = '';
+            document.getElementById('tableBody').innerHTML = '';
+            displayPreviewRows(inferredData, inferredColumnNames); // Mostra prévia
+        }
+
+
+        // Função para exibir as primeiras linhas dos dados brutos na tabela para mapeamento
+        function displayPreviewRows(data, columnNames) {
+            const tableHeaders = document.getElementById('tableHeaders');
+            const tableBody = document.getElementById('tableBody');
+            const previewRowCount = Math.min(data.length, 5); // Mostra até 5 linhas de prévia
+
+            // Cria cabeçalhos genéricos para a prévia
+            // Se já temos nomes de coluna (mesmo que "Campo 1"), usamos eles
+            const headersToDisplay = columnNames.length > 0 ? columnNames : Array.from({ length: data[0].length }, (_, i) => `Campo ${i + 1}`);
+
+            headersToDisplay.forEach((name, index) => {
+                const th = document.createElement('th');
+                th.textContent = name; // Usa o nome inferido ou genérico
+                tableHeaders.appendChild(th);
+            });
+
+            // Adiciona as linhas de dados brutos à tabela
+            for (let i = 0; i < previewRowCount; i++) {
+                const tr = document.createElement('tr');
+                // Garante que estamos pegando os dados correspondentes aos cabeçalhos exibidos
+                const rowData = data[i];
+                for (let j = 0; j < headersToDisplay.length; j++) {
+                    const td = document.createElement('td');
+                    // Verifica se a célula existe antes de tentar acessá-la
+                    const cellData = rowData && rowData[j] !== undefined ? rowData[j] : '';
+                    td.textContent = String(cellData || '').substring(0, 50) + (String(cellData || '').length > 50 ? '...' : ''); // Limita texto longo
+                    tr.appendChild(td);
+                }
+                tableBody.appendChild(tr);
+            }
+            document.getElementById('resultTable').style.display = 'table'; // Mostra a tabela para a prévia
+        }
+
+
+        // Função para aplicar o mapeamento manual
+        function applyManualMapping() {
+            const columnMappingInputsDiv = document.getElementById('columnMappingInputs');
+            const selects = columnMappingInputsDiv.querySelectorAll('select');
+            const customInputs = columnMappingInputsDiv.querySelectorAll('input[type="text"]');
+            
+            const newColumnNames = [];
+            const originalDataIndices = []; // Para saber qual índice original corresponde ao novo nome
+
+            // Verifica se todos os selects foram preenchidos
+            let allMapped = true;
+            selects.forEach((select, i) => {
+                const selectedValue = select.value;
+                const originalIndex = parseInt(select.getAttribute('data-col-index'));
+                let finalColName;
+
+                if (selectedValue === 'Outro') {
+                    finalColName = customInputs[i].value.trim();
+                } else {
+                    finalColName = selectedValue;
+                }
+
+                if (finalColName === '' || finalColName === 'Selecione...') {
+                    allMapped = false;
+                }
+                newColumnNames.push(finalColName);
+                originalDataIndices.push(originalIndex);
+            });
+
+            if (!allMapped) {
+                alert("Por favor, nomeie todas as colunas ou selecione uma opção antes de aplicar o mapeamento.");
+                return;
+            }
+
+            if (newColumnNames.length === 0 || newColumnNames.length !== selects.length) {
+                return;
+            }
+
+            // Reprocessar os dados com os novos nomes de coluna
+            let remappedData = lastInferredData.organizedData.map(row => {
+                const newRow = [];
+                originalDataIndices.forEach(originalIdx => {
+                    newRow.push(row[originalIdx]);
+                });
+                return newRow;
+            });
+
+            // Reinicia os tipos de coluna com base nos novos nomes
+            columnTypes = {};
+            newColumnNames.forEach(name => {
+                columnTypes[name] = getColumnType(name);
+            });
+
+            // Aplica a lógica de adicionar coluna de classificação se marcado
+            const addRankingColumn = document.getElementById('addRankingColumn').checked;
+            if (addRankingColumn) {
+                const columnsToRemove = ['Classificação', 'Posição', 'Ranking', 'Campo Num 1', 'Campo 1'];
+                columnsToRemove.forEach(colName => {
+                    const existingIndex = newColumnNames.indexOf(colName);
+                    if (existingIndex !== -1) {
+                        newColumnNames.splice(existingIndex, 1);
+                        remappedData.forEach(row => {
+                            row.splice(existingIndex, 1);
+                        });
+                    }
+                });
+
+                remappedData.forEach((row, index) => {
+                    row.unshift(index + 1);
+                });
+                newColumnNames.unshift('Classificação'); 
+                columnTypes['Classificação'] = 'integer_numeric'; 
+            }
+
+            // Esconde a área de mapeamento manual e o aviso
+            document.getElementById('patternWarning').style.display = 'none';
+            document.getElementById('manualMappingArea').style.display = 'none';
+
+            // Atualiza a tabela com os dados remapeados
+            updateTable(newColumnNames, remappedData);
+            document.getElementById('resultTable').style.display = 'table'; // Garante que a tabela esteja visível
+        }
+
+
         function updateTable(columnNames, data) {
             const tableHeaders = document.getElementById('tableHeaders');
             const tableBody = document.getElementById('tableBody');
@@ -702,7 +1011,7 @@
             columnNames.forEach((columnName, index) => {
                 const th = document.createElement('th');
                 th.textContent = columnName;
-                th.onclick = () => sortTable(index); // Mantém a ordenação normal
+                th.onclick = () => sortTable(index); 
 
                 // Adiciona o elemento para a seta de ordenação (oculto por padrão)
                 const arrowSpan = document.createElement('span');
@@ -828,6 +1137,12 @@
             applyTheme('light'); 
         }
 
+        window.onload = function() {
+            document.getElementById('currentYear').textContent = new Date().getFullYear();
+            document.getElementById('ContainerResult').style.display = 'none';
+            document.getElementById('mapColumnsButton').style.display = 'none'; // Garante que esteja oculto ao carregar
+        };
+        
         themeToggle.addEventListener('click', () => {
             if (htmlElement.classList.contains('dark')) {
                 applyTheme('light');
@@ -837,13 +1152,7 @@
                 localStorage.setItem('theme', 'dark');
             }
         });
-        // --- Fim da Lógica de Tema Claro/Escuro ---
 
-
-        window.onload = function() {
-            document.getElementById('currentYear').textContent = new Date().getFullYear();
-            document.getElementById('ContainerResult').style.display = 'none';
-        };
 
         function searchTable() {
             let input = document.getElementById('searchInput').value.toUpperCase();
@@ -939,12 +1248,16 @@
 
         function toggleColumnRename() {
             const tableHeaders = document.querySelectorAll('#tableHeaders th');
-            const toggleRenameButton = document.getElementById('toggleRenameButton');
+            const toggleRenameButton = document.getElementById('toggleRenameHeadersButton');
             
+            // Oculta a área de mapeamento manual se estiver visível
+            document.getElementById('patternWarning').style.display = 'none';
+            document.getElementById('manualMappingArea').style.display = 'none';
+
             // Verifica se a tabela está vazia
             const tableBody = document.getElementById('tableBody');
             if (tableBody.children.length === 0) {
-                alert("Organize os dados primeiro para poder renomear as colunas.");
+                alert("Organize os dados primeiro para poder renomear os cabeçalhos.");
                 return;
             }
 
@@ -1010,7 +1323,7 @@
 
             } else {
                 // Sai do modo de edição (Confirma Renomeação)
-                toggleRenameButton.innerHTML = '<i class="fas fa-pencil-alt"></i> Renomear Colunas'; // Volta o texto original
+                toggleRenameButton.innerHTML = '<i class="fas fa-pencil-alt"></i> Renomear Cabeçalhos'; // Volta o texto original
                 toggleRenameButton.classList.remove('bg-green-600', 'hover:bg-green-700', 'dark:bg-green-500', 'dark:hover:bg-green-400');
                 toggleRenameButton.classList.add('bg-purple-600', 'hover:bg-purple-700', 'dark:bg-purple-500', 'dark:hover:bg-purple-400');
 
@@ -1065,7 +1378,7 @@
                     tooltipSpan.style.display = ''; // Volta a exibir
                 }
 
-                alert('Nomes das colunas atualizados com sucesso!');
+                alert('Nomes dos cabeçalhos atualizados com sucesso!');
             }
         }
     </script>
