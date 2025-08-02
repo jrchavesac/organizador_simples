@@ -17,71 +17,64 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
     <style>
-        /* CSS Customizado: Mantenha apenas o essencial ou sobreposições */
-        /* Cores base para o modo claro */
+        /* CSS Customizado */
         body {
             font-family: 'Inter', Arial, sans-serif;
-            background-color: #f3f4f6; /* bg-gray-100 */
-            color: #1f2937; /* text-gray-800 */
-            transition: background-color 0.3s ease, color 0.3s ease; /* Transição suave para o tema */
+            background-color: #f3f4f6;
+            color: #1f2937;
+            transition: background-color 0.3s ease, color 0.3s ease;
         }
-        /* Cores para o modo escuro, aplicadas quando a classe 'dark' está presente */
         html.dark body {
-            background-color: #1a202c; /* bg-gray-900 */
-            color: #e2e8f0; /* text-gray-200 */
+            background-color: #1a202c;
+            color: #e2e8f0;
         }
-
-        /* Estilos específicos para inputs e textareas para manter o visual */
         textarea, select, input[type="text"] {
-            border-radius: 0.5rem; /* Tailwind: rounded-lg */
+            border-radius: 0.5rem;
             border: 1px solid #4CAF50;
-            padding: 0.75rem; /* Tailwind: p-3 */
-            width: 70%; /* Mantém sua largura específica */
+            padding: 0.75rem;
+            width: 70%;
             box-sizing: border-box;
             color: #004d40;
-            outline: none; /* Remove o outline padrão */
-            transition: border-color 0.2s, box-shadow 0.2s, background-color 0.3s ease, color 0.3s ease; /* Transição suave */
-            background-color: #ffffff; /* Fundo claro para inputs */
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s, background-color 0.3s ease, color 0.3s ease;
+            background-color: #ffffff;
         }
-        /* Ajuste de cores para inputs no modo escuro */
         html.dark textarea,
         html.dark select,
         html.dark input[type="text"] {
-            background-color: #2d3748; /* bg-gray-700 */
-            color: #e2e8f0; /* text-gray-200 */
-            border-color: #48bb78; /* green-500 */
+            background-color: #2d3748;
+            color: #e2e8f0;
+            border-color: #48bb78;
         }
         textarea:focus, select:focus, input[type="text"]:focus {
-            border-color: #388E3C; /* Cor da borda ao focar */
-            box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2); /* Sombra ao focar */
+            border-color: #388E3C;
+            box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2);
         }
         html.dark textarea:focus,
         html.dark select:focus,
         html.dark input[type="text"]:focus {
-            border-color: #68d391; /* green-400 */
-            box-shadow: 0 0 0 3px rgba(72, 187, 120, 0.4); /* Sombra verde mais forte */
+            border-color: #68d391;
+            box-shadow: 0 0 0 3px rgba(72, 187, 120, 0.4);
         }
-
-        /* Ajustes dos botões para um visual mais coeso com o Tailwind */
         button {
             cursor: pointer;
             background-color: #4CAF50;
             color: white;
             border: none;
-            padding: 0.5rem 1rem; /* Tailwind: px-4 py-2 */
-            border-radius: 0.5rem; /* Tailwind: rounded-lg */
-            transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out, color 0.2s ease-in-out, box-shadow 0.2s ease-in-out; /* Adicionado transições */
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1); /* Sombra sutil */
-            display: flex; /* Para alinhar o ícone e o texto */
-            align-items: center; /* Alinha verticalmente */
-            justify-content: center; /* Centraliza conteúdo (ícone + texto) */
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out, color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         button i {
-            margin-right: 8px; /* Espaço entre o ícone e o texto */
+            margin-right: 8px;
         }
         button:hover {
             background-color: #388E3C;
-            transform: translateY(-1px); /* Leve efeito de "lift" */
+            transform: translateY(-1px);
             box-shadow: 0 4px 8px rgba(0,0,0,0.15);
         }
         button:active {
@@ -94,24 +87,19 @@
             transform: none;
             box-shadow: none;
         }
-
-        /* Cores dos botões no modo escuro */
         html.dark button {
-            background-color: #48bb78; /* green-500 */
-            color: #1a202c; /* text-gray-900 para contraste */
+            background-color: #48bb78;
+            color: #1a202c;
             box-shadow: 0 2px 4px rgba(0,0,0,0.3);
         }
-        html.dark button:hover:not(:disabled) { /* Não aplica hover se desabilitado */
-            background-color: #68d391; /* green-400 */
+        html.dark button:hover:not(:disabled) {
+            background-color: #68d391;
             color: #1a202c;
             box-shadow: 0 4px 8px rgba(0,0,0,0.4);
         }
         html.dark button:disabled {
-            background-color: #2f855a; /* Um verde mais escuro para desabilitado */
+            background-color: #2f855a;
         }
-
-
-        /* Estilos da tabela */
         table {
             width: 100%;
             border-collapse: collapse;
@@ -119,20 +107,20 @@
             margin-top: 1rem;
             margin: auto;
             border-radius: 0.5rem;
-            overflow: hidden; /* Garante que o border-radius funcione */
+            overflow: hidden;
         }
         th, td {
-            border: 1px solid #e2e8f0; /* Cor da borda mais suave, como no Tailwind: border-gray-200 */
-            padding: 0.75rem; /* Tailwind: p-3 */
+            border: 1px solid #e2e8f0;
+            padding: 0.75rem;
             text-align: center;
-            cursor: pointer; /* Apenas para TH, mas não interfere em TD */
+            cursor: pointer;
         }
         th {
             background-color: #4CAF50;
             color: white;
-            font-weight: 600; /* Tailwind: font-semibold */
-            position: relative; /* Para posicionar a seta */
-            padding-right: 25px; /* Espaço para a seta */
+            font-weight: 600;
+            position: relative;
+            padding-right: 25px;
         }
         th .sort-arrow {
             position: absolute;
@@ -140,122 +128,99 @@
             top: 50%;
             transform: translateY(-50%);
             font-size: 0.8em;
-            color: rgba(255, 255, 255, 0.7); /* Seta mais discreta */
+            color: rgba(255, 255, 255, 0.7);
         }
         td {
-            background-color: #ffffff; /* Fundo branco para células */
+            background-color: #ffffff;
         }
         tr:nth-child(even) td {
-            background-color: #f8fafc; /* Tailwind: bg-gray-50 */
+            background-color: #f8fafc;
         }
-
-        /* Estilos da tabela no modo escuro */
         html.dark th {
-            background-color: #48bb78; /* green-500 */
-            color: #1a202c; /* text-gray-900 */
-            border-color: #2d3748; /* gray-700 */
+            background-color: #48bb78;
+            color: #1a202c;
+            border-color: #2d3748;
         }
         html.dark th .sort-arrow {
-            color: rgba(0, 0, 0, 0.5); /* Seta mais discreta no modo escuro */
+            color: rgba(0, 0, 0, 0.5);
         }
         html.dark td {
-            background-color: #2d3748; /* gray-700 */
-            color: #e2e8f0; /* gray-200 */
-            border-color: #4a5568; /* gray-600 */
+            background-color: #2d3748;
+            color: #e2e8f0;
+            border-color: #4a5568;
         }
         html.dark tr:nth-child(even) td {
-            background-color: #4a5568; /* gray-600 */
+            background-color: #4a5568;
         }
-
-
-        /* Ajustes para os títulos das seções */
         h1 {
-            font-size: 2.25rem; /* Tailwind: text-4xl */
-            font-weight: 700; /* Tailwind: font-bold */
-            color: #1a202c; /* Tailwind: text-gray-900 */
+            font-size: 2.25rem;
+            font-weight: 700;
+            color: #1a202c;
             margin-bottom: 1.5rem;
             transition: color 0.3s ease;
         }
-        /* Ajuste de cores para h1 no modo escuro */
         html.dark h1 {
-            color: #e2e8f0; /* text-gray-200 */
+            color: #e2e8f0;
         }
-
         h4 {
-            font-size: 0.875rem; /* Tailwind: text-sm */
-            color: #718096; /* Tailwind: text-gray-600 */
+            font-size: 0.875rem;
+            color: #718096;
             margin-top: 1rem;
             transition: color 0.3s ease;
         }
-        /* Ajuste de cores para h4 no modo escuro */
         html.dark h4 {
-            color: #a0aec0; /* text-gray-400 */
+            color: #a0aec0;
         }
-
-        /* Classes de utilidade para manter a compatibilidade com o CSS existente */
         .form-group label {
             font-weight: bold;
             text-align: center;
             color: #4CAF50;
             transition: color 0.3s ease;
         }
-        /* Ajuste de cores para labels no modo escuro */
         html.dark .form-group label {
-            color: #68d391; /* green-400 */
+            color: #68d391;
         }
-
-        /* Estilos específicos para o footer */
         .footer-img {
-            margin-bottom: 10px; /* Mantém um pequeno espaçamento abaixo da imagem em mobile */
-            /* As propriedades image-rendering foram removidas para atender ao seu pedido de mexer apenas no HTML. */
-            /* Se você quiser reintroduzi-las (em conjunto com o novo tamanho), me avise! */
+            margin-bottom: 10px;
         }
-
         .social-links a {
-            color: #4CAF50; /* Cor dos links sociais */
-            margin: 0 8px; /* Espaçamento entre os ícones */
-            font-size: 24px; /* Tamanho dos ícones (ajuste conforme necessário) */
+            color: #4CAF50;
+            margin: 0 8px;
+            font-size: 24px;
             transition: color 0.2s ease-in-out;
         }
-        /* Cores dos links sociais no modo escuro */
         html.dark .social-links a {
-            color: #68d391; /* green-400 */
+            color: #68d391;
         }
-
         .social-links a:hover {
-            color: #388E3C; /* Cor ao passar o mouse */
+            color: #388E3C;
         }
-        /* Cores dos links sociais no modo escuro */
         html.dark .social-links a:hover {
-            color: #48bb78; /* green-500 */
+            color: #48bb78;
         }
-
-        /* --- Estilos para Tooltip Customizado --- */
         .tooltip-container {
             position: relative;
-            display: inline-block; /* Ou block, dependendo do elemento pai */
+            display: inline-block;
         }
-
         .tooltip-text {
             visibility: hidden;
             opacity: 0;
-            width: max-content; /* Ajusta largura ao conteúdo */
-            background-color: #333; /* Fundo escuro */
-            color: #fff; /* Texto claro */
+            width: max-content;
+            background-color: #333;
+            color: #fff;
             text-align: center;
             border-radius: 6px;
             padding: 5px 8px;
             position: absolute;
-            z-index: 100; /* Acima de outros elementos */
-            bottom: 125%; /* Acima do elemento pai */
+            z-index: 100;
+            bottom: 125%;
             left: 50%;
             transform: translateX(-50%);
             transition: opacity 0.3s, visibility 0.3s;
             font-size: 0.85rem;
-            pointer-events: none; /* Garante que o tooltip não bloqueie eventos do mouse no elemento pai */
+            pointer-events: none;
             box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }
-
         .tooltip-text::after {
             content: "";
             position: absolute;
@@ -264,36 +229,30 @@
             margin-left: -5px;
             border-width: 5px;
             border-style: solid;
-            border-color: #333 transparent transparent transparent; /* Seta para baixo */
+            border-color: #333 transparent transparent transparent;
         }
-
         .tooltip-container:hover .tooltip-text {
             visibility: visible;
             opacity: 1;
         }
-
-        /* Estilos para tooltip no modo escuro */
         html.dark .tooltip-text {
-            background-color: #f8fafc; /* light gray for dark mode tooltip */
-            color: #1a202c; /* dark text for dark mode tooltip */
+            background-color: #f8fafc;
+            color: #1a202c;
             box-shadow: 0 2px 5px rgba(255,255,255,0.1);
         }
         html.dark .tooltip-text::after {
             border-color: #f8fafc transparent transparent transparent;
         }
-
-        /* Estilo para cabeçalhos em modo de edição */
         .editable-header {
-            cursor: text !important; /* Muda o cursor para indicar editável */
-            border: 1px dashed #68d391; /* Borda tracejada verde para indicar edição */
-            background-color: rgba(72, 187, 120, 0.2); /* Fundo levemente verde */
-            padding: 0.75rem 25px; /* Manter padding-right para a seta, se ela for visível */
+            cursor: text !important;
+            border: 1px dashed #68d391;
+            background-color: rgba(72, 187, 120, 0.2);
+            padding: 0.75rem 25px;
         }
         html.dark .editable-header {
-            border: 1px dashed #9AE6B4; /* Borda mais clara no dark mode */
+            border: 1px dashed #9AE6B4;
             background-color: rgba(104, 211, 145, 0.2);
         }
-
     </style>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -371,7 +330,7 @@
             <div id="manualMappingArea" class="mt-4 p-4 border border-gray-300 rounded-lg bg-gray-50 dark:bg-gray-800 dark:border-gray-600" style="display: none;">
                 <p class="font-semibold text-center mb-3 text-gray-800 dark:text-gray-200">Defina os Nomes das Colunas:</p>
                 <div id="columnMappingInputs" class="flex flex-wrap justify-center gap-4 mb-4">
-                    </div>
+                </div>
                 <button type="button" id="applyMappingButton" onclick="applyManualMapping()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg mx-auto block tooltip-container">
                     <i class="fas fa-check"></i> Aplicar Mapeamento
                     <span class="tooltip-text">Reorganize os dados com base nos nomes de coluna que você selecionou.</span>
@@ -379,7 +338,8 @@
             </div>
 
             <h4 class="text-sm text-gray-600 italic mb-4 text-center dark:text-gray-400"><i>Ao clicar no cabeçalho da tabela, os dados são organizados conforme a coluna clicada!</i></h4>
-            <div class="overflow-x-auto"> <table id="resultTable" class="min-w-full">
+            <div class="overflow-x-auto">
+                <table id="resultTable" class="min-w-full">
                     <thead>
                         <tr id="tableHeaders"></tr>
                     </thead>
@@ -406,885 +366,108 @@
         <p class="text-xs text-gray-500 mt-4 text-center dark:text-gray-500">© <span id="currentYear"></span> Júnior Chaves. Todos os direitos reservados.</p>
     </footer>
 
+    <div id="toast-notification" class="fixed bottom-5 right-5 bg-green-600 text-white py-3 px-6 rounded-lg shadow-lg transform translate-y-20 opacity-0 transition-all duration-500 ease-in-out">
+        Mensagem de sucesso!
+    </div>
+
+
     <script>
-        // Função para atualizar o ano no footer dinamicamente
         document.getElementById('currentYear').textContent = new Date().getFullYear();
 
         let sortDirections = {}; 
         let currentColumnNames = [];
         let columnTypes = {}; 
-        let isRenamingColumns = false; // Estado para controlar o modo de edição dos cabeçalhos
-        let lastInferredData = null; // Armazena os últimos dados brutos inferidos para reprocessamento manual
+        let isRenamingColumns = false;
+        let lastInferredData = null;
 
-        // Mapeamento de nomes de colunas para tipos de dados para comportamento de ordenação/formatação
         const typeMapping = {
-            'classificacao': 'integer_numeric',
-            'posicao': 'integer_numeric',
-            'ranking': 'integer_numeric',
-            'inscricao': 'numeric_string', 
-            'matricula': 'numeric_string',
-            'nota': 'numeric',
-            'pontuacao': 'numeric',
-            'total': 'numeric',
-            'acertos': 'numeric',
+            'classificacao': 'integer_numeric', 'posicao': 'integer_numeric', 'ranking': 'integer_numeric',
+            'inscricao': 'numeric_string', 'matricula': 'numeric_string',
+            'nota': 'numeric', 'pontuacao': 'numeric', 'total': 'numeric', 'acertos': 'numeric',
             'idade': 'integer_numeric' 
         };
 
-        // Opções de nomes de coluna para o dropdown de mapeamento manual
         const predefinedColumnOptions = [
-            { value: '', text: 'Selecione...' },
-            { value: 'Classificação', text: 'Classificação' },
-            { value: 'Nome', text: 'Nome' },
-            { value: 'Inscrição', text: 'Inscrição' },
-            { value: 'Nota', text: 'Nota' },
-            { value: 'Pontuação', text: 'Pontuação' },
-            { value: 'Posição', text: 'Posição' },
-            { value: 'Matrícula', text: 'Matrícula' },
-            { value: 'Acertos', text: 'Acertos' },
-            { value: 'Idade', text: 'Idade' }, 
+            { value: '', text: 'Selecione...' }, { value: 'Classificação', text: 'Classificação' },
+            { value: 'Nome', text: 'Nome' }, { value: 'Inscrição', text: 'Inscrição' },
+            { value: 'Nota', text: 'Nota' }, { value: 'Pontuação', text: 'Pontuação' },
+            { value: 'Posição', text: 'Posição' }, { value: 'Matrícula', text: 'Matrícula' },
+            { value: 'Acertos', text: 'Acertos' }, { value: 'Idade', text: 'Idade' }, 
             { value: 'Outro', text: 'Outro (digite abaixo)' } 
         ];
 
-        // Função para determinar o tipo de uma coluna com base em seu nome
+        // ==========================================================
+        // 2. NOVA FUNÇÃO PARA CONTROLAR A NOTIFICAÇÃO
+        // ==========================================================
+        function showToast(message, duration = 3000) {
+            const toast = document.getElementById('toast-notification');
+            if (!toast) return;
+
+            toast.textContent = message;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, duration);
+        }
+
         function getColumnType(columnName) {
             const lowerName = columnName.toLowerCase();
             for (const key in typeMapping) {
-                if (lowerName.includes(key)) {
-                    return typeMapping[key];
-                }
+                if (lowerName.includes(key)) return typeMapping[key];
             }
-            if (lowerName.includes('nome')) {
-                return 'string';
-            }
-            return 'string'; // Padrão
+            if (lowerName.includes('nome')) return 'string';
+            return 'string';
         }
 
-        function isNumeric(str) {
-            if (str === null || str === undefined || str.trim() === '') return false;
-            return /^-?\d+(\.\d+)?$/.test(str.trim());
-        }
-
-        function isInteger(str) {
-            if (str === null || str === undefined || str.trim() === '') return false;
-            return /^-?\d+$/.test(str.trim());
-        }
+        // ... (todas as outras funções como isNumeric, inferAndApplyPattern, organizeData, etc., continuam aqui sem alteração) ...
+        function isNumeric(str) { if (str === null || str === undefined || str.trim() === '') return false; return /^-?\d+(\.\d+)?$/.test(str.trim()); }
+        function isInteger(str) { if (str === null || str === undefined || str.trim() === '') return false; return /^-?\d+$/.test(str.trim()); }
+        function inferAndApplyPattern(rawInputString) { if (!rawInputString) { return { columnNames: [], organizedData: [], patternDetected: true }; } let processedString = rawInputString .replace(/\r\n|\r/g, ' ') .replace(/º|°/g, '', ' ') .replace(/(\d+),(\d{1,2})(?![0-9])/g, '$1.$2') .trim(); let candidateBlocks = []; let finalColumnNames = []; let patternFound = false; const regexNameInscNota = /([A-ZÀ-Ÿ\s.-]+?),\s*(\d+),\s*(\d+\.?\d*)\s*(?:\/\s*|$)/gi; let match; let tempBlocks = []; while ((match = regexNameInscNota.exec(processedString)) !== null) { tempBlocks.push([match[1].trim(), match[2].trim(), match[3].trim()]); } if (tempBlocks.length > 0) { finalColumnNames = ['Nome', 'Inscrição', 'Nota']; candidateBlocks = tempBlocks; patternFound = true; } else { const regexPattern3Fields = /(\d+);\s*([A-ZÀ-Ÿ\s.-]+?);\s*(\d+\.?\d*)\s*(?:\/\s*|$)/gi; tempBlocks = []; while ((match = regexPattern3Fields.exec(processedString)) !== null) { tempBlocks.push([match[1].trim(), match[2].trim(), match[3].trim()]); } if (tempBlocks.length > 0) { finalColumnNames = ['Inscrição', 'Nome', 'Nota']; candidateBlocks = tempBlocks; patternFound = true; } else { const regexPattern4FieldsComma = /(\d+),\s*(\d+),\s*([A-ZÀ-Ÿ\s.-]+?),\s*(\d+\.?\d*)\s*(?:\/\s*|$)/gi; tempBlocks = []; while ((match = regexPattern4FieldsComma.exec(processedString)) !== null) { tempBlocks.push([match[1].trim(), match[2].trim(), match[3].trim(), match[4].trim()]); } if (tempBlocks.length > 0) { finalColumnNames = ['Classificação', 'Inscrição', 'Nome', 'Nota']; candidateBlocks = tempBlocks; patternFound = true; } else { const regexPattern4FieldsSlashOnly = /(\d+)\s*\/\s*([A-ZÀ-Ÿ\s.-]+?)\s*\/\s*(\d+)\s*\/\s*(\d+\.?\d*)\s*(?:\/\s*|$)/gi; tempBlocks = []; while ((match = regexPattern4FieldsSlashOnly.exec(processedString)) !== null) { tempBlocks.push([match[1].trim(), match[2].trim(), match[3].trim(), match[4].trim()]); } if (tempBlocks.length > 0) { finalColumnNames = ['Inscrição', 'Nome', 'Posição', 'Nota']; candidateBlocks = tempBlocks; patternFound = true; } else { const regexConcatenated4 = /(\d+)(\d+)([A-ZÀ-Ÿ\s.-]+?)(\d+\.?\d*)/gi; const regexConcatenated3 = /(\d+)([A-ZÀ-Ÿ\s.-]+?)(\d+\.?\d*)/gi; tempBlocks = []; if (processedString.match(regexConcatenated4)) { while ((match = regexConcatenated4.exec(processedString)) !== null) { tempBlocks.push([match[1].trim(), match[2].trim(), match[3].trim(), match[4].trim()]); } if (tempBlocks.length > 0) { finalColumnNames = ['Classificação', 'Inscrição', 'Nome', 'Nota']; candidateBlocks = tempBlocks; patternFound = true; } } else if (processedString.match(regexConcatenated3)) { tempBlocks = []; while ((match = regexConcatenated3.exec(processedString)) !== null) { tempBlocks.push([match[1].trim(), match[2].trim(), match[3].trim()]); } if (tempBlocks.length > 0) { finalColumnNames = ['Inscrição', 'Nome', 'Nota']; candidateBlocks = tempBlocks; patternFound = true; } } if (!patternFound) { const regexNameAge = /([A-ZÀ-Ÿ\s.-]+?),\s*(\d+)\s*(?:\/\s*|$)/gi; tempBlocks = []; while ((match = regexNameNameAge.exec(processedString)) !== null) { tempBlocks.push([match[1].trim(), match[2].trim()]); } if (tempBlocks.length > 0) { finalColumnNames = ['Nome', 'Idade']; candidateBlocks = tempBlocks; patternFound = true; } } if (!patternFound && processedString.length > 0) { const lines = processedString.split('/').map(line => line.trim()).filter(line => line.length > 0); if (lines.length > 0) { const sampleLine = lines[0]; let fields = sampleLine.split(/[\s,;]+/).filter(f => f.length > 0); if (fields.length > 1) { finalColumnNames = Array.from({ length: fields.length }, (_, i) => `Campo ${i + 1}`); candidateBlocks = lines.map(line => line.split(/[\s,;]+/).filter(f => f.length > 0)); candidateBlocks = candidateBlocks.filter(block => block.length === fields.length); if (candidateBlocks.length > 0) { patternFound = false; } else { candidateBlocks = [[processedString]]; finalColumnNames = ['Dados Brutos']; patternFound = false; } } else { candidateBlocks = [[processedString]]; finalColumnNames = ['Dados Brutos']; patternFound = false; } } else { candidateBlocks = []; finalColumnNames = []; patternFound = true; } } } } } } const organizedData = []; candidateBlocks.forEach(rowFields => { const rowData = new Array(finalColumnNames.length).fill(null); for (let i = 0; i < Math.min(rowFields.length, finalColumnNames.length); i++) { const value = rowFields[i]; const colName = finalColumnNames[i]; const inferredType = getColumnType(colName); if (value !== null && value !== undefined && value !== '') { let cleanedValue = value.replace(/º/g, '').trim(); if (inferredType === 'numeric') { rowData[i] = parseFloat(cleanedValue); } else if (inferredType === 'integer_numeric') { rowData[i] = parseInt(cleanedValue, 10); } else { rowData[i] = cleanedValue; } } } organizedData.push(rowData); }); return { columnNames: finalColumnNames, organizedData, patternDetected: patternFound }; }
+        function organizeData() { const dataInput = document.getElementById('dataInput').value.trim(); const addRankingColumn = document.getElementById('addRankingColumn').checked; const containerResult = document.getElementById('ContainerResult'); const organizeButton = document.getElementById('organizeButton'); const loadingSpinner = document.getElementById('loadingSpinner'); const organizeText = document.getElementById('organizeText'); const patternWarning = document.getElementById('patternWarning'); const manualMappingArea = document.getElementById('manualMappingArea'); const mapColumnsButton = document.getElementById('mapColumnsButton'); if (isRenamingColumns) { toggleColumnRename(); } patternWarning.style.display = 'none'; manualMappingArea.style.display = 'none'; if (dataInput === "") { containerResult.style.display = 'none'; mapColumnsButton.style.display = 'none'; alert("Por favor, digite algum dado na 'Lista dos candidatos' para organizar."); return; } organizeText.style.display = 'none'; loadingSpinner.style.display = 'inline-block'; organizeButton.disabled = true; setTimeout(() => { try { let { columnNames, organizedData, patternDetected } = inferAndApplyPattern(dataInput); lastInferredData = { columnNames, organizedData, patternDetected }; containerResult.style.display = 'block'; mapColumnsButton.style.display = 'flex'; columnTypes = {}; columnNames.forEach(name => { columnTypes[name] = getColumnType(name); }); organizedData.sort((a, b) => { const notaIndex = columnNames.indexOf('Nota'); const classificacaoIndex = columnNames.indexOf('Classificação'); const campoNum1Index = columnNames.indexOf('Campo 1'); const nomeIndex = columnNames.indexOf('Nome'); const inscricaoIndex = columnNames.indexOf('Inscrição'); const posicaoIndex = columnNames.indexOf('Posição'); const idadeIndex = columnNames.indexOf('Idade'); if (notaIndex !== -1 && a[notaIndex] !== null && b[notaIndex] !== null) { const valA = parseFloat(a[notaIndex]); const valB = parseFloat(b[notaIndex]); const comp = (isNaN(valB) ? -Infinity : valB) - (isNaN(valA) ? -Infinity : valA); if (comp !== 0) return comp; } if (idadeIndex !== -1 && a[idadeIndex] !== null && b[idadeIndex] !== null) { const valA = parseInt(a[idadeIndex]); const valB = parseInt(b[idadeIndex]); const comp = (isNaN(valB) ? -Infinity : valB) - (isNaN(valA) ? -Infinity : valA); if (comp !== 0) return comp; } if (classificacaoIndex !== -1 && a[classificacaoIndex] !== null && b[classificacaoIndex] !== null) { const valA = parseInt(a[classificacaoIndex]); const valB = parseInt(b[classificacaoIndex]); const comp = (isNaN(valA) ? Infinity : valA) - (isNaN(valB) ? Infinity : valB); if (comp !== 0) return comp; } else if (campoNum1Index !== -1 && a[campoNum1Index] !== null && b[campoNum1Index] !== null) { const valA = parseInt(a[campoNum1Index]); const valB = parseInt(b[campoNum1Index]); const comp = (isNaN(valA) ? Infinity : valA) - (isNaN(valB) ? Infinity : valB); if (comp !== 0) return comp; } if (inscricaoIndex !== -1 && a[inscricaoIndex] !== null && b[inscricaoIndex] !== null) { const valA = parseInt(a[inscricaoIndex]); const valB = parseInt(b[inscricaoIndex]); const comp = (isNaN(valA) ? Infinity : valA) - (isNaN(valB) ? Infinity : valB); if (comp !== 0) return comp; } if (posicaoIndex !== -1 && a[posicaoIndex] !== null && b[posicaoIndex] !== null) { const valA = parseInt(a[posicaoIndex]); const valB = parseInt(b[posicaoIndex]); const comp = (isNaN(valA) ? Infinity : valA) - (isNaN(valB) ? Infinity : valB); if (comp !== 0) return comp; } if (nomeIndex !== -1 && a[nomeIndex] !== null && b[nomeIndex] !== null) { const nomeA = a[nomeIndex] || ''; const nomeB = b[nomeIndex] || ''; return String(nomeA).localeCompare(String(nomeB), undefined, { numeric: true, sensitivity: 'base' }); } return 0; }); let finalColumnNamesForTable = [...columnNames]; if (addRankingColumn) { const columnsToRemove = ['Classificação', 'Posição', 'Ranking', 'Campo Num 1', 'Campo 1']; columnsToRemove.forEach(colName => { const existingIndex = finalColumnNamesForTable.indexOf(colName); if (existingIndex !== -1) { finalColumnNamesForTable.splice(existingIndex, 1); organizedData.forEach(row => { row.splice(existingIndex, 1); }); } }); organizedData.forEach((row, index) => { row.unshift(index + 1); }); finalColumnNamesForTable.unshift('Classificação'); columnTypes['Classificação'] = 'integer_numeric'; } updateTable(finalColumnNamesForTable, organizedData); document.getElementById('ContainerResult').scrollIntoView({ behavior: 'smooth', block: 'start' }); } finally { organizeText.style.display = 'inline'; loadingSpinner.style.display = 'none'; organizeButton.disabled = false; } }, 100); }
+        function showManualMapping() { if (isRenamingColumns) { toggleColumnRename(); } if (!lastInferredData || lastInferredData.organizedData.length === 0) { alert("Por favor, organize os dados primeiro para poder mapear os campos."); return; } document.getElementById('patternWarning').style.display = 'block'; document.getElementById('manualMappingArea').style.display = 'block'; displayManualMappingOptions(lastInferredData.columnNames, lastInferredData.organizedData, currentColumnNames); document.getElementById('manualMappingArea').scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+        function displayManualMappingOptions(inferredColumnNames, inferredData, tableCurrentHeaders) { const columnMappingInputsDiv = document.getElementById('columnMappingInputs'); columnMappingInputsDiv.innerHTML = ''; const displayLimit = inferredColumnNames.length; inferredColumnNames.slice(0, displayLimit).forEach((colName, index) => { const div = document.createElement('div'); div.className = 'flex flex-col items-center'; const label = document.createElement('label'); label.className = 'mb-1 text-sm dark:text-gray-300'; label.textContent = `Coluna ${index + 1}:`; div.appendChild(label); const select = document.createElement('select'); select.className = 'p-2 border rounded-md dark:bg-gray-700 dark:text-gray-100'; select.setAttribute('data-col-index', index); const currentHeaderName = tableCurrentHeaders[index] || colName; predefinedColumnOptions.forEach(option => { const opt = document.createElement('option'); opt.value = option.value; opt.textContent = option.text; if (option.value === currentHeaderName) { opt.selected = true; } else if (option.value === colName && !predefinedColumnOptions.some(p => p.value === currentHeaderName && p.value !== '')) { opt.selected = true; } select.appendChild(opt); }); div.appendChild(select); const customInput = document.createElement('input'); customInput.type = 'text'; customInput.placeholder = 'Nome personalizado'; customInput.className = 'mt-2 p-2 border rounded-md w-32 dark:bg-gray-700 dark:text-gray-100'; if (!predefinedColumnOptions.some(opt => opt.value === currentHeaderName && opt.value !== '')) { customInput.value = currentHeaderName; select.value = 'Outro'; customInput.style.display = 'block'; } else { customInput.style.display = 'none'; } div.appendChild(customInput); select.addEventListener('change', (event) => { if (event.target.value === 'Outro') { customInput.style.display = 'block'; customInput.focus(); } else { customInput.style.display = 'none'; customInput.value = ''; } }); columnMappingInputsDiv.appendChild(div); }); document.getElementById('resultTable').style.display = 'none'; document.getElementById('tableHeaders').innerHTML = ''; document.getElementById('tableBody').innerHTML = ''; displayPreviewRows(inferredData, inferredColumnNames); }
+        function displayPreviewRows(data, columnNames) { const tableHeaders = document.getElementById('tableHeaders'); const tableBody = document.getElementById('tableBody'); const previewRowCount = Math.min(data.length, 5); const headersToDisplay = columnNames.length > 0 ? columnNames : Array.from({ length: data[0].length }, (_, i) => `Campo ${i + 1}`); headersToDisplay.forEach((name, index) => { const th = document.createElement('th'); th.textContent = name; tableHeaders.appendChild(th); }); for (let i = 0; i < previewRowCount; i++) { const tr = document.createElement('tr'); const rowData = data[i]; for (let j = 0; j < headersToDisplay.length; j++) { const td = document.createElement('td'); const cellData = rowData && rowData[j] !== undefined ? rowData[j] : ''; td.textContent = String(cellData || '').substring(0, 50) + (String(cellData || '').length > 50 ? '...' : ''); tr.appendChild(td); } tableBody.appendChild(tr); } document.getElementById('resultTable').style.display = 'table'; }
+        function applyManualMapping() { const columnMappingInputsDiv = document.getElementById('columnMappingInputs'); const selects = columnMappingInputsDiv.querySelectorAll('select'); const customInputs = columnMappingInputsDiv.querySelectorAll('input[type="text"]'); const newColumnNames = []; const originalDataIndices = []; let allMapped = true; selects.forEach((select, i) => { const selectedValue = select.value; const originalIndex = parseInt(select.getAttribute('data-col-index')); let finalColName; if (selectedValue === 'Outro') { finalColName = customInputs[i].value.trim(); } else { finalColName = selectedValue; } if (finalColName === '' || finalColName === 'Selecione...') { allMapped = false; } newColumnNames.push(finalColName); originalDataIndices.push(originalIndex); }); if (!allMapped) { alert("Por favor, nomeie todas as colunas ou selecione uma opção antes de aplicar o mapeamento."); return; } if (newColumnNames.length === 0 || newColumnNames.length !== selects.length) { return; } let remappedData = lastInferredData.organizedData.map(row => { const newRow = []; originalDataIndices.forEach(originalIdx => { newRow.push(row[originalIdx]); }); return newRow; }); columnTypes = {}; newColumnNames.forEach(name => { columnTypes[name] = getColumnType(name); }); const addRankingColumn = document.getElementById('addRankingColumn').checked; if (addRankingColumn) { const columnsToRemove = ['Classificação', 'Posição', 'Ranking', 'Campo Num 1', 'Campo 1']; columnsToRemove.forEach(colName => { const existingIndex = newColumnNames.indexOf(colName); if (existingIndex !== -1) { newColumnNames.splice(existingIndex, 1); remappedData.forEach(row => { row.splice(existingIndex, 1); }); } }); remappedData.forEach((row, index) => { row.unshift(index + 1); }); newColumnNames.unshift('Classificação'); columnTypes['Classificação'] = 'integer_numeric'; } document.getElementById('patternWarning').style.display = 'none'; document.getElementById('manualMappingArea').style.display = 'none'; updateTable(newColumnNames, remappedData); document.getElementById('resultTable').style.display = 'table'; }
+        function updateTable(columnNames, data) { const tableHeaders = document.getElementById('tableHeaders'); const tableBody = document.getElementById('tableBody'); tableHeaders.innerHTML = ''; tableBody.innerHTML = ''; const oldColumnNames = currentColumnNames; currentColumnNames = columnNames; const newSortDirections = {}; currentColumnNames.forEach((name, index) => { const oldIndex = oldColumnNames.indexOf(name); if (oldIndex !== -1 && sortDirections[oldIndex] !== undefined) { newSortDirections[index] = sortDirections[oldIndex]; } else { newSortDirections[index] = true; } }); sortDirections = newSortDirections; columnNames.forEach((columnName, index) => { const th = document.createElement('th'); th.textContent = columnName; th.onclick = () => sortTable(index); const arrowSpan = document.createElement('span'); arrowSpan.className = 'sort-arrow ml-1 text-gray-400 opacity-0 transition-opacity duration-200'; th.appendChild(arrowSpan); tableHeaders.appendChild(th); }); data.forEach(row => { const tr = document.createElement('tr'); for (let i = 0; i < columnNames.length; i++) { const td = document.createElement('td'); let value = row[i]; const colName = columnNames[i]; const colType = columnTypes[colName] || getColumnType(colName); if (value !== null && value !== undefined) { value = String(value).replace(/[\r\n]+/g, ' ').trim(); } if (value !== null && value !== undefined) { if (colType === 'numeric') { td.textContent = parseFloat(value).toFixed(2); } else if (colType === 'integer_numeric') { td.textContent = parseInt(value, 10); } else if (colType === 'numeric_string') { td.textContent = String(value); } else { td.textContent = String(value); } } else { td.textContent = ''; } tr.appendChild(td); } tableBody.appendChild(tr); }); }
+        function sortTable(columnIndex) { if (isRenamingColumns) { return; } const table = document.getElementById('resultTable'); const tbody = table.getElementsByTagName('tbody')[0]; const rows = Array.from(tbody.getElementsByTagName('tr')); const headerCell = table.querySelector(`th:nth-child(${columnIndex + 1})`); const headerText = headerCell.textContent.replace(/[\u2191\u2193]/g, '').trim(); const currentArrow = headerCell.querySelector('.sort-arrow'); document.querySelectorAll('#tableHeaders th .sort-arrow').forEach(arrow => { arrow.classList.remove('opacity-100'); arrow.classList.add('opacity-0'); arrow.innerHTML = ''; }); sortDirections[columnIndex] = !sortDirections[columnIndex]; const colType = columnTypes[headerText] || getColumnType(headerText); const sortedRows = rows.sort((a, b) => { const textA = a.cells[columnIndex].textContent.trim(); const textB = b.cells[columnIndex].textContent.trim(); let valA, valB; if (colType === 'numeric' || colType === 'integer_numeric') { valA = parseFloat(textA.replace(',', '.')); valB = parseFloat(textB.replace(',', '.')); valA = isNaN(valA) ? (sortDirections[columnIndex] ? Infinity : -Infinity) : valA; valB = isNaN(valB) ? (sortDirections[columnIndex] ? Infinity : -Infinity) : valB; return sortDirections[columnIndex] ? valA - valB : valB - valA; } else if (colType === 'numeric_string') { valA = parseInt(textA); valB = parseInt(textB); valA = isNaN(valA) ? (sortDirections[columnIndex] ? Infinity : -Infinity) : valA; valB = isNaN(valB) ? (sortDirections[columnIndex] ? Infinity : -Infinity) : valB; return sortDirections[columnIndex] ? valA - valB : valB - valA; } else { return sortDirections[columnIndex] ? textA.localeCompare(textB, undefined, { numeric: true, sensitivity: 'base' }) : textB.localeCompare(textA, undefined, { numeric: true, sensitivity: 'base' }); } }); tbody.innerHTML = ''; sortedRows.forEach(row => tbody.appendChild(row)); currentArrow.classList.add('opacity-100'); currentArrow.innerHTML = sortDirections[columnIndex] ? '<i class="fas fa-arrow-up"></i>' : '<i class="fas fa-arrow-down"></i>'; }
+        const themeToggle = document.getElementById('themeToggle'); const themeIcon = document.getElementById('themeIcon'); const htmlElement = document.documentElement; function updateThemeToggle(isDark) { if (isDark) { themeIcon.classList.remove('fa-moon'); themeIcon.classList.add('fa-sun'); themeToggle.title = 'Mudar para modo claro'; } else { themeIcon.classList.remove('fa-sun'); themeIcon.classList.add('fa-moon'); themeToggle.title = 'Mudar para modo escuro'; } } function applyTheme(theme) { if (theme === 'dark') { htmlElement.classList.add('dark'); updateThemeToggle(true); } else { htmlElement.classList.remove('dark'); updateThemeToggle(false); } } const savedTheme = localStorage.getItem('theme'); if (savedTheme) { applyTheme(savedTheme); } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) { applyTheme('dark'); } else { applyTheme('light'); }
+        window.onload = function() { document.getElementById('currentYear').textContent = new Date().getFullYear(); document.getElementById('ContainerResult').style.display = 'none'; document.getElementById('mapColumnsButton').style.display = 'none'; };
+        themeToggle.addEventListener('click', () => { if (htmlElement.classList.contains('dark')) { applyTheme('light'); localStorage.setItem('theme', 'light'); } else { applyTheme('dark'); localStorage.setItem('theme', 'dark'); } });
+        function searchTable() { let input = document.getElementById('searchInput').value.toUpperCase(); let table = document.getElementById('resultTable'); let tr = table.getElementsByTagName('tr'); for (let i = 1; i < tr.length; i++) { let td = tr[i].getElementsByTagName('td'); let found = false; for (let j = 0; j < td.length; j++) { if (td[j] && td[j].innerHTML.toUpperCase().indexOf(input) > -1) { found = true; break; } } tr[i].style.display = found ? '' : 'none'; } }
+        function generatePDF() { if (isRenamingColumns) { toggleColumnRename(); } try { const { jsPDF } = window.jspdf; const doc = new jsPDF(); const margin = 10; let y = margin; const lineHeight = 10; const pageWidth = doc.internal.pageSize.getWidth(); doc.setFontSize(16); doc.setFont("helvetica", "bold"); const customTitle = document.getElementById('pdfTitleInput').value.trim(); const title = customTitle === '' ? "Relatório de Resultados" : customTitle; const splitTitle = doc.splitTextToSize(title, pageWidth - 2 * margin); doc.text(splitTitle, pageWidth / 2, y, { align: 'center' }); y += (splitTitle.length * lineHeight) + lineHeight; const table = document.getElementById('resultTable'); if (!table || table.querySelector('tbody').children.length === 0) { alert("Erro: Gere a tabela primeiro clicando em 'Organizar'!"); return; } const headers = Array.from(document.querySelectorAll('#tableHeaders th')).map(th => th.textContent.replace(/[\u2191\u2193]/g, '').trim()); const rows = Array.from(table.querySelectorAll('tbody tr')).map(tr => Array.from(tr.querySelectorAll('td')).map(td => td.textContent.replace(/\s*\n\s*/g, ' ').trim())); doc.autoTable({ head: [headers], body: rows, startY: y, margin: { left: margin, right: margin }, styles: { fontSize: 10, cellPadding: 2, halign: 'center', valign: 'middle', lineColor: [226, 232, 240], lineWidth: 0.5 }, headStyles: { fillColor: [76, 175, 80], textColor: 255, fontStyle: 'bold', halign: 'center', valign: 'middle' }, alternateRowStyles: { fillColor: [248, 250, 252] }, didDrawPage: function(data) { } }); window.open(doc.output('bloburl'), '_blank'); } catch (error) { console.error("Erro ao gerar PDF:", error); alert("Erro ao gerar PDF. Veja o console para detalhes."); } }
         
-        /**
-         * Inferir o padrão de colunas e dados a partir da string de entrada.
-         * Retorna { columnNames, organizedData, patternDetected: boolean }
-         */
-        function inferAndApplyPattern(rawInputString) {
-            if (!rawInputString) {
-                return { columnNames: [], organizedData: [], patternDetected: true }; 
-            }
-
-            let processedString = rawInputString
-                .replace(/\r\n|\r/g, ' ') 
-                .replace(/º|°/g, '', ' ') 
-                .replace(/(\d+),(\d{1,2})(?![0-9])/g, '$1.$2') 
-                .trim();
-
-            let candidateBlocks = [];
-            let finalColumnNames = [];
-            let patternFound = false;
-
-            // Padrão 1: Nome, Inscrição, Nota /
-            const regexNameInscNota = /([A-ZÀ-Ÿ\s.-]+?),\s*(\d+),\s*(\d+\.?\d*)\s*(?:\/\s*|$)/gi;
-            let match;
-            let tempBlocks = [];
-            while ((match = regexNameInscNota.exec(processedString)) !== null) {
-                tempBlocks.push([match[1].trim(), match[2].trim(), match[3].trim()]);
-            }
-
-            if (tempBlocks.length > 0) {
-                finalColumnNames = ['Nome', 'Inscrição', 'Nota'];
-                candidateBlocks = tempBlocks;
-                patternFound = true;
-            } else {
-                // Padrão 2: Separador de campo é ';' e separador de candidato é '/' (Ex: Jonatas)
-                const regexPattern3Fields = /(\d+);\s*([A-ZÀ-Ÿ\s.-]+?);\s*(\d+\.?\d*)\s*(?:\/\s*|$)/gi;
-                tempBlocks = [];
-                while ((match = regexPattern3Fields.exec(processedString)) !== null) {
-                    tempBlocks.push([match[1].trim(), match[2].trim(), match[3].trim()]);
-                }
-
-                if (tempBlocks.length > 0) {
-                    finalColumnNames = ['Inscrição', 'Nome', 'Nota'];
-                    candidateBlocks = tempBlocks;
-                    patternFound = true;
-                } else {
-                    // Padrão 3: Separador de campo é ',' e separador de candidato é '/' (Ex: Saulo)
-                    const regexPattern4FieldsComma = /(\d+),\s*(\d+),\s*([A-ZÀ-Ÿ\s.-]+?),\s*(\d+\.?\d*)\s*(?:\/\s*|$)/gi;
-                    tempBlocks = [];
-                    while ((match = regexPattern4FieldsComma.exec(processedString)) !== null) {
-                        tempBlocks.push([match[1].trim(), match[2].trim(), match[3].trim(), match[4].trim()]);
-                    }
-
-                    if (tempBlocks.length > 0) {
-                        finalColumnNames = ['Classificação', 'Inscrição', 'Nome', 'Nota'];
-                        candidateBlocks = tempBlocks;
-                        patternFound = true;
-                    } else {
-                        // Padrão 4: A barra '/' é o único separador para campos e candidatos (Ex: Gabriel)
-                        const regexPattern4FieldsSlashOnly = /(\d+)\s*\/\s*([A-ZÀ-Ÿ\s.-]+?)\s*\/\s*(\d+)\s*\/\s*(\d+\.?\d*)\s*(?:\/\s*|$)/gi;
-                        tempBlocks = [];
-                        while ((match = regexPattern4FieldsSlashOnly.exec(processedString)) !== null) {
-                            tempBlocks.push([match[1].trim(), match[2].trim(), match[3].trim(), match[4].trim()]);
-                        }
-
-                        if (tempBlocks.length > 0) {
-                            finalColumnNames = ['Inscrição', 'Nome', 'Posição', 'Nota'];
-                            candidateBlocks = tempBlocks;
-                            patternFound = true;
-                        } else {
-                            // Padrão 5: Campos colados (sem separadores óbvios além de espaços/transições)
-                            const regexConcatenated4 = /(\d+)(\d+)([A-ZÀ-Ÿ\s.-]+?)(\d+\.?\d*)/gi; 
-                            const regexConcatenated3 = /(\d+)([A-ZÀ-Ÿ\s.-]+?)(\d+\.?\d*)/gi;
-                            
-                            tempBlocks = [];
-                            if (processedString.match(regexConcatenated4)) { 
-                                while ((match = regexConcatenated4.exec(processedString)) !== null) {
-                                    tempBlocks.push([match[1].trim(), match[2].trim(), match[3].trim(), match[4].trim()]);
-                                }
-                                if (tempBlocks.length > 0) {
-                                    finalColumnNames = ['Classificação', 'Inscrição', 'Nome', 'Nota'];
-                                    candidateBlocks = tempBlocks;
-                                    patternFound = true;
-                                }
-                            } else if (processedString.match(regexConcatenated3)) { 
-                                tempBlocks = [];
-                                while ((match = regexConcatenated3.exec(processedString)) !== null) {
-                                    tempBlocks.push([match[1].trim(), match[2].trim(), match[3].trim()]);
-                                }
-                                if (tempBlocks.length > 0) {
-                                    finalColumnNames = ['Inscrição', 'Nome', 'Nota'];
-                                    candidateBlocks = tempBlocks;
-                                    patternFound = true;
-                                }
-                            }
-
-                            // NOVO PADRÃO 6: Nome, Idade / Nome, Idade (dois campos)
-                            if (!patternFound) {
-                                const regexNameAge = /([A-ZÀ-Ÿ\s.-]+?),\s*(\d+)\s*(?:\/\s*|$)/gi;
-                                tempBlocks = [];
-                                while ((match = regexNameNameAge.exec(processedString)) !== null) {
-                                    tempBlocks.push([match[1].trim(), match[2].trim()]);
-                                }
-                                if (tempBlocks.length > 0) {
-                                    finalColumnNames = ['Nome', 'Idade'];
-                                    candidateBlocks = tempBlocks;
-                                    patternFound = true;
-                                }
-                            }
-                            
-                            if (!patternFound && processedString.length > 0) {
-                                // Fallback se NADA funcionou: tenta dividir por espaços/múltiplos espaços/tabuladores
-                                // e assume uma linha por candidato
-                                const lines = processedString.split('/').map(line => line.trim()).filter(line => line.length > 0);
-                                if (lines.length > 0) {
-                                    // Tenta dividir a primeira linha para inferir o número de colunas
-                                    const sampleLine = lines[0];
-                                    let fields = sampleLine.split(/[\s,;]+/).filter(f => f.length > 0);
-                                    
-                                    if (fields.length > 1) { 
-                                        finalColumnNames = Array.from({ length: fields.length }, (_, i) => `Campo ${i + 1}`);
-                                        candidateBlocks = lines.map(line => line.split(/[\s,;]+/).filter(f => f.length > 0));
-                                        // Filtra linhas que não têm o número esperado de campos
-                                        candidateBlocks = candidateBlocks.filter(block => block.length === fields.length);
-                                        if (candidateBlocks.length > 0) {
-                                            patternFound = false; // Indica que o padrão é genérico, requer mapeamento
-                                        } else {
-                                            // Se mesmo com espaços não funcionou bem para múltiplas linhas
-                                            candidateBlocks = [[processedString]]; // Trata tudo como 1 campo
-                                            finalColumnNames = ['Dados Brutos'];
-                                            patternFound = false; // Ainda não detectado automaticamente
-                                        }
-                                    } else { // Se só tem um campo (ou não conseguiu dividir)
-                                        candidateBlocks = [[processedString]];
-                                        finalColumnNames = ['Dados Brutos'];
-                                        patternFound = false;
-                                    }
-                                } else {
-                                    candidateBlocks = [];
-                                    finalColumnNames = [];
-                                    patternFound = true; // Entrada vazia tratada como padrão "detectado" (sem dados)
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            
-            const organizedData = [];
-            candidateBlocks.forEach(rowFields => {
-                const rowData = new Array(finalColumnNames.length).fill(null);
-                for (let i = 0; i < Math.min(rowFields.length, finalColumnNames.length); i++) {
-                    const value = rowFields[i];
-                    const colName = finalColumnNames[i]; 
-                    const inferredType = getColumnType(colName);
-
-                    if (value !== null && value !== undefined && value !== '') {
-                        let cleanedValue = value.replace(/º/g, '').trim(); 
-                        if (inferredType === 'numeric') {
-                            rowData[i] = parseFloat(cleanedValue);
-                        } else if (inferredType === 'integer_numeric') {
-                            rowData[i] = parseInt(cleanedValue, 10);
-                        } else {
-                            rowData[i] = cleanedValue;
-                        }
-                    }
-                }
-                organizedData.push(rowData);
-            });
-            
-            return { columnNames: finalColumnNames, organizedData, patternDetected: patternFound };
-        }
-
-
-        function organizeData() {
-            const dataInput = document.getElementById('dataInput').value.trim();
-            const addRankingColumn = document.getElementById('addRankingColumn').checked;
-            const containerResult = document.getElementById('ContainerResult');
-            const organizeButton = document.getElementById('organizeButton');
-            const loadingSpinner = document.getElementById('loadingSpinner');
-            const organizeText = document.getElementById('organizeText');
-            const patternWarning = document.getElementById('patternWarning');
-            const manualMappingArea = document.getElementById('manualMappingArea');
-            const mapColumnsButton = document.getElementById('mapColumnsButton'); // Novo botão
-
-            // Garante que o modo de renomeação de cabeçalhos esteja desativado
-            if (isRenamingColumns) {
-                toggleColumnRename(); 
-            }
-
-            // Oculta avisos e áreas de mapeamento manual (serão exibidos pelo novo botão, se necessário)
-            patternWarning.style.display = 'none';
-            manualMappingArea.style.display = 'none';
-
-            if (dataInput === "") {
-                containerResult.style.display = 'none';
-                mapColumnsButton.style.display = 'none'; // Esconde o novo botão se não há dados
-                alert("Por favor, digite algum dado na 'Lista dos candidatos' para organizar.");
-                return;
-            }
-
-            organizeText.style.display = 'none';
-            loadingSpinner.style.display = 'inline-block';
-            organizeButton.disabled = true;
-
-            setTimeout(() => {
-                try {
-                    let { columnNames, organizedData, patternDetected } = inferAndApplyPattern(dataInput);
-                    lastInferredData = { columnNames, organizedData, patternDetected }; // Salva para possível mapeamento manual
-
-                    // Sempre exibe o container de resultados e o botão de Mapear Campos após a organização
-                    containerResult.style.display = 'block';
-                    mapColumnsButton.style.display = 'flex'; // Exibe o novo botão "Mapear Campos"
-
-                    columnTypes = {};
-                    columnNames.forEach(name => {
-                        columnTypes[name] = getColumnType(name);
-                    });
-
-                    // Aplica a ordenação inicial (mantido do código anterior)
-                    organizedData.sort((a, b) => {
-                        const notaIndex = columnNames.indexOf('Nota');
-                        const classificacaoIndex = columnNames.indexOf('Classificação');
-                        const campoNum1Index = columnNames.indexOf('Campo 1'); 
-                        const nomeIndex = columnNames.indexOf('Nome'); 
-                        const inscricaoIndex = columnNames.indexOf('Inscrição'); 
-                        const posicaoIndex = columnNames.indexOf('Posição'); 
-                        const idadeIndex = columnNames.indexOf('Idade'); 
-
-                        if (notaIndex !== -1 && a[notaIndex] !== null && b[notaIndex] !== null) {
-                            const valA = parseFloat(a[notaIndex]);
-                            const valB = parseFloat(b[notaIndex]);
-                            const comp = (isNaN(valB) ? -Infinity : valB) - (isNaN(valA) ? -Infinity : valA);
-                            if (comp !== 0) return comp;
-                        }
-                        
-                        if (idadeIndex !== -1 && a[idadeIndex] !== null && b[idadeIndex] !== null) { 
-                            const valA = parseInt(a[idadeIndex]);
-                            const valB = parseInt(b[idadeIndex]);
-                            const comp = (isNaN(valB) ? -Infinity : valB) - (isNaN(valA) ? -Infinity : valA);
-                            if (comp !== 0) return comp;
-                        }
-
-                        if (classificacaoIndex !== -1 && a[classificacaoIndex] !== null && b[classificacaoIndex] !== null) {
-                            const valA = parseInt(a[classificacaoIndex]);
-                            const valB = parseInt(b[classificacaoIndex]);
-                            const comp = (isNaN(valA) ? Infinity : valA) - (isNaN(valB) ? Infinity : valB);
-                            if (comp !== 0) return comp;
-                        } else if (campoNum1Index !== -1 && a[campoNum1Index] !== null && b[campoNum1Index] !== null) {
-                            const valA = parseInt(a[campoNum1Index]);
-                            const valB = parseInt(b[campoNum1Index]);
-                            const comp = (isNaN(valA) ? Infinity : valA) - (isNaN(valB) ? Infinity : valB);
-                            if (comp !== 0) return comp;
-                        }
-                        
-                        if (inscricaoIndex !== -1 && a[inscricaoIndex] !== null && b[inscricaoIndex] !== null) {
-                            const valA = parseInt(a[inscricaoIndex]);
-                            const valB = parseInt(b[inscricaoIndex]);
-                            const comp = (isNaN(valA) ? Infinity : valA) - (isNaN(valB) ? Infinity : valB);
-                            if (comp !== 0) return comp;
-                        }
-
-                        if (posicaoIndex !== -1 && a[posicaoIndex] !== null && b[posicaoIndex] !== null) {
-                            const valA = parseInt(a[posicaoIndex]);
-                            const valB = parseInt(b[posicaoIndex]);
-                            const comp = (isNaN(valA) ? Infinity : valA) - (isNaN(valB) ? Infinity : valB);
-                            if (comp !== 0) return comp;
-                        }
-
-                        if (nomeIndex !== -1 && a[nomeIndex] !== null && b[nomeIndex] !== null) {
-                            const nomeA = a[nomeIndex] || '';
-                            const nomeB = b[nomeIndex] || '';
-                            return String(nomeA).localeCompare(String(nomeB), undefined, { numeric: true, sensitivity: 'base' });
-                        }
-                        
-                        return 0;
-                    });
-
-                    let finalColumnNamesForTable = [...columnNames];
-                    if (addRankingColumn) {
-                        const columnsToRemove = ['Classificação', 'Posição', 'Ranking', 'Campo Num 1', 'Campo 1']; 
-                        columnsToRemove.forEach(colName => {
-                            const existingIndex = finalColumnNamesForTable.indexOf(colName);
-                            if (existingIndex !== -1) {
-                                finalColumnNamesForTable.splice(existingIndex, 1);
-                                organizedData.forEach(row => {
-                                    row.splice(existingIndex, 1);
-                                });
-                            }
-                        });
-
-                        organizedData.forEach((row, index) => {
-                            row.unshift(index + 1);
-                        });
-                        finalColumnNamesForTable.unshift('Classificação'); 
-                        columnTypes['Classificação'] = 'integer_numeric'; 
-                    }
-
-                    updateTable(finalColumnNamesForTable, organizedData);
-                    document.getElementById('ContainerResult').scrollIntoView({ behavior: 'smooth', block: 'start' });
-
-                } finally {
-                    organizeText.style.display = 'inline';
-                    loadingSpinner.style.display = 'none';
-                    organizeButton.disabled = false;
-                }
-            }, 100); 
-        }
-
-        // NOVA FUNÇÃO: Exibe a área de mapeamento manual e o aviso
-        function showManualMapping() {
-            if (isRenamingColumns) { // Sai do modo de renomeação de cabeçalhos se estiver ativo
-                toggleColumnRename();
-            }
-            if (!lastInferredData || lastInferredData.organizedData.length === 0) {
-                alert("Por favor, organize os dados primeiro para poder mapear os campos.");
-                return;
-            }
-
-            // Exibe o aviso e a área de mapeamento
-            document.getElementById('patternWarning').style.display = 'block';
-            document.getElementById('manualMappingArea').style.display = 'block';
-            
-            // AGORA PASSA currentColumnNames para a pré-seleção dos dropdowns
-            displayManualMappingOptions(lastInferredData.columnNames, lastInferredData.organizedData, currentColumnNames);
-            
-            // Rola para a área de mapeamento
-            document.getElementById('manualMappingArea').scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-
-
-        // Função para exibir as opções de mapeamento manual
-        // Adicionado o parâmetro `tableCurrentHeaders` para pré-selecionar os dropdowns
-        function displayManualMappingOptions(inferredColumnNames, inferredData, tableCurrentHeaders) {
-            const columnMappingInputsDiv = document.getElementById('columnMappingInputs');
-            columnMappingInputsDiv.innerHTML = ''; // Limpa os inputs anteriores
-
-            // Limita a exibição para as primeiras N colunas se houver muitas
-            const displayLimit = inferredColumnNames.length; 
-
-            inferredColumnNames.slice(0, displayLimit).forEach((colName, index) => {
-                const div = document.createElement('div');
-                div.className = 'flex flex-col items-center';
-
-                const label = document.createElement('label');
-                label.className = 'mb-1 text-sm dark:text-gray-300';
-                label.textContent = `Coluna ${index + 1}:`;
-                div.appendChild(label);
-
-                const select = document.createElement('select');
-                select.className = 'p-2 border rounded-md dark:bg-gray-700 dark:text-gray-100';
-                select.setAttribute('data-col-index', index); // Armazena o índice da coluna original
-
-                const currentHeaderName = tableCurrentHeaders[index] || colName; // Pega o nome atual da tabela ou o inferido
-
-                predefinedColumnOptions.forEach(option => {
-                    const opt = document.createElement('option');
-                    opt.value = option.value;
-                    opt.textContent = option.text;
-                    
-                    // Tenta pré-selecionar com base no currentHeaderName
-                    if (option.value === currentHeaderName) {
-                        opt.selected = true;
-                    } else if (option.value === colName && !predefinedColumnOptions.some(p => p.value === currentHeaderName && p.value !== '')) {
-                        // Fallback: se o currentHeaderName não está nas opções predefinidas,
-                        // e o inferido (colName) está, pré-seleciona o inferido.
-                        opt.selected = true;
-                    }
-                    select.appendChild(opt);
-                });
-
-                div.appendChild(select);
-
-                const customInput = document.createElement('input');
-                customInput.type = 'text';
-                customInput.placeholder = 'Nome personalizado';
-                customInput.className = 'mt-2 p-2 border rounded-md w-32 dark:bg-gray-700 dark:text-gray-100';
-                // Define o valor do customInput se a opção 'Outro' for selecionada ou se o nome atual não for predefinido
-                if (!predefinedColumnOptions.some(opt => opt.value === currentHeaderName && opt.value !== '')) {
-                    customInput.value = currentHeaderName;
-                    select.value = 'Outro'; // Força a seleção de "Outro"
-                    customInput.style.display = 'block';
-                } else {
-                    customInput.style.display = 'none'; // Inicialmente oculto
-                }
-                div.appendChild(customInput);
-
-                select.addEventListener('change', (event) => {
-                    if (event.target.value === 'Outro') {
-                        customInput.style.display = 'block';
-                        customInput.focus();
-                    } else {
-                        customInput.style.display = 'none';
-                        customInput.value = ''; // Limpa o valor se não for "Outro"
-                    }
-                });
-
-                columnMappingInputsDiv.appendChild(div);
-            });
-            // Oculta a tabela real e mostra uma prévia das primeiras linhas para ajudar o usuário
-            document.getElementById('resultTable').style.display = 'none';
-            document.getElementById('tableHeaders').innerHTML = '';
-            document.getElementById('tableBody').innerHTML = '';
-            displayPreviewRows(inferredData, inferredColumnNames); // Mostra prévia
-        }
-
-
-        // Função para exibir as primeiras linhas dos dados brutos na tabela para mapeamento
-        function displayPreviewRows(data, columnNames) {
-            const tableHeaders = document.getElementById('tableHeaders');
-            const tableBody = document.getElementById('tableBody');
-            const previewRowCount = Math.min(data.length, 5); // Mostra até 5 linhas de prévia
-
-            // Cria cabeçalhos genéricos para a prévia
-            // Se já temos nomes de coluna (mesmo que "Campo 1"), usamos eles
-            const headersToDisplay = columnNames.length > 0 ? columnNames : Array.from({ length: data[0].length }, (_, i) => `Campo ${i + 1}`);
-
-            headersToDisplay.forEach((name, index) => {
-                const th = document.createElement('th');
-                th.textContent = name; // Usa o nome inferido ou genérico
-                tableHeaders.appendChild(th);
-            });
-
-            // Adiciona as linhas de dados brutos à tabela
-            for (let i = 0; i < previewRowCount; i++) {
-                const tr = document.createElement('tr');
-                // Garante que estamos pegando os dados correspondentes aos cabeçalhos exibidos
-                const rowData = data[i];
-                for (let j = 0; j < headersToDisplay.length; j++) {
-                    const td = document.createElement('td');
-                    // Verifica se a célula existe antes de tentar acessá-la
-                    const cellData = rowData && rowData[j] !== undefined ? rowData[j] : '';
-                    td.textContent = String(cellData || '').substring(0, 50) + (String(cellData || '').length > 50 ? '...' : ''); // Limita texto longo
-                    tr.appendChild(td);
-                }
-                tableBody.appendChild(tr);
-            }
-            document.getElementById('resultTable').style.display = 'table'; // Mostra a tabela para a prévia
-        }
-
-
-        // Função para aplicar o mapeamento manual
-        function applyManualMapping() {
-            const columnMappingInputsDiv = document.getElementById('columnMappingInputs');
-            const selects = columnMappingInputsDiv.querySelectorAll('select');
-            const customInputs = columnMappingInputsDiv.querySelectorAll('input[type="text"]');
-            
-            const newColumnNames = [];
-            const originalDataIndices = []; // Para saber qual índice original corresponde ao novo nome
-
-            // Verifica se todos os selects foram preenchidos
-            let allMapped = true;
-            selects.forEach((select, i) => {
-                const selectedValue = select.value;
-                const originalIndex = parseInt(select.getAttribute('data-col-index'));
-                let finalColName;
-
-                if (selectedValue === 'Outro') {
-                    finalColName = customInputs[i].value.trim();
-                } else {
-                    finalColName = selectedValue;
-                }
-
-                if (finalColName === '' || finalColName === 'Selecione...') {
-                    allMapped = false;
-                }
-                newColumnNames.push(finalColName);
-                originalDataIndices.push(originalIndex);
-            });
-
-            if (!allMapped) {
-                alert("Por favor, nomeie todas as colunas ou selecione uma opção antes de aplicar o mapeamento.");
-                return;
-            }
-
-            if (newColumnNames.length === 0 || newColumnNames.length !== selects.length) {
-                return;
-            }
-
-            // Reprocessar os dados com os novos nomes de coluna
-            let remappedData = lastInferredData.organizedData.map(row => {
-                const newRow = [];
-                originalDataIndices.forEach(originalIdx => {
-                    newRow.push(row[originalIdx]);
-                });
-                return newRow;
-            });
-
-            // Reinicia os tipos de coluna com base nos novos nomes
-            columnTypes = {};
-            newColumnNames.forEach(name => {
-                columnTypes[name] = getColumnType(name);
-            });
-
-            // Aplica a lógica de adicionar coluna de classificação se marcado
-            const addRankingColumn = document.getElementById('addRankingColumn').checked;
-            if (addRankingColumn) {
-                const columnsToRemove = ['Classificação', 'Posição', 'Ranking', 'Campo Num 1', 'Campo 1'];
-                columnsToRemove.forEach(colName => {
-                    const existingIndex = newColumnNames.indexOf(colName);
-                    if (existingIndex !== -1) {
-                        newColumnNames.splice(existingIndex, 1);
-                        remappedData.forEach(row => {
-                            row.splice(existingIndex, 1);
-                        });
-                    }
-                });
-
-                remappedData.forEach((row, index) => {
-                    row.unshift(index + 1);
-                });
-                newColumnNames.unshift('Classificação'); 
-                columnTypes['Classificação'] = 'integer_numeric'; 
-            }
-
-            // Esconde a área de mapeamento manual e o aviso
-            document.getElementById('patternWarning').style.display = 'none';
-            document.getElementById('manualMappingArea').style.display = 'none';
-
-            // Atualiza a tabela com os dados remapeados
-            updateTable(newColumnNames, remappedData);
-            document.getElementById('resultTable').style.display = 'table'; // Garante que a tabela esteja visível
-        }
-
-
-        function updateTable(columnNames, data) {
-            const tableHeaders = document.getElementById('tableHeaders');
-            const tableBody = document.getElementById('tableBody');
-            tableHeaders.innerHTML = '';
-            tableBody.innerHTML = '';
-
-            const oldColumnNames = currentColumnNames;
-            currentColumnNames = columnNames; 
-            
-            const newSortDirections = {};
-            currentColumnNames.forEach((name, index) => {
-                const oldIndex = oldColumnNames.indexOf(name);
-                if (oldIndex !== -1 && sortDirections[oldIndex] !== undefined) {
-                    newSortDirections[index] = sortDirections[oldIndex];
-                } else {
-                    newSortDirections[index] = true; 
-                }
-            });
-            sortDirections = newSortDirections; 
-
-            columnNames.forEach((columnName, index) => {
-                const th = document.createElement('th');
-                th.textContent = columnName;
-                th.onclick = () => sortTable(index); 
-
-                // Adiciona o elemento para a seta de ordenação (oculto por padrão)
-                const arrowSpan = document.createElement('span');
-                arrowSpan.className = 'sort-arrow ml-1 text-gray-400 opacity-0 transition-opacity duration-200';
-                th.appendChild(arrowSpan);
-
-                tableHeaders.appendChild(th);
-            });
-
-            data.forEach(row => {
-                const tr = document.createElement('tr');
-                for (let i = 0; i < columnNames.length; i++) {
-                    const td = document.createElement('td');
-                    let value = row[i];
-                    const colName = columnNames[i];
-                    const colType = columnTypes[colName] || getColumnType(colName);
-
-                    // --- MUDANÇA APLICADA AQUI: NORMALIZAÇÃO DE QUEBRAS DE LINHA ---
-                    if (value !== null && value !== undefined) {
-                        value = String(value).replace(/[\r\n]+/g, ' ').trim();
-                    }
-                    // --- FIM DA MUDANÇA ---
-
-                    if (value !== null && value !== undefined) {
-                        if (colType === 'numeric') {
-                            td.textContent = parseFloat(value).toFixed(2);
-                        } else if (colType === 'integer_numeric') {
-                            td.textContent = parseInt(value, 10);
-                        } else if (colType === 'numeric_string') {
-                            td.textContent = String(value); 
-                        } else {
-                            td.textContent = String(value);
-                        }
-                    } else {
-                        td.textContent = '';
-                    }
-                    tr.appendChild(td);
-                }
-                tableBody.appendChild(tr);
-            });
-        }
-
-        function sortTable(columnIndex) {
-            // Se estiver no modo de edição, não permite ordenar
-            if (isRenamingColumns) {
-                return; 
-            }
-
-            const table = document.getElementById('resultTable');
-            const tbody = table.getElementsByTagName('tbody')[0];
-            const rows = Array.from(tbody.getElementsByTagName('tr'));
-            const headerCell = table.querySelector(`th:nth-child(${columnIndex + 1})`);
-            const headerText = headerCell.textContent.replace(/[\u2191\u2193]/g, '').trim(); 
-            const currentArrow = headerCell.querySelector('.sort-arrow');
-
-            document.querySelectorAll('#tableHeaders th .sort-arrow').forEach(arrow => {
-                arrow.classList.remove('opacity-100');
-                arrow.classList.add('opacity-0');
-                arrow.innerHTML = '';
-            });
-
-            sortDirections[columnIndex] = !sortDirections[columnIndex]; 
-
-            const colType = columnTypes[headerText] || getColumnType(headerText);
-
-            const sortedRows = rows.sort((a, b) => {
-                const textA = a.cells[columnIndex].textContent.trim();
-                const textB = b.cells[columnIndex].textContent.trim();
-
-                let valA, valB;
-
-                if (colType === 'numeric' || colType === 'integer_numeric') {
-                    valA = parseFloat(textA.replace(',', '.'));
-                    valB = parseFloat(textB.replace(',', '.'));
-                    valA = isNaN(valA) ? (sortDirections[columnIndex] ? Infinity : -Infinity) : valA;
-                    valB = isNaN(valB) ? (sortDirections[columnIndex] ? Infinity : -Infinity) : valB;
-                    return sortDirections[columnIndex] ? valA - valB : valB - valA;
-                } else if (colType === 'numeric_string') {
-                    valA = parseInt(textA);
-                    valB = parseInt(textB);
-                    valA = isNaN(valA) ? (sortDirections[columnIndex] ? Infinity : -Infinity) : valA;
-                    valB = isNaN(valB) ? (sortDirections[columnIndex] ? Infinity : -Infinity) : valB;
-                    return sortDirections[columnIndex] ? valA - valB : valB - valA;
-                } else {
-                    return sortDirections[columnIndex] ? textA.localeCompare(textB, undefined, { numeric: true, sensitivity: 'base' }) : textB.localeCompare(textA, undefined, { numeric: true, sensitivity: 'base' });
-                }
-            });
-
-            tbody.innerHTML = '';
-            sortedRows.forEach(row => tbody.appendChild(row));
-
-            currentArrow.classList.add('opacity-100');
-            currentArrow.innerHTML = sortDirections[columnIndex] ? '<i class="fas fa-arrow-up"></i>' : '<i class="fas fa-arrow-down"></i>';
-        }
-
-        // --- Lógica de Tema Claro/Escuro ---
-        const themeToggle = document.getElementById('themeToggle');
-        const themeIcon = document.getElementById('themeIcon');
-        const htmlElement = document.documentElement; 
-
-        function updateThemeToggle(isDark) {
-            if (isDark) {
-                themeIcon.classList.remove('fa-moon');
-                themeIcon.classList.add('fa-sun');
-                themeToggle.title = 'Mudar para modo claro';
-            } else {
-                themeIcon.classList.remove('fa-sun');
-                themeIcon.classList.add('fa-moon');
-                themeToggle.title = 'Mudar para modo escuro';
-            }
-        }
-
-        function applyTheme(theme) {
-            if (theme === 'dark') {
-                htmlElement.classList.add('dark');
-                updateThemeToggle(true);
-            } else {
-                htmlElement.classList.remove('dark');
-                updateThemeToggle(false);
-            }
-        }
-
-        const savedTheme = localStorage.getItem('theme');
-        if (savedTheme) {
-            applyTheme(savedTheme);
-        } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-            applyTheme('dark'); 
-        } else {
-            applyTheme('light'); 
-        }
-
-        window.onload = function() {
-            document.getElementById('currentYear').textContent = new Date().getFullYear();
-            document.getElementById('ContainerResult').style.display = 'none';
-            document.getElementById('mapColumnsButton').style.display = 'none'; // Garante que esteja oculto ao carregar
-        };
-        
-        themeToggle.addEventListener('click', () => {
-            if (htmlElement.classList.contains('dark')) {
-                applyTheme('light');
-                localStorage.setItem('theme', 'light');
-            } else {
-                applyTheme('dark');
-                localStorage.setItem('theme', 'dark');
-            }
-        });
-
-
-        function searchTable() {
-            let input = document.getElementById('searchInput').value.toUpperCase();
-            let table = document.getElementById('resultTable');
-            let tr = table.getElementsByTagName('tr');
-
-            for (let i = 1; i < tr.length; i++) {
-                let td = tr[i].getElementsByTagName('td');
-                let found = false;
-                for (let j = 0; j < td.length; j++) {
-                    if (td[j] && td[j].innerHTML.toUpperCase().indexOf(input) > -1) {
-                        found = true;
-                        break;
-                    }
-                }
-                tr[i].style.display = found ? '' : 'none';
-            }
-        }
-
-        function generatePDF() {
-            // Desabilita o modo de renomeação se estiver ativo antes de gerar PDF
-            if (isRenamingColumns) {
-                toggleColumnRename(); 
-            }
-
-            try {
-                const { jsPDF } = window.jspdf;
-                const doc = new jsPDF();
-
-                const margin = 10;
-                let y = margin;
-                const lineHeight = 10;
-                const pageWidth = doc.internal.pageSize.getWidth();
-
-                doc.setFontSize(16);
-                doc.setFont("helvetica", "bold");
-
-                const customTitle = document.getElementById('pdfTitleInput').value.trim();
-                const title = customTitle === '' ? "Relatório de Resultados" : customTitle;
-
-                const splitTitle = doc.splitTextToSize(title, pageWidth - 2 * margin);
-                doc.text(splitTitle, pageWidth / 2, y, { align: 'center' });
-                y += (splitTitle.length * lineHeight) + lineHeight;
-
-                const table = document.getElementById('resultTable');
-                if (!table || table.querySelector('tbody').children.length === 0) {
-                    alert("Erro: Gere a tabela primeiro clicando em 'Organizar'!");
-                    return;
-                }
-
-                // Assegura que os cabeçalhos usados para o PDF são os valores textuais atuais
-                const headers = Array.from(document.querySelectorAll('#tableHeaders th')).map(th => th.textContent.replace(/[\u2191\u2193]/g, '').trim()); 
-                const rows = Array.from(table.querySelectorAll('tbody tr')).map(tr =>
-                    Array.from(tr.querySelectorAll('td')).map(td =>
-                         td.textContent.replace(/\s*\n\s*/g, ' ').trim()
-                    )
-                );
-
-                doc.autoTable({
-                    head: [headers],
-                    body: rows,
-                    startY: y,
-                    margin: { left: margin, right: margin },
-                    styles: { 
-                        fontSize: 10, 
-                        cellPadding: 2, 
-                        halign: 'center',
-                        valign: 'middle',
-                        lineColor: [226, 232, 240], 
-                        lineWidth: 0.5 
-                    },
-                    headStyles: { 
-                        fillColor: [76, 175, 80], 
-                        textColor: 255, 
-                        fontStyle: 'bold', 
-                        halign: 'center',
-                        valign: 'middle'
-                    },
-                    alternateRowStyles: { 
-                        fillColor: [248, 250, 252] 
-                    },
-                    didDrawPage: function(data) {
-                    }
-                });
-
-                window.open(doc.output('bloburl'), '_blank');
-
-            } catch (error) {
-                console.error("Erro ao gerar PDF:", error);
-                alert("Erro ao gerar PDF. Veja o console para detalhes.");
-            }
-        }
-
-        // FUNÇÃO: Exportar dados da tabela para CSV com BOM e tratamento de quebra de linha
+        // ===================================================================
+        // 3. FUNÇÃO exportToCSV LIMPA E COM A CHAMADA PARA A NOTIFICAÇÃO
+        // ===================================================================
         function exportToCSV() {
-            // Desabilita o modo de renomeação se estiver ativo antes de exportar
             if (isRenamingColumns) {
                 toggleColumnRename(); 
             }
 
             const table = document.getElementById('resultTable');
+            const visibleRows = Array.from(table.querySelectorAll('tbody tr:not([style*="display: none"])'));
+
+            if (visibleRows.length === 0) {
+                alert("Não há dados visíveis para exportar. Limpe a busca ou verifique os dados.");
+                return;
+            }
+
             const headers = Array.from(table.querySelectorAll('thead th'))
-                               .map(th => {
-                                   let headerText = th.textContent.replace(/[\u2191\u2193]/g, '').trim();
-                                   // Substitui quebras de linha por espaço nos cabeçalhos também, por segurança
-                                   headerText = headerText.replace(/[\r\n]+/g, ' ').trim();
-                                   return `"${headerText.replace(/"/g, '""')}"`; // Remove setas, normaliza, e escapa aspas
-                               });
+                                        .map(th => {
+                                            let headerText = th.textContent.replace(/[\u2191\u2193]/g, '').trim();
+                                            headerText = headerText.replace(/[\r\n]+/g, ' ').trim();
+                                            return `"${headerText.replace(/"/g, '""')}"`;
+                                        });
             
-            const rows = Array.from(table.querySelectorAll('tbody tr')).map(tr => {
+            const rows = visibleRows.map(tr => {
                 return Array.from(tr.querySelectorAll('td'))
-                            .map(td => {
-                                let cellText = td.textContent;
-                                // REMOVIDO AQUI: a normalização de quebra de linha já é feita em updateTable()
-                                return `"${cellText.replace(/"/g, '""')}"`; // Escapa aspas em dados
-                            })
-                            .join(';'); // Delimitador ponto e vírgula
+                            .map(td => `"${td.textContent.replace(/"/g, '""')}"`)
+                            .join(';');
             });
 
-            const csvContent = headers.join(';') + '\n' + rows.join('\n'); // Junta cabeçalhos e linhas
+            const csvContent = headers.join(';') + '\n' + rows.join('\n');
 
-            // Adiciona o BOM (Byte Order Mark) para UTF-8.
             const bom = "\uFEFF"; 
             const blob = new Blob([bom + csvContent], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement('a');
@@ -1293,11 +476,55 @@
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
-            URL.revokeObjectURL(link.href); // Libera o objeto URL
-        }
+            URL.revokeObjectURL(link.href);
 
+            // Exibe a notificação de sucesso
+            showToast('Arquivo CSV gerado com sucesso!');
+        }
+        
+        function toggleColumnRename() {
+            isRenamingColumns = !isRenamingColumns;
+            const headers = document.querySelectorAll('#tableHeaders th');
+            const button = document.getElementById('toggleRenameHeadersButton');
+
+            if (isRenamingColumns) {
+                button.innerHTML = '<i class="fas fa-save"></i> Salvar Nomes';
+                button.classList.remove('bg-purple-600', 'hover:bg-purple-700', 'dark:bg-purple-500', 'dark:hover:bg-purple-400');
+                button.classList.add('bg-green-600', 'hover:bg-green-700', 'dark:bg-green-500', 'dark:hover:bg-green-400');
+                
+                headers.forEach((th, index) => {
+                    th.onclick = null; 
+                    th.classList.add('editable-header');
+                    const originalText = th.textContent.replace(/[\u2191\u2193]/g, '').trim();
+                    th.innerHTML = `<input type="text" value="${originalText}" class="w-full bg-transparent text-center font-semibold p-0" data-original-index="${index}">`;
+                });
+
+                const firstInput = headers[0].querySelector('input');
+                if (firstInput) firstInput.focus();
+
+            } else {
+                button.innerHTML = '<i class="fas fa-pencil-alt"></i> Renomear Cabeçalhos';
+                button.classList.remove('bg-green-600', 'hover:bg-green-700', 'dark:bg-green-500', 'dark:hover:bg-green-400');
+                button.classList.add('bg-purple-600', 'hover:bg-purple-700', 'dark:bg-purple-500', 'dark:hover:bg-purple-400');
+
+                const newColumnNames = [];
+                headers.forEach(th => {
+                    const input = th.querySelector('input');
+                    const newName = input ? input.value.trim() : th.textContent.trim();
+                    newColumnNames.push(newName);
+                    
+                    th.innerHTML = newName;
+                    th.classList.remove('editable-header');
+                    const originalIndex = parseInt(input.getAttribute('data-original-index'));
+                    th.onclick = () => sortTable(originalIndex);
+                    
+                    const arrowSpan = document.createElement('span');
+                    arrowSpan.className = 'sort-arrow ml-1 text-gray-400 opacity-0 transition-opacity duration-200';
+                    th.appendChild(arrowSpan);
+                });
+                currentColumnNames = newColumnNames; 
+            }
+        }
     </script>
 </body>
 </html>
-
-
