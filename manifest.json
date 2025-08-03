@@ -1,0 +1,17 @@
+{
+  "name": "Organizador de Dados de Concurso",
+  "short_name": "Organizador",
+  "description": "Uma ferramenta para organizar listas de candidatos de concursos.",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#f3f4f6",
+  "theme_color": "#4CAF50",
+  "icons": [
+    {
+      "src": "favicon.png",
+      "sizes": "486x559",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
