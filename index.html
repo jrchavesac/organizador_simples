@@ -30,26 +30,8 @@
         html.dark button:hover:not(:disabled) { background-color: #68d391; color: #1a202c; box-shadow: 0 4px 8px rgba(0,0,0,0.4); }
         html.dark button:disabled { background-color: #2f855a; }
         table { width: 100%; border-collapse: collapse; text-align: center; margin-top: 1rem; margin: auto; border-radius: 0.5rem; overflow: hidden; }
-        
-        /* ========================================================== */
-        /* ALTERAÇÃO PARA MELHORAR TABELA NO CELULAR                  */
-        /* ========================================================== */
-        th, td {
-            border: 1px solid #e2e8f0;
-            text-align: center;
-            cursor: pointer;
-            /* Estilos para telas pequenas (celular na vertical) */
-            padding: 0.5rem; /* p-2 */
-            font-size: 0.875rem; /* text-sm */
-        }
-        /* Para telas maiores (sm: 640px para cima), volta aos estilos originais */
-        @media (min-width: 640px) {
-            th, td {
-                padding: 0.75rem; /* p-3 */
-                font-size: 1rem; /* text-base */
-            }
-        }
-
+        th, td { border: 1px solid #e2e8f0; text-align: center; cursor: pointer; padding: 0.5rem; font-size: 0.875rem; }
+        @media (min-width: 640px) { th, td { padding: 0.75rem; font-size: 1rem; } }
         th { background-color: #4CAF50; color: white; font-weight: 600; position: relative; padding-right: 25px; }
         th .sort-arrow { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); font-size: 0.8em; color: rgba(255, 255, 255, 0.7); }
         td { background-color: #ffffff; }
@@ -77,6 +59,13 @@
         html.dark .tooltip-text::after { border-color: #f8fafc transparent transparent transparent; }
         .editable-header { cursor: text !important; border: 1px dashed #68d391; background-color: rgba(72, 187, 120, 0.2); }
         html.dark .editable-header { border: 1px dashed #9AE6B4; background-color: rgba(104, 211, 145, 0.2); }
+
+        /* ========================================================== */
+        /* CSS PARA O "MODO DE EDIÇÃO" DA TABELA                      */
+        /* ========================================================== */
+        .table-editing-mode th {
+            min-width: 150px;
+        }
     </style>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -190,21 +179,12 @@
     </div>
 
     <script>
+        // ... (todo o script, com a alteração na função toggleColumnRename) ...
         document.getElementById('currentYear').textContent = new Date().getFullYear();
         let sortDirections = {}; let currentColumnNames = []; let columnTypes = {}; let isRenamingColumns = false; let lastInferredData = null;
         const typeMapping = { 'classificacao': 'integer_numeric', 'posicao': 'integer_numeric', 'ranking': 'integer_numeric', 'inscricao': 'numeric_string', 'matricula': 'numeric_string', 'nota': 'numeric', 'pontuacao': 'numeric', 'total': 'numeric', 'acertos': 'numeric', 'idade': 'integer_numeric' };
         const predefinedColumnOptions = [ { value: '', text: 'Selecione...' }, { value: 'Classificação', text: 'Classificação' }, { value: 'Nome', text: 'Nome' }, { value: 'Inscrição', text: 'Inscrição' }, { value: 'Nota', text: 'Nota' }, { value: 'Pontuação', text: 'Pontuação' }, { value: 'Posição', text: 'Posição' }, { value: 'Matrícula', text: 'Matrícula' }, { value: 'Acertos', text: 'Acertos' }, { value: 'Idade', text: 'Idade' }, { value: 'Outro', text: 'Outro (digite abaixo)' } ];
-        
-        function showToast(message, duration = 3000) {
-            const toast = document.getElementById('toast-notification');
-            if (!toast) return;
-            toast.textContent = message;
-            toast.classList.remove('translate-y-20', 'opacity-0');
-            setTimeout(() => {
-                toast.classList.add('translate-y-20', 'opacity-0');
-            }, duration);
-        }
-
+        function showToast(message, duration = 3000) { const toast = document.getElementById('toast-notification'); if (!toast) return; toast.textContent = message; toast.classList.remove('translate-y-20', 'opacity-0'); setTimeout(() => { toast.classList.add('translate-y-20', 'opacity-0'); }, duration); }
         function getColumnType(columnName) { const lowerName = columnName.toLowerCase(); for (const key in typeMapping) { if (lowerName.includes(key)) return typeMapping[key]; } if (lowerName.includes('nome')) return 'string'; return 'string'; }
         function isNumeric(str) { if (str === null || str === undefined || str.trim() === '') return false; return /^-?\d+(\.\d+)?$/.test(str.trim()); }
         function isInteger(str) { if (str === null || str === undefined || str.trim() === '') return false; return /^-?\d+$/.test(str.trim()); }
@@ -225,27 +205,32 @@
         
         function toggleColumnRename() {
             isRenamingColumns = !isRenamingColumns;
+            const table = document.getElementById('resultTable'); // Pega a referência da tabela
             const headers = document.querySelectorAll('#tableHeaders th');
             const button = document.getElementById('toggleRenameHeadersButton');
+
             if (isRenamingColumns) {
+                table.classList.add('table-editing-mode'); // LIGA o modo de edição
                 button.innerHTML = '<i class="fas fa-save"></i> Salvar Nomes';
                 button.classList.remove('bg-purple-600', 'hover:bg-purple-700', 'dark:bg-purple-500', 'dark:hover:bg-purple-400');
                 button.classList.add('bg-green-600', 'hover:bg-green-700', 'dark:bg-green-500', 'dark:hover:bg-green-400');
+                
                 headers.forEach((th, index) => {
                     th.onclick = null;
                     th.classList.add('editable-header');
                     const originalText = th.textContent.replace(/[\u2191\u2193]/g, '').trim();
-                    // ==========================================================
-                    // ALTERAÇÃO PARA MELHORAR INPUT NO CELULAR
-                    // ==========================================================
                     th.innerHTML = `<input type="text" value="${originalText}" class="w-full bg-transparent text-center font-semibold p-0 text-sm border-none focus:ring-0" data-original-index="${index}">`;
                 });
+
                 const firstInput = headers[0].querySelector('input');
                 if (firstInput) firstInput.focus();
+
             } else {
+                table.classList.remove('table-editing-mode'); // DESLIGA o modo de edição
                 button.innerHTML = '<i class="fas fa-pencil-alt"></i> Renomear Cabeçalhos';
                 button.classList.remove('bg-green-600', 'hover:bg-green-700', 'dark:bg-green-500', 'dark:hover:bg-green-400');
                 button.classList.add('bg-purple-600', 'hover:bg-purple-700', 'dark:bg-purple-500', 'dark:hover:bg-purple-400');
+                
                 const newColumnNames = [];
                 headers.forEach(th => {
                     const input = th.querySelector('input');
