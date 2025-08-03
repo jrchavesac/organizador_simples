@@ -25,7 +25,16 @@
         *, *::before, *::after { box-sizing: border-box; }
         body { font-family: 'Inter', Arial, sans-serif; background-color: #f3f4f6; color: #1f2937; transition: background-color 0.3s ease, color 0.3s ease; }
         html.dark body { background-color: #1a202c; color: #e2e8f0; }
-        textarea, select, input[type="text"] { border-radius: 0.5rem; border: 1px solid #4CAF50; padding: 0.75rem; width: 70%; color: #004d40; outline: none; transition: border-color 0.2s, box-shadow 0.2s, background-color 0.3s ease, color 0.3s ease; background-color: #ffffff; }
+        
+        textarea, select, input[type="text"] { 
+            border-radius: 0.5rem; 
+            border: 1px solid #4CAF50; 
+            padding: 0.75rem; 
+            color: #004d40; 
+            outline: none; 
+            transition: border-color 0.2s, box-shadow 0.2s, background-color 0.3s ease, color 0.3s ease; 
+            background-color: #ffffff; 
+        }
         html.dark textarea, html.dark select, html.dark input[type="text"] { background-color: #2d3748; color: #e2e8f0; border-color: #48bb78; }
         textarea:focus, select:focus, input[type="text"]:focus { border-color: #388E3C; box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2); }
         html.dark textarea:focus, html.dark select:focus, html.dark input[type="text"]:focus { border-color: #68d391; box-shadow: 0 0 0 3px rgba(72, 187, 120, 0.4); }
@@ -47,7 +56,7 @@
         html.dark th .sort-arrow { color: rgba(0, 0, 0, 0.5); }
         html.dark td { background-color: #2d3748; color: #e2e8f0; border-color: #4a5568; }
         html.dark tr:nth-child(even) td { background-color: #4a5568; }
-        h1 { font-size: 1.25rem; font-weight: 700; color: #1a202c; transition: color 0.3s ease; } /* Tamanho de fonte ajustado */
+        h1 { font-weight: 700; color: #1a202c; transition: color 0.3s ease; }
         @media (min-width: 640px) { h1 { font-size: 1.875rem; } } /* sm:text-3xl */
         html.dark h1 { color: #e2e8f0; }
         h4 { font-size: 0.875rem; color: #718096; margin-top: 1rem; transition: color 0.3s ease; }
@@ -79,11 +88,9 @@
     <header class="w-full bg-white shadow-md py-3 text-center dark:bg-gray-800 dark:text-gray-100">
         <div class="max-w-4xl mx-auto flex items-center gap-3 sm:gap-4 px-4">
             <img src="favicon.png" alt="Ícone" class="w-8 h-8 flex-shrink-0">
-            
             <h1 class="flex-grow text-center text-xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100">
                 Organizador de Dados de Concurso
             </h1>
-
             <button id="themeToggle" class="flex-shrink-0 bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-200 p-2 rounded-full shadow-sm hover:shadow-md transition-all duration-200" title="Mudar tema">
                 <i class="fas fa-moon" id="themeIcon"></i>
             </button>
@@ -95,7 +102,7 @@
             <form id="organizeForm" class="space-y-4">
                 <div class="form-group flex flex-col items-center tooltip-container">
                     <label for="dataInput" class="text-lg font-semibold text-green-600 mb-2 dark:text-green-400">Lista dos Candidatos:</label>
-                    <textarea id="dataInput" name="dataInput" rows="4" cols="50" class="w-full max-w-md"></textarea>
+                    <textarea id="dataInput" name="dataInput" rows="4" class="w-full max-w-md resize-y max-h-96 min-h-28"></textarea>
                     <span class="tooltip-text">Insira a lista dos candidatos.</span>
                 </div>
                 <div class="form-group flex flex-col items-center tooltip-container">
