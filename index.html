@@ -47,7 +47,7 @@
         html.dark th .sort-arrow { color: rgba(0, 0, 0, 0.5); }
         html.dark td { background-color: #2d3748; color: #e2e8f0; border-color: #4a5568; }
         html.dark tr:nth-child(even) td { background-color: #4a5568; }
-        h1 { font-size: 2.25rem; font-weight: 700; color: #1a202c; margin-bottom: 1.5rem; transition: color 0.3s ease; }
+        h1 { font-size: 2.25rem; font-weight: 700; color: #1a202c; transition: color 0.3s ease; }
         html.dark h1 { color: #e2e8f0; }
         h4 { font-size: 0.875rem; color: #718096; margin-top: 1rem; transition: color 0.3s ease; }
         html.dark h4 { color: #a0aec0; }
@@ -76,12 +76,14 @@
 <body class="bg-gray-100 text-gray-800 font-sans antialiased">
 
     <header class="w-full bg-white shadow-md py-4 text-center dark:bg-gray-800 dark:text-gray-100">
-        <div class="relative max-w-4xl mx-auto flex items-center justify-center px-4 flex-wrap">
-            <h1 class="text-2xl sm:text-4xl font-bold text-gray-900 dark:text-gray-100 flex items-center justify-center text-center">
-                <img src="favicon.png" alt="Ícone" class="w-8 h-8 mr-2 sm:mr-4">
-                <span>Organizador de Dados de Concurso</span>
-            </h1>
-            <button id="themeToggle" class="ml-4 bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-200 px-3 py-1 rounded-full text-lg shadow-sm hover:shadow-md transition-all duration-200" title="Mudar para modo escuro">
+        <div class="relative max-w-4xl mx-auto flex items-center justify-between px-4 gap-4">
+            <div class="flex items-center">
+                <img src="favicon.png" alt="Ícone" class="w-8 h-8 mr-2 sm:mr-4 flex-shrink-0">
+                <h1 class="text-xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100">
+                    Organizador de Dados de Concurso
+                </h1>
+            </div>
+            <button id="themeToggle" class="flex-shrink-0 bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-200 p-2 rounded-full shadow-sm hover:shadow-md transition-all duration-200" title="Mudar tema">
                 <i class="fas fa-moon" id="themeIcon"></i>
             </button>
         </div>
