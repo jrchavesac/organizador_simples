@@ -68,12 +68,10 @@
 
     <header class="w-full bg-white shadow-md py-4 text-center dark:bg-gray-800 dark:text-gray-100">
         <div class="relative max-w-4xl mx-auto flex items-center justify-center px-4">
-            
             <h1 class="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-gray-100 flex items-center justify-center">
                 <img src="favicon.png" alt="Ícone" class="w-8 h-8 mr-4">
                 <span>Organizador de Dados de Concurso</span>
             </h1>
-            
             <button id="themeToggle" class="ml-4 bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-200 px-3 py-1 rounded-full text-lg shadow-sm hover:shadow-md transition-all duration-200" title="Mudar para modo escuro">
                 <i class="fas fa-moon" id="themeIcon"></i>
             </button>
@@ -173,17 +171,26 @@
     </div>
 
     <script>
-        // ... (todo o seu JavaScript continua aqui, sem alterações) ...
         document.getElementById('currentYear').textContent = new Date().getFullYear();
         let sortDirections = {}; let currentColumnNames = []; let columnTypes = {}; let isRenamingColumns = false; let lastInferredData = null;
         const typeMapping = { 'classificacao': 'integer_numeric', 'posicao': 'integer_numeric', 'ranking': 'integer_numeric', 'inscricao': 'numeric_string', 'matricula': 'numeric_string', 'nota': 'numeric', 'pontuacao': 'numeric', 'total': 'numeric', 'acertos': 'numeric', 'idade': 'integer_numeric' };
         const predefinedColumnOptions = [ { value: '', text: 'Selecione...' }, { value: 'Classificação', text: 'Classificação' }, { value: 'Nome', text: 'Nome' }, { value: 'Inscrição', text: 'Inscrição' }, { value: 'Nota', text: 'Nota' }, { value: 'Pontuação', text: 'Pontuação' }, { value: 'Posição', text: 'Posição' }, { value: 'Matrícula', text: 'Matrícula' }, { value: 'Acertos', text: 'Acertos' }, { value: 'Idade', text: 'Idade' }, { value: 'Outro', text: 'Outro (digite abaixo)' } ];
-        function showToast(message, duration = 3000) { const toast = document.getElementById('toast-notification'); if (!toast) return; toast.textContent = message; toast.classList.remove('translate-y-20', 'opacity-0'); setTimeout(() => { toast.classList.add('translate-y-20', 'opacity-0'); }, duration); }
+        
+        function showToast(message, duration = 3000) {
+            const toast = document.getElementById('toast-notification');
+            if (!toast) return;
+            toast.textContent = message;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, duration);
+        }
+
         function getColumnType(columnName) { const lowerName = columnName.toLowerCase(); for (const key in typeMapping) { if (lowerName.includes(key)) return typeMapping[key]; } if (lowerName.includes('nome')) return 'string'; return 'string'; }
         function isNumeric(str) { if (str === null || str === undefined || str.trim() === '') return false; return /^-?\d+(\.\d+)?$/.test(str.trim()); }
         function isInteger(str) { if (str === null || str === undefined || str.trim() === '') return false; return /^-?\d+$/.test(str.trim()); }
         function inferAndApplyPattern(rawInputString) { if (!rawInputString) { return { columnNames: [], organizedData: [], patternDetected: true }; } let processedString = rawInputString .replace(/\r\n|\r/g, ' ') .replace(/º|°/g, '', ' ') .replace(/(\d+),(\d{1,2})(?![0-9])/g, '$1.$2') .trim(); let candidateBlocks = []; let finalColumnNames = []; let patternFound = false; const regexNameInscNota = /([A-ZÀ-Ÿ\s.-]+?),\s*(\d+),\s*(\d+\.?\d*)\s*(?:\/\s*|$)/gi; let match; let tempBlocks = []; while ((match = regexNameInscNota.exec(processedString)) !== null) { tempBlocks.push([match[1].trim(), match[2].trim(), match[3].trim()]); } if (tempBlocks.length > 0) { finalColumnNames = ['Nome', 'Inscrição', 'Nota']; candidateBlocks = tempBlocks; patternFound = true; } else { const regexPattern3Fields = /(\d+);\s*([A-ZÀ-Ÿ\s.-]+?);\s*(\d+\.?\d*)\s*(?:\/\s*|$)/gi; tempBlocks = []; while ((match = regexPattern3Fields.exec(processedString)) !== null) { tempBlocks.push([match[1].trim(), match[2].trim(), match[3].trim()]); } if (tempBlocks.length > 0) { finalColumnNames = ['Inscrição', 'Nome', 'Nota']; candidateBlocks = tempBlocks; patternFound = true; } else { const regexPattern4FieldsComma = /(\d+),\s*(\d+),\s*([A-ZÀ-Ÿ\s.-]+?),\s*(\d+\.?\d*)\s*(?:\/\s*|$)/gi; tempBlocks = []; while ((match = regexPattern4FieldsComma.exec(processedString)) !== null) { tempBlocks.push([match[1].trim(), match[2].trim(), match[3].trim(), match[4].trim()]); } if (tempBlocks.length > 0) { finalColumnNames = ['Classificação', 'Inscrição', 'Nome', 'Nota']; candidateBlocks = tempBlocks; patternFound = true; } else { const regexPattern4FieldsSlashOnly = /(\d+)\s*\/\s*([A-ZÀ-Ÿ\s.-]+?)\s*\/\s*(\d+)\s*\/\s*(\d+\.?\d*)\s*(?:\/\s*|$)/gi; tempBlocks = []; while ((match = regexPattern4FieldsSlashOnly.exec(processedString)) !== null) { tempBlocks.push([match[1].trim(), match[2].trim(), match[3].trim(), match[4].trim()]); } if (tempBlocks.length > 0) { finalColumnNames = ['Inscrição', 'Nome', 'Posição', 'Nota']; candidateBlocks = tempBlocks; patternFound = true; } else { const regexConcatenated4 = /(\d+)(\d+)([A-ZÀ-Ÿ\s.-]+?)(\d+\.?\d*)/gi; const regexConcatenated3 = /(\d+)([A-ZÀ-Ÿ\s.-]+?)(\d+\.?\d*)/gi; tempBlocks = []; if (processedString.match(regexConcatenated4)) { while ((match = regexConcatenated4.exec(processedString)) !== null) { tempBlocks.push([match[1].trim(), match[2].trim(), match[3].trim(), match[4].trim()]); } if (tempBlocks.length > 0) { finalColumnNames = ['Classificação', 'Inscrição', 'Nome', 'Nota']; candidateBlocks = tempBlocks; patternFound = true; } } else if (processedString.match(regexConcatenated3)) { tempBlocks = []; while ((match = regexConcatenated3.exec(processedString)) !== null) { tempBlocks.push([match[1].trim(), match[2].trim(), match[3].trim()]); } if (tempBlocks.length > 0) { finalColumnNames = ['Inscrição', 'Nome', 'Nota']; candidateBlocks = tempBlocks; patternFound = true; } } if (!patternFound) { const regexNameAge = /([A-ZÀ-Ÿ\s.-]+?),\s*(\d+)\s*(?:\/\s*|$)/gi; tempBlocks = []; while ((match = regexNameNameAge.exec(processedString)) !== null) { tempBlocks.push([match[1].trim(), match[2].trim()]); } if (tempBlocks.length > 0) { finalColumnNames = ['Nome', 'Idade']; candidateBlocks = tempBlocks; patternFound = true; } } if (!patternFound && processedString.length > 0) { const lines = processedString.split('/').map(line => line.trim()).filter(line => line.length > 0); if (lines.length > 0) { const sampleLine = lines[0]; let fields = sampleLine.split(/[\s,;]+/).filter(f => f.length > 0); if (fields.length > 1) { finalColumnNames = Array.from({ length: fields.length }, (_, i) => `Campo ${i + 1}`); candidateBlocks = lines.map(line => line.split(/[\s,;]+/).filter(f => f.length > 0)); candidateBlocks = candidateBlocks.filter(block => block.length === fields.length); if (candidateBlocks.length > 0) { patternFound = false; } else { candidateBlocks = [[processedString]]; finalColumnNames = ['Dados Brutos']; patternFound = false; } } else { candidateBlocks = [[processedString]]; finalColumnNames = ['Dados Brutos']; patternFound = false; } } else { candidateBlocks = []; finalColumnNames = []; patternFound = true; } } } } } } const organizedData = []; candidateBlocks.forEach(rowFields => { const rowData = new Array(finalColumnNames.length).fill(null); for (let i = 0; i < Math.min(rowFields.length, finalColumnNames.length); i++) { const value = rowFields[i]; const colName = finalColumnNames[i]; const inferredType = getColumnType(colName); if (value !== null && value !== undefined && value !== '') { let cleanedValue = value.replace(/º/g, '').trim(); if (inferredType === 'numeric') { rowData[i] = parseFloat(cleanedValue); } else if (inferredType === 'integer_numeric') { rowData[i] = parseInt(cleanedValue, 10); } else { rowData[i] = cleanedValue; } } } organizedData.push(rowData); }); return { columnNames: finalColumnNames, organizedData, patternDetected: patternFound }; }
-        function organizeData() { const dataInput = document.getElementById('dataInput').value.trim(); const addRankingColumn = document.getElementById('addRankingColumn').checked; const containerResult = document.getElementById('ContainerResult'); const organizeButton = document.getElementById('organizeButton'); const loadingSpinner = document.getElementById('loadingSpinner'); const organizeText = document.getElementById('organizeText'); const patternWarning = document.getElementById('patternWarning'); const manualMappingArea = document.getElementById('manualMappingArea'); const mapColumnsButton = document.getElementById('mapColumnsButton'); if (isRenamingColumns) { toggleColumnRename(); } patternWarning.style.display = 'none'; manualMappingArea.style.display = 'none'; if (dataInput === "") { containerResult.style.display = 'none'; mapColumnsButton.style.display = 'none'; alert("Por favor, digite algum dado na 'Lista dos candidatos' para organizar."); return; } organizeText.style.display = 'none'; loadingSpinner.style.display = 'inline-block'; organizeButton.disabled = true; setTimeout(() => { try { let { columnNames, organizedData, patternDetected } = inferAndApplyPattern(dataInput); lastInferredData = { columnNames, organizedData, patternDetected }; containerResult.style.display = 'block'; mapColumnsButton.style.display = 'flex'; columnTypes = {}; columnNames.forEach(name => { columnTypes[name] = getColumnType(name); }); organizedData.sort((a, b) => { const notaIndex = columnNames.indexOf('Nota'); const classificacaoIndex = columnNames.indexOf('Classificação'); const campoNum1Index = columnNames.indexOf('Campo 1'); const nomeIndex = columnNames.indexOf('Nome'); const inscricaoIndex = columnNames.indexOf('Inscrição'); const posicaoIndex = columnNames.indexOf('Posição'); const idadeIndex = columnNames.indexOf('Idade'); if (notaIndex !== -1 && a[notaIndex] !== null && b[notaIndex] !== null) { const valA = parseFloat(a[notaIndex]); const valB = parseFloat(b[notaIndex]); const comp = (isNaN(valB) ? -Infinity : valB) - (isNaN(valA) ? -Infinity : valA); if (comp !== 0) return comp; } if (idadeIndex !== -1 && a[idadeIndex] !== null && b[idadeIndex] !== null) { const valA = parseInt(a[idadeIndex]); const valB = parseInt(b[idadeIndex]); const comp = (isNaN(valB) ? -Infinity : valB) - (isNaN(valA) ? -Infinity : valA); if (comp !== 0) return comp; } if (classificacaoIndex !== -1 && a[classificacaoIndex] !== null && b[classificacaoIndex] !== null) { const valA = parseInt(a[classificacaoIndex]); const valB = parseInt(b[classificacaoIndex]); const comp = (isNaN(valA) ? Infinity : valA) - (isNaN(valB) ? Infinity : valB); if (comp !== 0) return comp; } else if (campoNum1Index !== -1 && a[campoNum1Index] !== null && b[campoNum1Index] !== null) { const valA = parseInt(a[campoNum1Index]); const valB = parseInt(b[campoNum1Index]); const comp = (isNaN(valA) ? Infinity : valA) - (isNaN(valB) ? Infinity : valB); if (comp !== 0) return comp; } if (inscricaoIndex !== -1 && a[inscricaoIndex] !== null && b[inscricaoIndex] !== null) { const valA = parseInt(a[inscricaoIndex]); const valB = parseInt(b[inscricaoIndex]); const comp = (isNaN(valA) ? Infinity : valA) - (isNaN(valB) ? Infinity : valB); if (comp !== 0) return comp; } if (posicaoIndex !== -1 && a[posicaoIndex] !== null && b[posicaoIndex] !== null) { const valA = parseInt(a[posicaoIndex]); const valB = parseInt(b[posicaoIndex]); const comp = (isNaN(valA) ? Infinity : valA) - (isNaN(valB) ? Infinity : valB); if (comp !== 0) return comp; } if (nomeIndex !== -1 && a[nomeIndex] !== null && b[nomeIndex] !== null) { const nomeA = a[nomeIndex] || ''; const nomeB = b[nomeIndex] || ''; return String(nomeA).localeCompare(String(nomeB), undefined, { numeric: true, sensitivity: 'base' }); } return 0; }); let finalColumnNamesForTable = [...columnNames]; if (addRankingColumn) { const columnsToRemove = ['Classificação', 'Posição', 'Ranking', 'Campo Num 1', 'Campo 1']; columnsToRemove.forEach(colName => { const existingIndex = finalColumnNamesForTable.indexOf(colName); if (existingIndex !== -1) { finalColumnNamesForTable.splice(existingIndex, 1); organizedData.forEach(row => { row.splice(existingIndex, 1); }); } }); organizedData.forEach((row, index) => { row.unshift(index + 1); }); finalColumnNamesForTable.unshift('Classificação'); columnTypes['Classificação'] = 'integer_numeric'; } updateTable(finalColumnNamesForTable, organizedData); document.getElementById('ContainerResult').scrollIntoView({ behavior: 'smooth', block: 'start' }); } finally { organizeText.style.display = 'inline'; loadingSpinner.style.display = 'none'; organizeButton.disabled = false; } }, 100); }
+        function organizeData() { const dataInput = document.getElementById('dataInput').value.trim(); const addRankingColumn = document.getElementById('addRankingColumn').checked; const containerResult = document.getElementById('ContainerResult'); const organizeButton = document.getElementById('organizeButton'); const loadingSpinner = document.getElementById('loadingSpinner'); const organizeText = document.getElementById('organizeText'); const patternWarning = document.getElementById('patternWarning'); const manualMappingArea = document.getElementById('manualMappingArea'); const mapColumnsButton = document.getElementById('mapColumnsButton'); if (isRenamingColumns) { toggleColumnRename(); } patternWarning.style.display = 'none'; manualMappingArea.style.display = 'none'; if (dataInput === "") { alert("Por favor, digite algum dado na 'Lista dos candidatos' para organizar."); return; } organizeText.style.display = 'none'; loadingSpinner.style.display = 'inline-block'; organizeButton.disabled = true; setTimeout(() => { try { let { columnNames, organizedData, patternDetected } = inferAndApplyPattern(dataInput); lastInferredData = { columnNames, organizedData, patternDetected }; containerResult.style.display = 'block'; mapColumnsButton.style.display = 'flex'; columnTypes = {}; columnNames.forEach(name => { columnTypes[name] = getColumnType(name); }); organizedData.sort((a, b) => { const notaIndex = columnNames.indexOf('Nota'); const classificacaoIndex = columnNames.indexOf('Classificação'); const campoNum1Index = columnNames.indexOf('Campo 1'); const nomeIndex = columnNames.indexOf('Nome'); const inscricaoIndex = columnNames.indexOf('Inscrição'); const posicaoIndex = columnNames.indexOf('Posição'); const idadeIndex = columnNames.indexOf('Idade'); if (notaIndex !== -1 && a[notaIndex] !== null && b[notaIndex] !== null) { const valA = parseFloat(a[notaIndex]); const valB = parseFloat(b[notaIndex]); const comp = (isNaN(valB) ? -Infinity : valB) - (isNaN(valA) ? -Infinity : valA); if (comp !== 0) return comp; } if (idadeIndex !== -1 && a[idadeIndex] !== null && b[idadeIndex] !== null) { const valA = parseInt(a[idadeIndex]); const valB = parseInt(b[idadeIndex]); const comp = (isNaN(valB) ? -Infinity : valB) - (isNaN(valA) ? -Infinity : valA); if (comp !== 0) return comp; } if (classificacaoIndex !== -1 && a[classificacaoIndex] !== null && b[classificacaoIndex] !== null) { const valA = parseInt(a[classificacaoIndex]); const valB = parseInt(b[classificacaoIndex]); const comp = (isNaN(valA) ? Infinity : valA) - (isNaN(valB) ? Infinity : valB); if (comp !== 0) return comp; } else if (campoNum1Index !== -1 && a[campoNum1Index] !== null && b[campoNum1Index] !== null) { const valA = parseInt(a[campoNum1Index]); const valB = parseInt(b[campoNum1Index]); const comp = (isNaN(valA) ? Infinity : valA) - (isNaN(valB) ? Infinity : valB); if (comp !== 0) return comp; } if (inscricaoIndex !== -1 && a[inscricaoIndex] !== null && b[inscricaoIndex] !== null) { const valA = parseInt(a[inscricaoIndex]); const valB = parseInt(b[inscricaoIndex]); const comp = (isNaN(valA) ? Infinity : valA) - (isNaN(valB) ? Infinity : valB); if (comp !== 0) return comp; } if (posicaoIndex !== -1 && a[posicaoIndex] !== null && b[posicaoIndex] !== null) { const valA = parseInt(a[posicaoIndex]); const valB = parseInt(b[posicaoIndex]); const comp = (isNaN(valA) ? Infinity : valA) - (isNaN(valB) ? Infinity : valB); if (comp !== 0) return comp; } if (nomeIndex !== -1 && a[nomeIndex] !== null && b[nomeIndex] !== null) { const nomeA = a[nomeIndex] || ''; const nomeB = b[nomeIndex] || ''; return String(nomeA).localeCompare(String(nomeB), undefined, { numeric: true, sensitivity: 'base' }); } return 0; }); let finalColumnNamesForTable = [...columnNames]; if (addRankingColumn) { const columnsToRemove = ['Classificação', 'Posição', 'Ranking', 'Campo Num 1', 'Campo 1']; columnsToRemove.forEach(colName => { const existingIndex = finalColumnNamesForTable.indexOf(colName); if (existingIndex !== -1) { finalColumnNamesForTable.splice(existingIndex, 1); organizedData.forEach(row => { row.splice(existingIndex, 1); }); } }); organizedData.forEach((row, index) => { row.unshift(index + 1); }); finalColumnNamesForTable.unshift('Classificação'); columnTypes['Classificação'] = 'integer_numeric'; } updateTable(finalColumnNamesForTable, organizedData); document.getElementById('ContainerResult').scrollIntoView({ behavior: 'smooth', block: 'start' }); showToast('Dados organizados com sucesso!'); } finally { organizeText.style.display = 'inline'; loadingSpinner.style.display = 'none'; organizeButton.disabled = false; } }, 100); }
         function showManualMapping() { if (isRenamingColumns) { toggleColumnRename(); } if (!lastInferredData || lastInferredData.organizedData.length === 0) { alert("Por favor, organize os dados primeiro para poder mapear os campos."); return; } document.getElementById('patternWarning').style.display = 'block'; document.getElementById('manualMappingArea').style.display = 'block'; displayManualMappingOptions(lastInferredData.columnNames, lastInferredData.organizedData, currentColumnNames); document.getElementById('manualMappingArea').scrollIntoView({ behavior: 'smooth', block: 'start' }); }
         function displayManualMappingOptions(inferredColumnNames, inferredData, tableCurrentHeaders) { const columnMappingInputsDiv = document.getElementById('columnMappingInputs'); columnMappingInputsDiv.innerHTML = ''; const displayLimit = inferredColumnNames.length; inferredColumnNames.slice(0, displayLimit).forEach((colName, index) => { const div = document.createElement('div'); div.className = 'flex flex-col items-center'; const label = document.createElement('label'); label.className = 'mb-1 text-sm dark:text-gray-300'; label.textContent = `Coluna ${index + 1}:`; div.appendChild(label); const select = document.createElement('select'); select.className = 'p-2 border rounded-md dark:bg-gray-700 dark:text-gray-100'; select.setAttribute('data-col-index', index); const currentHeaderName = tableCurrentHeaders[index] || colName; predefinedColumnOptions.forEach(option => { const opt = document.createElement('option'); opt.value = option.value; opt.textContent = option.text; if (option.value === currentHeaderName) { opt.selected = true; } else if (option.value === colName && !predefinedColumnOptions.some(p => p.value === currentHeaderName && p.value !== '')) { opt.selected = true; } select.appendChild(opt); }); div.appendChild(select); const customInput = document.createElement('input'); customInput.type = 'text'; customInput.placeholder = 'Nome personalizado'; customInput.className = 'mt-2 p-2 border rounded-md w-32 dark:bg-gray-700 dark:text-gray-100'; if (!predefinedColumnOptions.some(opt => opt.value === currentHeaderName && opt.value !== '')) { customInput.value = currentHeaderName; select.value = 'Outro'; customInput.style.display = 'block'; } else { customInput.style.display = 'none'; } div.appendChild(customInput); select.addEventListener('change', (event) => { if (event.target.value === 'Outro') { customInput.style.display = 'block'; customInput.focus(); } else { customInput.style.display = 'none'; customInput.value = ''; } }); columnMappingInputsDiv.appendChild(div); }); document.getElementById('resultTable').style.display = 'none'; document.getElementById('tableHeaders').innerHTML = ''; document.getElementById('tableBody').innerHTML = ''; displayPreviewRows(inferredData, inferredColumnNames); }
         function displayPreviewRows(data, columnNames) { const tableHeaders = document.getElementById('tableHeaders'); const tableBody = document.getElementById('tableBody'); const previewRowCount = Math.min(data.length, 5); const headersToDisplay = columnNames.length > 0 ? columnNames : Array.from({ length: data[0].length }, (_, i) => `Campo ${i + 1}`); headersToDisplay.forEach((name, index) => { const th = document.createElement('th'); th.textContent = name; tableHeaders.appendChild(th); }); for (let i = 0; i < previewRowCount; i++) { const tr = document.createElement('tr'); const rowData = data[i]; for (let j = 0; j < headersToDisplay.length; j++) { const td = document.createElement('td'); const cellData = rowData && rowData[j] !== undefined ? rowData[j] : ''; td.textContent = String(cellData || '').substring(0, 50) + (String(cellData || '').length > 50 ? '...' : ''); tr.appendChild(td); } tableBody.appendChild(tr); } document.getElementById('resultTable').style.display = 'table'; }
@@ -194,9 +201,123 @@
         window.onload = function() { document.getElementById('currentYear').textContent = new Date().getFullYear(); document.getElementById('ContainerResult').style.display = 'none'; document.getElementById('mapColumnsButton').style.display = 'none'; };
         themeToggle.addEventListener('click', () => { if (htmlElement.classList.contains('dark')) { applyTheme('light'); localStorage.setItem('theme', 'light'); } else { applyTheme('dark'); localStorage.setItem('theme', 'dark'); } });
         function searchTable() { let input = document.getElementById('searchInput').value.toUpperCase(); let table = document.getElementById('resultTable'); let tr = table.getElementsByTagName('tr'); for (let i = 1; i < tr.length; i++) { let td = tr[i].getElementsByTagName('td'); let found = false; for (let j = 0; j < td.length; j++) { if (td[j] && td[j].innerHTML.toUpperCase().indexOf(input) > -1) { found = true; break; } } tr[i].style.display = found ? '' : 'none'; } }
-        function generatePDF() { if (isRenamingColumns) { toggleColumnRename(); } try { const { jsPDF } = window.jspdf; const doc = new jsPDF(); const margin = 10; let y = margin; const lineHeight = 10; const pageWidth = doc.internal.pageSize.getWidth(); doc.setFontSize(16); doc.setFont("helvetica", "bold"); const customTitle = document.getElementById('pdfTitleInput').value.trim(); const title = customTitle === '' ? "Relatório de Resultados" : customTitle; const splitTitle = doc.splitTextToSize(title, pageWidth - 2 * margin); doc.text(splitTitle, pageWidth / 2, y, { align: 'center' }); y += (splitTitle.length * lineHeight) + lineHeight; const table = document.getElementById('resultTable'); if (!table || table.querySelector('tbody').children.length === 0) { alert("Erro: Gere a tabela primeiro clicando em 'Organizar'!"); return; } const headers = Array.from(document.querySelectorAll('#tableHeaders th')).map(th => th.textContent.replace(/[\u2191\u2193]/g, '').trim()); const rows = Array.from(table.querySelectorAll('tbody tr')).map(tr => Array.from(tr.querySelectorAll('td')).map(td => td.textContent.replace(/\s*\n\s*/g, ' ').trim())); doc.autoTable({ head: [headers], body: rows, startY: y, margin: { left: margin, right: margin }, styles: { fontSize: 10, cellPadding: 2, halign: 'center', valign: 'middle', lineColor: [226, 232, 240], lineWidth: 0.5 }, headStyles: { fillColor: [76, 175, 80], textColor: 255, fontStyle: 'bold', halign: 'center', valign: 'middle' }, alternateRowStyles: { fillColor: [248, 250, 252] }, didDrawPage: function(data) { } }); window.open(doc.output('bloburl'), '_blank'); } catch (error) { console.error("Erro ao gerar PDF:", error); alert("Erro ao gerar PDF. Veja o console para detalhes."); } }
-        function exportToCSV() { if (isRenamingColumns) { toggleColumnRename(); } const table = document.getElementById('resultTable'); const visibleRows = Array.from(table.querySelectorAll('tbody tr:not([style*="display: none"])')); if (visibleRows.length === 0) { alert("Não há dados visíveis para exportar. Limpe a busca ou verifique os dados."); return; } const headers = Array.from(table.querySelectorAll('thead th')) .map(th => { let headerText = th.textContent.replace(/[\u2191\u2193]/g, '').trim(); headerText = headerText.replace(/[\r\n]+/g, ' ').trim(); return `"${headerText.replace(/"/g, '""')}"`; }); const rows = visibleRows.map(tr => { return Array.from(tr.querySelectorAll('td')) .map(td => `"${td.textContent.replace(/"/g, '""')}"`) .join(';'); }); const csvContent = headers.join(';') + '\n' + rows.join('\n'); const bom = "\uFEFF"; const blob = new Blob([bom + csvContent], { type: 'text/csv;charset=utf-8;' }); const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = 'dados_organizados.csv'; document.body.appendChild(link); link.click(); document.body.removeChild(link); URL.revokeObjectURL(link.href); showToast('Arquivo CSV gerado com sucesso!'); }
-        function toggleColumnRename() { isRenamingColumns = !isRenamingColumns; const headers = document.querySelectorAll('#tableHeaders th'); const button = document.getElementById('toggleRenameHeadersButton'); if (isRenamingColumns) { button.innerHTML = '<i class="fas fa-save"></i> Salvar Nomes'; button.classList.remove('bg-purple-600', 'hover:bg-purple-700', 'dark:bg-purple-500', 'dark:hover:bg-purple-400'); button.classList.add('bg-green-600', 'hover:bg-green-700', 'dark:bg-green-500', 'dark:hover:bg-green-400'); headers.forEach((th, index) => { th.onclick = null; th.classList.add('editable-header'); const originalText = th.textContent.replace(/[\u2191\u2193]/g, '').trim(); th.innerHTML = `<input type="text" value="${originalText}" class="w-full bg-transparent text-center font-semibold p-0" data-original-index="${index}">`; }); const firstInput = headers[0].querySelector('input'); if (firstInput) firstInput.focus(); } else { button.innerHTML = '<i class="fas fa-pencil-alt"></i> Renomear Cabeçalhos'; button.classList.remove('bg-green-600', 'hover:bg-green-700', 'dark:bg-green-500', 'dark:hover:bg-green-400'); button.classList.add('bg-purple-600', 'hover:bg-purple-700', 'dark:bg-purple-500', 'dark:hover:bg-purple-400'); const newColumnNames = []; headers.forEach(th => { const input = th.querySelector('input'); const newName = input ? input.value.trim() : th.textContent.trim(); newColumnNames.push(newName); th.innerHTML = newName; th.classList.remove('editable-header'); const originalIndex = parseInt(input.getAttribute('data-original-index')); th.onclick = () => sortTable(originalIndex); const arrowSpan = document.createElement('span'); arrowSpan.className = 'sort-arrow ml-1 text-gray-400 opacity-0 transition-opacity duration-200'; th.appendChild(arrowSpan); }); currentColumnNames = newColumnNames; } }
+        
+        function generatePDF() {
+            if (isRenamingColumns) {
+                toggleColumnRename(); 
+            }
+            try {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                const margin = 10;
+                let y = margin;
+                const lineHeight = 10;
+                const pageWidth = doc.internal.pageSize.getWidth();
+                doc.setFontSize(16);
+                doc.setFont("helvetica", "bold");
+                const customTitle = document.getElementById('pdfTitleInput').value.trim();
+                const title = customTitle === '' ? "Relatório de Resultados" : customTitle;
+                const splitTitle = doc.splitTextToSize(title, pageWidth - 2 * margin);
+                doc.text(splitTitle, pageWidth / 2, y, { align: 'center' });
+                y += (splitTitle.length * lineHeight) + lineHeight;
+                const table = document.getElementById('resultTable');
+                if (!table || table.querySelector('tbody').children.length === 0) {
+                    alert("Erro: Gere a tabela primeiro clicando em 'Organizar'!");
+                    return;
+                }
+                const headers = Array.from(document.querySelectorAll('#tableHeaders th')).map(th => th.textContent.replace(/[\u2191\u2193]/g, '').trim());
+                const rows = Array.from(table.querySelectorAll('tbody tr')).map(tr =>
+                    Array.from(tr.querySelectorAll('td')).map(td => td.textContent.replace(/\s*\n\s*/g, ' ').trim())
+                );
+                doc.autoTable({
+                    head: [headers],
+                    body: rows,
+                    startY: y,
+                    margin: { left: margin, right: margin },
+                    styles: { fontSize: 10, cellPadding: 2, halign: 'center', valign: 'middle', lineColor: [226, 232, 240], lineWidth: 0.5 },
+                    headStyles: { fillColor: [76, 175, 80], textColor: 255, fontStyle: 'bold', halign: 'center', valign: 'middle' },
+                    alternateRowStyles: { fillColor: [248, 250, 252] },
+                    didDrawPage: function(data) {}
+                });
+                window.open(doc.output('bloburl'), '_blank');
+                showToast('PDF gerado e aberto em uma nova aba.');
+            } catch (error) {
+                console.error("Erro ao gerar PDF:", error);
+                alert("Erro ao gerar PDF. Veja o console para detalhes.");
+            }
+        }
+        
+        function exportToCSV() {
+            if (isRenamingColumns) {
+                toggleColumnRename(); 
+            }
+            const table = document.getElementById('resultTable');
+            const visibleRows = Array.from(table.querySelectorAll('tbody tr:not([style*="display: none"])'));
+            if (visibleRows.length === 0) {
+                alert("Não há dados visíveis para exportar. Limpe a busca ou verifique os dados.");
+                return;
+            }
+            const headers = Array.from(table.querySelectorAll('thead th'))
+                .map(th => {
+                    let headerText = th.textContent.replace(/[\u2191\u2193]/g, '').trim();
+                    headerText = headerText.replace(/[\r\n]+/g, ' ').trim();
+                    return `"${headerText.replace(/"/g, '""')}"`;
+                });
+            const rows = visibleRows.map(tr => {
+                return Array.from(tr.querySelectorAll('td'))
+                    .map(td => `"${td.textContent.replace(/"/g, '""')}"`)
+                    .join(';');
+            });
+            const csvContent = headers.join(';') + '\n' + rows.join('\n');
+            const bom = "\uFEFF";
+            const blob = new Blob([bom + csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'dados_organizados.csv';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(link.href);
+            showToast('Arquivo CSV gerado com sucesso, verifique seus downloads!');
+        }
+        
+        function toggleColumnRename() {
+            isRenamingColumns = !isRenamingColumns;
+            const headers = document.querySelectorAll('#tableHeaders th');
+            const button = document.getElementById('toggleRenameHeadersButton');
+            if (isRenamingColumns) {
+                button.innerHTML = '<i class="fas fa-save"></i> Salvar Nomes';
+                button.classList.remove('bg-purple-600', 'hover:bg-purple-700', 'dark:bg-purple-500', 'dark:hover:bg-purple-400');
+                button.classList.add('bg-green-600', 'hover:bg-green-700', 'dark:bg-green-500', 'dark:hover:bg-green-400');
+                headers.forEach((th, index) => {
+                    th.onclick = null;
+                    th.classList.add('editable-header');
+                    const originalText = th.textContent.replace(/[\u2191\u2193]/g, '').trim();
+                    th.innerHTML = `<input type="text" value="${originalText}" class="w-full bg-transparent text-center font-semibold p-0" data-original-index="${index}">`;
+                });
+                const firstInput = headers[0].querySelector('input');
+                if (firstInput) firstInput.focus();
+            } else {
+                button.innerHTML = '<i class="fas fa-pencil-alt"></i> Renomear Cabeçalhos';
+                button.classList.remove('bg-green-600', 'hover:bg-green-700', 'dark:bg-green-500', 'dark:hover:bg-green-400');
+                button.classList.add('bg-purple-600', 'hover:bg-purple-700', 'dark:bg-purple-500', 'dark:hover:bg-purple-400');
+                const newColumnNames = [];
+                headers.forEach(th => {
+                    const input = th.querySelector('input');
+                    const newName = input ? input.value.trim() : th.textContent.trim();
+                    newColumnNames.push(newName);
+                    th.innerHTML = newName;
+                    th.classList.remove('editable-header');
+                    const originalIndex = parseInt(input.getAttribute('data-original-index'));
+                    th.onclick = () => sortTable(originalIndex);
+                    const arrowSpan = document.createElement('span');
+                    arrowSpan.className = 'sort-arrow ml-1 text-gray-400 opacity-0 transition-opacity duration-200';
+                    th.appendChild(arrowSpan);
+                });
+                currentColumnNames = newColumnNames;
+                showToast('Nomes dos cabeçalhos atualizados!');
+            }
+        }
     </script>
 </body>
 </html>
