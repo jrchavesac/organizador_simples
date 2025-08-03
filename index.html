@@ -4,11 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Organizador de Dados de Concurso</title>
+
+    <link rel="icon" type="image/png" href="favicon.png">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         // Configuração para habilitar o modo escuro baseado em classe
         tailwind.config = {
-            darkMode: 'class', // Habilita o dark mode baseado na presença da classe 'dark' no html
+            darkMode: 'class',
             theme: {
                 extend: {},
             }
@@ -17,242 +20,50 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
     <style>
-        /* CSS Customizado */
-        body {
-            font-family: 'Inter', Arial, sans-serif;
-            background-color: #f3f4f6;
-            color: #1f2937;
-            transition: background-color 0.3s ease, color 0.3s ease;
-        }
-        html.dark body {
-            background-color: #1a202c;
-            color: #e2e8f0;
-        }
-        textarea, select, input[type="text"] {
-            border-radius: 0.5rem;
-            border: 1px solid #4CAF50;
-            padding: 0.75rem;
-            width: 70%;
-            box-sizing: border-box;
-            color: #004d40;
-            outline: none;
-            transition: border-color 0.2s, box-shadow 0.2s, background-color 0.3s ease, color 0.3s ease;
-            background-color: #ffffff;
-        }
-        html.dark textarea,
-        html.dark select,
-        html.dark input[type="text"] {
-            background-color: #2d3748;
-            color: #e2e8f0;
-            border-color: #48bb78;
-        }
-        textarea:focus, select:focus, input[type="text"]:focus {
-            border-color: #388E3C;
-            box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2);
-        }
-        html.dark textarea:focus,
-        html.dark select:focus,
-        html.dark input[type="text"]:focus {
-            border-color: #68d391;
-            box-shadow: 0 0 0 3px rgba(72, 187, 120, 0.4);
-        }
-        button {
-            cursor: pointer;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            padding: 0.5rem 1rem;
-            border-radius: 0.5rem;
-            transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out, color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        button i {
-            margin-right: 8px;
-        }
-        button:hover {
-            background-color: #388E3C;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-        }
-        button:active {
-            transform: translateY(0);
-            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
-        }
-        button:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
-        }
-        html.dark button {
-            background-color: #48bb78;
-            color: #1a202c;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-        }
-        html.dark button:hover:not(:disabled) {
-            background-color: #68d391;
-            color: #1a202c;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.4);
-        }
-        html.dark button:disabled {
-            background-color: #2f855a;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            text-align: center;
-            margin-top: 1rem;
-            margin: auto;
-            border-radius: 0.5rem;
-            overflow: hidden;
-        }
-        th, td {
-            border: 1px solid #e2e8f0;
-            padding: 0.75rem;
-            text-align: center;
-            cursor: pointer;
-        }
-        th {
-            background-color: #4CAF50;
-            color: white;
-            font-weight: 600;
-            position: relative;
-            padding-right: 25px;
-        }
-        th .sort-arrow {
-            position: absolute;
-            right: 8px;
-            top: 50%;
-            transform: translateY(-50%);
-            font-size: 0.8em;
-            color: rgba(255, 255, 255, 0.7);
-        }
-        td {
-            background-color: #ffffff;
-        }
-        tr:nth-child(even) td {
-            background-color: #f8fafc;
-        }
-        html.dark th {
-            background-color: #48bb78;
-            color: #1a202c;
-            border-color: #2d3748;
-        }
-        html.dark th .sort-arrow {
-            color: rgba(0, 0, 0, 0.5);
-        }
-        html.dark td {
-            background-color: #2d3748;
-            color: #e2e8f0;
-            border-color: #4a5568;
-        }
-        html.dark tr:nth-child(even) td {
-            background-color: #4a5568;
-        }
-        h1 {
-            font-size: 2.25rem;
-            font-weight: 700;
-            color: #1a202c;
-            margin-bottom: 1.5rem;
-            transition: color 0.3s ease;
-        }
-        html.dark h1 {
-            color: #e2e8f0;
-        }
-        h4 {
-            font-size: 0.875rem;
-            color: #718096;
-            margin-top: 1rem;
-            transition: color 0.3s ease;
-        }
-        html.dark h4 {
-            color: #a0aec0;
-        }
-        .form-group label {
-            font-weight: bold;
-            text-align: center;
-            color: #4CAF50;
-            transition: color 0.3s ease;
-        }
-        html.dark .form-group label {
-            color: #68d391;
-        }
-        .footer-img {
-            margin-bottom: 10px;
-        }
-        .social-links a {
-            color: #4CAF50;
-            margin: 0 8px;
-            font-size: 24px;
-            transition: color 0.2s ease-in-out;
-        }
-        html.dark .social-links a {
-            color: #68d391;
-        }
-        .social-links a:hover {
-            color: #388E3C;
-        }
-        html.dark .social-links a:hover {
-            color: #48bb78;
-        }
-        .tooltip-container {
-            position: relative;
-            display: inline-block;
-        }
-        .tooltip-text {
-            visibility: hidden;
-            opacity: 0;
-            width: max-content;
-            background-color: #333;
-            color: #fff;
-            text-align: center;
-            border-radius: 6px;
-            padding: 5px 8px;
-            position: absolute;
-            z-index: 100;
-            bottom: 125%;
-            left: 50%;
-            transform: translateX(-50%);
-            transition: opacity 0.3s, visibility 0.3s;
-            font-size: 0.85rem;
-            pointer-events: none;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-        }
-        .tooltip-text::after {
-            content: "";
-            position: absolute;
-            top: 100%;
-            left: 50%;
-            margin-left: -5px;
-            border-width: 5px;
-            border-style: solid;
-            border-color: #333 transparent transparent transparent;
-        }
-        .tooltip-container:hover .tooltip-text {
-            visibility: visible;
-            opacity: 1;
-        }
-        html.dark .tooltip-text {
-            background-color: #f8fafc;
-            color: #1a202c;
-            box-shadow: 0 2px 5px rgba(255,255,255,0.1);
-        }
-        html.dark .tooltip-text::after {
-            border-color: #f8fafc transparent transparent transparent;
-        }
-        .editable-header {
-            cursor: text !important;
-            border: 1px dashed #68d391;
-            background-color: rgba(72, 187, 120, 0.2);
-            padding: 0.75rem 25px;
-        }
-        html.dark .editable-header {
-            border: 1px dashed #9AE6B4;
-            background-color: rgba(104, 211, 145, 0.2);
-        }
+        /* ... (todo o seu CSS continua aqui, sem alterações) ... */
+        body { font-family: 'Inter', Arial, sans-serif; background-color: #f3f4f6; color: #1f2937; transition: background-color 0.3s ease, color 0.3s ease; }
+        html.dark body { background-color: #1a202c; color: #e2e8f0; }
+        textarea, select, input[type="text"] { border-radius: 0.5rem; border: 1px solid #4CAF50; padding: 0.75rem; width: 70%; box-sizing: border-box; color: #004d40; outline: none; transition: border-color 0.2s, box-shadow 0.2s, background-color 0.3s ease, color 0.3s ease; background-color: #ffffff; }
+        html.dark textarea, html.dark select, html.dark input[type="text"] { background-color: #2d3748; color: #e2e8f0; border-color: #48bb78; }
+        textarea:focus, select:focus, input[type="text"]:focus { border-color: #388E3C; box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2); }
+        html.dark textarea:focus, html.dark select:focus, html.dark input[type="text"]:focus { border-color: #68d391; box-shadow: 0 0 0 3px rgba(72, 187, 120, 0.4); }
+        button { cursor: pointer; background-color: #4CAF50; color: white; border: none; padding: 0.5rem 1rem; border-radius: 0.5rem; transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out, color 0.2s ease-in-out, box-shadow 0.2s ease-in-out; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: flex; align-items: center; justify-content: center; }
+        button i { margin-right: 8px; }
+        button:hover { background-color: #388E3C; transform: translateY(-1px); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
+        button:active { transform: translateY(0); box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+        button:disabled { opacity: 0.6; cursor: not-allowed; transform: none; box-shadow: none; }
+        html.dark button { background-color: #48bb78; color: #1a202c; box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
+        html.dark button:hover:not(:disabled) { background-color: #68d391; color: #1a202c; box-shadow: 0 4px 8px rgba(0,0,0,0.4); }
+        html.dark button:disabled { background-color: #2f855a; }
+        table { width: 100%; border-collapse: collapse; text-align: center; margin-top: 1rem; margin: auto; border-radius: 0.5rem; overflow: hidden; }
+        th, td { border: 1px solid #e2e8f0; padding: 0.75rem; text-align: center; cursor: pointer; }
+        th { background-color: #4CAF50; color: white; font-weight: 600; position: relative; padding-right: 25px; }
+        th .sort-arrow { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); font-size: 0.8em; color: rgba(255, 255, 255, 0.7); }
+        td { background-color: #ffffff; }
+        tr:nth-child(even) td { background-color: #f8fafc; }
+        html.dark th { background-color: #48bb78; color: #1a202c; border-color: #2d3748; }
+        html.dark th .sort-arrow { color: rgba(0, 0, 0, 0.5); }
+        html.dark td { background-color: #2d3748; color: #e2e8f0; border-color: #4a5568; }
+        html.dark tr:nth-child(even) td { background-color: #4a5568; }
+        h1 { font-size: 2.25rem; font-weight: 700; color: #1a202c; margin-bottom: 1.5rem; transition: color 0.3s ease; }
+        html.dark h1 { color: #e2e8f0; }
+        h4 { font-size: 0.875rem; color: #718096; margin-top: 1rem; transition: color 0.3s ease; }
+        html.dark h4 { color: #a0aec0; }
+        .form-group label { font-weight: bold; text-align: center; color: #4CAF50; transition: color 0.3s ease; }
+        html.dark .form-group label { color: #68d391; }
+        .footer-img { margin-bottom: 10px; }
+        .social-links a { color: #4CAF50; margin: 0 8px; font-size: 24px; transition: color 0.2s ease-in-out; }
+        html.dark .social-links a { color: #68d391; }
+        .social-links a:hover { color: #388E3C; }
+        html.dark .social-links a:hover { color: #48bb78; }
+        .tooltip-container { position: relative; display: inline-block; }
+        .tooltip-text { visibility: hidden; opacity: 0; width: max-content; background-color: #333; color: #fff; text-align: center; border-radius: 6px; padding: 5px 8px; position: absolute; z-index: 100; bottom: 125%; left: 50%; transform: translateX(-50%); transition: opacity 0.3s, visibility 0.3s; font-size: 0.85rem; pointer-events: none; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        .tooltip-text::after { content: ""; position: absolute; top: 100%; left: 50%; margin-left: -5px; border-width: 5px; border-style: solid; border-color: #333 transparent transparent transparent; }
+        .tooltip-container:hover .tooltip-text { visibility: visible; opacity: 1; }
+        html.dark .tooltip-text { background-color: #f8fafc; color: #1a202c; box-shadow: 0 2px 5px rgba(255,255,255,0.1); }
+        html.dark .tooltip-text::after { border-color: #f8fafc transparent transparent transparent; }
+        .editable-header { cursor: text !important; border: 1px dashed #68d391; background-color: rgba(72, 187, 120, 0.2); padding: 0.75rem 25px; }
+        html.dark .editable-header { border: 1px dashed #9AE6B4; background-color: rgba(104, 211, 145, 0.2); }
     </style>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -260,6 +71,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body class="bg-gray-100 text-gray-800 font-sans antialiased items-center">
+
     <header class="w-full bg-white shadow-md py-4 text-center dark:bg-gray-800 dark:text-gray-100">
         <div class="relative max-w-4xl mx-auto flex items-center justify-center px-4">
             <h1 class="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-gray-100 mr-4">Organizador de Dados de Concurso</h1>
@@ -268,7 +80,6 @@
             </button>
         </div>
     </header>
-
     <div class="max-w-4xl mx-auto w-full px-4 py-8 space-y-8">
         <div class="bg-white shadow-lg rounded-lg p-6 text-center dark:bg-gray-700 dark:text-gray-100">
             <form id="organizeForm" class="space-y-4">
@@ -296,7 +107,6 @@
                 </div>
             </form>
         </div>
-
         <div id="ContainerResult" class="bg-white shadow-lg rounded-lg p-6 dark:bg-gray-700 dark:text-gray-100" style="display: none;">
             <h1 class="text-3xl font-bold text-gray-900 mb-4 text-center dark:text-gray-100">Resultado Organizado</h1>
             <div class="searchContainer flex flex-col items-center mb-4 tooltip-container">
@@ -326,7 +136,6 @@
                 <p>O sistema não conseguiu identificar as colunas como você esperava? Use os menus abaixo para nomeá-las corretamente.</p>
                 <p class="mt-2 text-sm italic">As primeiras linhas são mostradas para referência. Após mapear, clique em "Aplicar Mapeamento".</p>
             </div>
-
             <div id="manualMappingArea" class="mt-4 p-4 border border-gray-300 rounded-lg bg-gray-50 dark:bg-gray-800 dark:border-gray-600" style="display: none;">
                 <p class="font-semibold text-center mb-3 text-gray-800 dark:text-gray-200">Defina os Nomes das Colunas:</p>
                 <div id="columnMappingInputs" class="flex flex-wrap justify-center gap-4 mb-4">
@@ -336,7 +145,6 @@
                     <span class="tooltip-text">Reorganize os dados com base nos nomes de coluna que você selecionou.</span>
                 </button>
             </div>
-
             <h4 class="text-sm text-gray-600 italic mb-4 text-center dark:text-gray-400"><i>Ao clicar no cabeçalho da tabela, os dados são organizados conforme a coluna clicada!</i></h4>
             <div class="overflow-x-auto">
                 <table id="resultTable" class="min-w-full">
@@ -348,7 +156,6 @@
             </div>
         </div>
     </div>
-
     <footer class="w-full mt-12 bg-gray-50 text-gray-600 py-6 px-4 rounded-lg shadow-inner dark:bg-gray-900 dark:text-gray-400">
         <div class="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-8">
             <img src="minha_foto.jpg" alt="Foto do Autor Júnior Chaves" class="footer-img w-48 h-48 rounded-full object-cover border-4 border-green-500 shadow-md">
@@ -370,57 +177,14 @@
         Mensagem de sucesso!
     </div>
 
-
     <script>
+        // ... (todo o seu JavaScript continua aqui, exatamente como na última versão que funcionou) ...
         document.getElementById('currentYear').textContent = new Date().getFullYear();
-
-        let sortDirections = {}; 
-        let currentColumnNames = [];
-        let columnTypes = {}; 
-        let isRenamingColumns = false;
-        let lastInferredData = null;
-
-        const typeMapping = {
-            'classificacao': 'integer_numeric', 'posicao': 'integer_numeric', 'ranking': 'integer_numeric',
-            'inscricao': 'numeric_string', 'matricula': 'numeric_string',
-            'nota': 'numeric', 'pontuacao': 'numeric', 'total': 'numeric', 'acertos': 'numeric',
-            'idade': 'integer_numeric' 
-        };
-
-        const predefinedColumnOptions = [
-            { value: '', text: 'Selecione...' }, { value: 'Classificação', text: 'Classificação' },
-            { value: 'Nome', text: 'Nome' }, { value: 'Inscrição', text: 'Inscrição' },
-            { value: 'Nota', text: 'Nota' }, { value: 'Pontuação', text: 'Pontuação' },
-            { value: 'Posição', text: 'Posição' }, { value: 'Matrícula', text: 'Matrícula' },
-            { value: 'Acertos', text: 'Acertos' }, { value: 'Idade', text: 'Idade' }, 
-            { value: 'Outro', text: 'Outro (digite abaixo)' } 
-        ];
-
-        // ==========================================================
-        // 2. NOVA FUNÇÃO PARA CONTROLAR A NOTIFICAÇÃO
-        // ==========================================================
-        function showToast(message, duration = 3000) {
-            const toast = document.getElementById('toast-notification');
-            if (!toast) return;
-
-            toast.textContent = message;
-            toast.classList.remove('translate-y-20', 'opacity-0');
-
-            setTimeout(() => {
-                toast.classList.add('translate-y-20', 'opacity-0');
-            }, duration);
-        }
-
-        function getColumnType(columnName) {
-            const lowerName = columnName.toLowerCase();
-            for (const key in typeMapping) {
-                if (lowerName.includes(key)) return typeMapping[key];
-            }
-            if (lowerName.includes('nome')) return 'string';
-            return 'string';
-        }
-
-        // ... (todas as outras funções como isNumeric, inferAndApplyPattern, organizeData, etc., continuam aqui sem alteração) ...
+        let sortDirections = {}; let currentColumnNames = []; let columnTypes = {}; let isRenamingColumns = false; let lastInferredData = null;
+        const typeMapping = { 'classificacao': 'integer_numeric', 'posicao': 'integer_numeric', 'ranking': 'integer_numeric', 'inscricao': 'numeric_string', 'matricula': 'numeric_string', 'nota': 'numeric', 'pontuacao': 'numeric', 'total': 'numeric', 'acertos': 'numeric', 'idade': 'integer_numeric' };
+        const predefinedColumnOptions = [ { value: '', text: 'Selecione...' }, { value: 'Classificação', text: 'Classificação' }, { value: 'Nome', text: 'Nome' }, { value: 'Inscrição', text: 'Inscrição' }, { value: 'Nota', text: 'Nota' }, { value: 'Pontuação', text: 'Pontuação' }, { value: 'Posição', text: 'Posição' }, { value: 'Matrícula', text: 'Matrícula' }, { value: 'Acertos', text: 'Acertos' }, { value: 'Idade', text: 'Idade' }, { value: 'Outro', text: 'Outro (digite abaixo)' } ];
+        function showToast(message, duration = 3000) { const toast = document.getElementById('toast-notification'); if (!toast) return; toast.textContent = message; toast.classList.remove('translate-y-20', 'opacity-0'); setTimeout(() => { toast.classList.add('translate-y-20', 'opacity-0'); }, duration); }
+        function getColumnType(columnName) { const lowerName = columnName.toLowerCase(); for (const key in typeMapping) { if (lowerName.includes(key)) return typeMapping[key]; } if (lowerName.includes('nome')) return 'string'; return 'string'; }
         function isNumeric(str) { if (str === null || str === undefined || str.trim() === '') return false; return /^-?\d+(\.\d+)?$/.test(str.trim()); }
         function isInteger(str) { if (str === null || str === undefined || str.trim() === '') return false; return /^-?\d+$/.test(str.trim()); }
         function inferAndApplyPattern(rawInputString) { if (!rawInputString) { return { columnNames: [], organizedData: [], patternDetected: true }; } let processedString = rawInputString .replace(/\r\n|\r/g, ' ') .replace(/º|°/g, '', ' ') .replace(/(\d+),(\d{1,2})(?![0-9])/g, '$1.$2') .trim(); let candidateBlocks = []; let finalColumnNames = []; let patternFound = false; const regexNameInscNota = /([A-ZÀ-Ÿ\s.-]+?),\s*(\d+),\s*(\d+\.?\d*)\s*(?:\/\s*|$)/gi; let match; let tempBlocks = []; while ((match = regexNameInscNota.exec(processedString)) !== null) { tempBlocks.push([match[1].trim(), match[2].trim(), match[3].trim()]); } if (tempBlocks.length > 0) { finalColumnNames = ['Nome', 'Inscrição', 'Nota']; candidateBlocks = tempBlocks; patternFound = true; } else { const regexPattern3Fields = /(\d+);\s*([A-ZÀ-Ÿ\s.-]+?);\s*(\d+\.?\d*)\s*(?:\/\s*|$)/gi; tempBlocks = []; while ((match = regexPattern3Fields.exec(processedString)) !== null) { tempBlocks.push([match[1].trim(), match[2].trim(), match[3].trim()]); } if (tempBlocks.length > 0) { finalColumnNames = ['Inscrição', 'Nome', 'Nota']; candidateBlocks = tempBlocks; patternFound = true; } else { const regexPattern4FieldsComma = /(\d+),\s*(\d+),\s*([A-ZÀ-Ÿ\s.-]+?),\s*(\d+\.?\d*)\s*(?:\/\s*|$)/gi; tempBlocks = []; while ((match = regexPattern4FieldsComma.exec(processedString)) !== null) { tempBlocks.push([match[1].trim(), match[2].trim(), match[3].trim(), match[4].trim()]); } if (tempBlocks.length > 0) { finalColumnNames = ['Classificação', 'Inscrição', 'Nome', 'Nota']; candidateBlocks = tempBlocks; patternFound = true; } else { const regexPattern4FieldsSlashOnly = /(\d+)\s*\/\s*([A-ZÀ-Ÿ\s.-]+?)\s*\/\s*(\d+)\s*\/\s*(\d+\.?\d*)\s*(?:\/\s*|$)/gi; tempBlocks = []; while ((match = regexPattern4FieldsSlashOnly.exec(processedString)) !== null) { tempBlocks.push([match[1].trim(), match[2].trim(), match[3].trim(), match[4].trim()]); } if (tempBlocks.length > 0) { finalColumnNames = ['Inscrição', 'Nome', 'Posição', 'Nota']; candidateBlocks = tempBlocks; patternFound = true; } else { const regexConcatenated4 = /(\d+)(\d+)([A-ZÀ-Ÿ\s.-]+?)(\d+\.?\d*)/gi; const regexConcatenated3 = /(\d+)([A-ZÀ-Ÿ\s.-]+?)(\d+\.?\d*)/gi; tempBlocks = []; if (processedString.match(regexConcatenated4)) { while ((match = regexConcatenated4.exec(processedString)) !== null) { tempBlocks.push([match[1].trim(), match[2].trim(), match[3].trim(), match[4].trim()]); } if (tempBlocks.length > 0) { finalColumnNames = ['Classificação', 'Inscrição', 'Nome', 'Nota']; candidateBlocks = tempBlocks; patternFound = true; } } else if (processedString.match(regexConcatenated3)) { tempBlocks = []; while ((match = regexConcatenated3.exec(processedString)) !== null) { tempBlocks.push([match[1].trim(), match[2].trim(), match[3].trim()]); } if (tempBlocks.length > 0) { finalColumnNames = ['Inscrição', 'Nome', 'Nota']; candidateBlocks = tempBlocks; patternFound = true; } } if (!patternFound) { const regexNameAge = /([A-ZÀ-Ÿ\s.-]+?),\s*(\d+)\s*(?:\/\s*|$)/gi; tempBlocks = []; while ((match = regexNameNameAge.exec(processedString)) !== null) { tempBlocks.push([match[1].trim(), match[2].trim()]); } if (tempBlocks.length > 0) { finalColumnNames = ['Nome', 'Idade']; candidateBlocks = tempBlocks; patternFound = true; } } if (!patternFound && processedString.length > 0) { const lines = processedString.split('/').map(line => line.trim()).filter(line => line.length > 0); if (lines.length > 0) { const sampleLine = lines[0]; let fields = sampleLine.split(/[\s,;]+/).filter(f => f.length > 0); if (fields.length > 1) { finalColumnNames = Array.from({ length: fields.length }, (_, i) => `Campo ${i + 1}`); candidateBlocks = lines.map(line => line.split(/[\s,;]+/).filter(f => f.length > 0)); candidateBlocks = candidateBlocks.filter(block => block.length === fields.length); if (candidateBlocks.length > 0) { patternFound = false; } else { candidateBlocks = [[processedString]]; finalColumnNames = ['Dados Brutos']; patternFound = false; } } else { candidateBlocks = [[processedString]]; finalColumnNames = ['Dados Brutos']; patternFound = false; } } else { candidateBlocks = []; finalColumnNames = []; patternFound = true; } } } } } } const organizedData = []; candidateBlocks.forEach(rowFields => { const rowData = new Array(finalColumnNames.length).fill(null); for (let i = 0; i < Math.min(rowFields.length, finalColumnNames.length); i++) { const value = rowFields[i]; const colName = finalColumnNames[i]; const inferredType = getColumnType(colName); if (value !== null && value !== undefined && value !== '') { let cleanedValue = value.replace(/º/g, '').trim(); if (inferredType === 'numeric') { rowData[i] = parseFloat(cleanedValue); } else if (inferredType === 'integer_numeric') { rowData[i] = parseInt(cleanedValue, 10); } else { rowData[i] = cleanedValue; } } } organizedData.push(rowData); }); return { columnNames: finalColumnNames, organizedData, patternDetected: patternFound }; }
@@ -437,14 +201,10 @@
         function searchTable() { let input = document.getElementById('searchInput').value.toUpperCase(); let table = document.getElementById('resultTable'); let tr = table.getElementsByTagName('tr'); for (let i = 1; i < tr.length; i++) { let td = tr[i].getElementsByTagName('td'); let found = false; for (let j = 0; j < td.length; j++) { if (td[j] && td[j].innerHTML.toUpperCase().indexOf(input) > -1) { found = true; break; } } tr[i].style.display = found ? '' : 'none'; } }
         function generatePDF() { if (isRenamingColumns) { toggleColumnRename(); } try { const { jsPDF } = window.jspdf; const doc = new jsPDF(); const margin = 10; let y = margin; const lineHeight = 10; const pageWidth = doc.internal.pageSize.getWidth(); doc.setFontSize(16); doc.setFont("helvetica", "bold"); const customTitle = document.getElementById('pdfTitleInput').value.trim(); const title = customTitle === '' ? "Relatório de Resultados" : customTitle; const splitTitle = doc.splitTextToSize(title, pageWidth - 2 * margin); doc.text(splitTitle, pageWidth / 2, y, { align: 'center' }); y += (splitTitle.length * lineHeight) + lineHeight; const table = document.getElementById('resultTable'); if (!table || table.querySelector('tbody').children.length === 0) { alert("Erro: Gere a tabela primeiro clicando em 'Organizar'!"); return; } const headers = Array.from(document.querySelectorAll('#tableHeaders th')).map(th => th.textContent.replace(/[\u2191\u2193]/g, '').trim()); const rows = Array.from(table.querySelectorAll('tbody tr')).map(tr => Array.from(tr.querySelectorAll('td')).map(td => td.textContent.replace(/\s*\n\s*/g, ' ').trim())); doc.autoTable({ head: [headers], body: rows, startY: y, margin: { left: margin, right: margin }, styles: { fontSize: 10, cellPadding: 2, halign: 'center', valign: 'middle', lineColor: [226, 232, 240], lineWidth: 0.5 }, headStyles: { fillColor: [76, 175, 80], textColor: 255, fontStyle: 'bold', halign: 'center', valign: 'middle' }, alternateRowStyles: { fillColor: [248, 250, 252] }, didDrawPage: function(data) { } }); window.open(doc.output('bloburl'), '_blank'); } catch (error) { console.error("Erro ao gerar PDF:", error); alert("Erro ao gerar PDF. Veja o console para detalhes."); } }
         
-        // ===================================================================
-        // 3. FUNÇÃO exportToCSV LIMPA E COM A CHAMADA PARA A NOTIFICAÇÃO
-        // ===================================================================
         function exportToCSV() {
             if (isRenamingColumns) {
                 toggleColumnRename(); 
             }
-
             const table = document.getElementById('resultTable');
             const visibleRows = Array.from(table.querySelectorAll('tbody tr:not([style*="display: none"])'));
 
@@ -454,20 +214,19 @@
             }
 
             const headers = Array.from(table.querySelectorAll('thead th'))
-                                        .map(th => {
-                                            let headerText = th.textContent.replace(/[\u2191\u2193]/g, '').trim();
-                                            headerText = headerText.replace(/[\r\n]+/g, ' ').trim();
-                                            return `"${headerText.replace(/"/g, '""')}"`;
-                                        });
+                .map(th => {
+                    let headerText = th.textContent.replace(/[\u2191\u2193]/g, '').trim();
+                    headerText = headerText.replace(/[\r\n]+/g, ' ').trim();
+                    return `"${headerText.replace(/"/g, '""')}"`;
+                });
             
             const rows = visibleRows.map(tr => {
                 return Array.from(tr.querySelectorAll('td'))
-                            .map(td => `"${td.textContent.replace(/"/g, '""')}"`)
-                            .join(';');
+                    .map(td => `"${td.textContent.replace(/"/g, '""')}"`)
+                    .join(';');
             });
 
             const csvContent = headers.join(';') + '\n' + rows.join('\n');
-
             const bom = "\uFEFF"; 
             const blob = new Blob([bom + csvContent], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement('a');
@@ -477,8 +236,6 @@
             link.click();
             document.body.removeChild(link);
             URL.revokeObjectURL(link.href);
-
-            // Exibe a notificação de sucesso
             showToast('Arquivo CSV gerado com sucesso!');
         }
         
