@@ -195,10 +195,11 @@
                 return { columnNames: [], organizedData: [], patternDetected: true };
             }
             
-            // ==========================================================
-            // LINHA ADICIONADA PARA REMOVER HIFENIZAÇÃO DE PDFs/WORD
-            // ==========================================================
-            let sanitizedString = rawInputString.replace(/-\s*\r?\n\s*/g, '');
+            // ======================================================================================
+            // CORREÇÃO PARA REMOVER HIFENIZAÇÃO DE PDFs/WORD (VERSÃO MAIS ROBUSTA)
+            // Esta regra agora remove o hífen seguido por QUALQUER tipo de espaço ou quebra de linha
+            // ======================================================================================
+            let sanitizedString = rawInputString.replace(/-\s+/g, '');
 
             // Agora o resto do código trabalha com a string já limpa
             let processedString = sanitizedString
@@ -212,72 +213,7 @@
         function showManualMapping() { if (isRenamingColumns) { toggleColumnRename(); } if (!lastInferredData || lastInferredData.organizedData.length === 0) { alert("Por favor, organize os dados primeiro para poder mapear os campos."); return; } document.getElementById('patternWarning').style.display = 'block'; document.getElementById('manualMappingArea').style.display = 'block'; displayManualMappingOptions(lastInferredData.columnNames, lastInferredData.organizedData, currentColumnNames); document.getElementById('manualMappingArea').scrollIntoView({ behavior: 'smooth', block: 'start' }); }
         function displayManualMappingOptions(inferredColumnNames, inferredData, tableCurrentHeaders) { const columnMappingInputsDiv = document.getElementById('columnMappingInputs'); columnMappingInputsDiv.innerHTML = ''; const displayLimit = inferredColumnNames.length; inferredColumnNames.slice(0, displayLimit).forEach((colName, index) => { const div = document.createElement('div'); div.className = 'flex flex-col items-center'; const label = document.createElement('label'); label.className = 'mb-1 text-sm dark:text-gray-300'; label.textContent = `Coluna ${index + 1}:`; div.appendChild(label); const select = document.createElement('select'); select.className = 'p-2 border rounded-md dark:bg-gray-700 dark:text-gray-100'; select.setAttribute('data-col-index', index); const currentHeaderName = tableCurrentHeaders[index] || colName; predefinedColumnOptions.forEach(option => { const opt = document.createElement('option'); opt.value = option.value; opt.textContent = option.text; if (option.value === currentHeaderName) { opt.selected = true; } else if (option.value === colName && !predefinedColumnOptions.some(p => p.value === currentHeaderName && p.value !== '')) { opt.selected = true; } select.appendChild(opt); }); div.appendChild(select); const customInput = document.createElement('input'); customInput.type = 'text'; customInput.placeholder = 'Nome personalizado'; customInput.className = 'mt-2 p-2 border rounded-md w-32 dark:bg-gray-700 dark:text-gray-100'; if (!predefinedColumnOptions.some(opt => opt.value === currentHeaderName && opt.value !== '')) { customInput.value = currentHeaderName; select.value = 'Outro'; customInput.style.display = 'block'; } else { customInput.style.display = 'none'; } div.appendChild(customInput); select.addEventListener('change', (event) => { if (event.target.value === 'Outro') { customInput.style.display = 'block'; customInput.focus(); } else { customInput.style.display = 'none'; customInput.value = ''; } }); columnMappingInputsDiv.appendChild(div); }); document.getElementById('resultTable').style.display = 'none'; document.getElementById('tableHeaders').innerHTML = ''; document.getElementById('tableBody').innerHTML = ''; displayPreviewRows(inferredData, inferredColumnNames); }
         function displayPreviewRows(data, columnNames) { const tableHeaders = document.getElementById('tableHeaders'); const tableBody = document.getElementById('tableBody'); const previewRowCount = Math.min(data.length, 5); const headersToDisplay = columnNames.length > 0 ? columnNames : Array.from({ length: data[0].length }, (_, i) => `Campo ${i + 1}`); headersToDisplay.forEach((name, index) => { const th = document.createElement('th'); th.textContent = name; tableHeaders.appendChild(th); }); for (let i = 0; i < previewRowCount; i++) { const tr = document.createElement('tr'); const rowData = data[i]; for (let j = 0; j < headersToDisplay.length; j++) { const td = document.createElement('td'); const cellData = rowData && rowData[j] !== undefined ? rowData[j] : ''; td.textContent = String(cellData || '').substring(0, 50) + (String(cellData || '').length > 50 ? '...' : ''); tr.appendChild(td); } tableBody.appendChild(tr); } document.getElementById('resultTable').style.display = 'table'; }
-        
-        function applyManualMapping() {
-            const columnMappingInputsDiv = document.getElementById('columnMappingInputs');
-            const selects = columnMappingInputsDiv.querySelectorAll('select');
-            const customInputs = columnMappingInputsDiv.querySelectorAll('input[type="text"]');
-            const newColumnNames = [];
-            const originalDataIndices = [];
-            let allMapped = true;
-            selects.forEach((select, i) => {
-                const selectedValue = select.value;
-                const originalIndex = parseInt(select.getAttribute('data-col-index'));
-                let finalColName;
-                if (selectedValue === 'Outro') {
-                    finalColName = customInputs[i].value.trim();
-                } else {
-                    finalColName = selectedValue;
-                }
-                if (finalColName === '' || finalColName === 'Selecione...') {
-                    allMapped = false;
-                }
-                newColumnNames.push(finalColName);
-                originalDataIndices.push(originalIndex);
-            });
-            if (!allMapped) {
-                alert("Por favor, nomeie todas as colunas ou selecione uma opção antes de aplicar o mapeamento.");
-                return;
-            }
-            if (newColumnNames.length === 0 || newColumnNames.length !== selects.length) {
-                return;
-            }
-            let remappedData = lastInferredData.organizedData.map(row => {
-                const newRow = [];
-                originalDataIndices.forEach(originalIdx => {
-                    newRow.push(row[originalIdx]);
-                });
-                return newRow;
-            });
-            columnTypes = {};
-            newColumnNames.forEach(name => {
-                columnTypes[name] = getColumnType(name);
-            });
-            const addRankingColumn = document.getElementById('addRankingColumn').checked;
-            if (addRankingColumn) {
-                const columnsToRemove = ['Classificação', 'Posição', 'Ranking', 'Campo Num 1', 'Campo 1'];
-                columnsToRemove.forEach(colName => {
-                    const existingIndex = newColumnNames.indexOf(colName);
-                    if (existingIndex !== -1) {
-                        newColumnNames.splice(existingIndex, 1);
-                        remappedData.forEach(row => {
-                            row.splice(existingIndex, 1);
-                        });
-                    }
-                });
-                remappedData.forEach((row, index) => {
-                    row.unshift(index + 1);
-                });
-                newColumnNames.unshift('Classificação');
-                columnTypes['Classificação'] = 'integer_numeric';
-            }
-            document.getElementById('patternWarning').style.display = 'none';
-            document.getElementById('manualMappingArea').style.display = 'none';
-            updateTable(newColumnNames, remappedData);
-            document.getElementById('resultTable').style.display = 'table';
-            showToast('Mapeamento aplicado com sucesso!');
-        }
-
+        function applyManualMapping() { const columnMappingInputsDiv = document.getElementById('columnMappingInputs'); const selects = columnMappingInputsDiv.querySelectorAll('select'); const customInputs = columnMappingInputsDiv.querySelectorAll('input[type="text"]'); const newColumnNames = []; const originalDataIndices = []; let allMapped = true; selects.forEach((select, i) => { const selectedValue = select.value; const originalIndex = parseInt(select.getAttribute('data-col-index')); let finalColName; if (selectedValue === 'Outro') { finalColName = customInputs[i].value.trim(); } else { finalColName = selectedValue; } if (finalColName === '' || finalColName === 'Selecione...') { allMapped = false; } newColumnNames.push(finalColName); originalDataIndices.push(originalIndex); }); if (!allMapped) { alert("Por favor, nomeie todas as colunas ou selecione uma opção antes de aplicar o mapeamento."); return; } if (newColumnNames.length === 0 || newColumnNames.length !== selects.length) { return; } let remappedData = lastInferredData.organizedData.map(row => { const newRow = []; originalDataIndices.forEach(originalIdx => { newRow.push(row[originalIdx]); }); return newRow; }); columnTypes = {}; newColumnNames.forEach(name => { columnTypes[name] = getColumnType(name); }); const addRankingColumn = document.getElementById('addRankingColumn').checked; if (addRankingColumn) { const columnsToRemove = ['Classificação', 'Posição', 'Ranking', 'Campo Num 1', 'Campo 1']; columnsToRemove.forEach(colName => { const existingIndex = newColumnNames.indexOf(colName); if (existingIndex !== -1) { newColumnNames.splice(existingIndex, 1); remappedData.forEach(row => { row.splice(existingIndex, 1); }); } }); remappedData.forEach((row, index) => { row.unshift(index + 1); }); newColumnNames.unshift('Classificação'); columnTypes['Classificação'] = 'integer_numeric'; } document.getElementById('patternWarning').style.display = 'none'; document.getElementById('manualMappingArea').style.display = 'none'; updateTable(newColumnNames, remappedData); document.getElementById('resultTable').style.display = 'table'; showToast('Mapeamento aplicado com sucesso!'); }
         function updateTable(columnNames, data) { const tableHeaders = document.getElementById('tableHeaders'); const tableBody = document.getElementById('tableBody'); tableHeaders.innerHTML = ''; tableBody.innerHTML = ''; const oldColumnNames = currentColumnNames; currentColumnNames = columnNames; const newSortDirections = {}; currentColumnNames.forEach((name, index) => { const oldIndex = oldColumnNames.indexOf(name); if (oldIndex !== -1 && sortDirections[oldIndex] !== undefined) { newSortDirections[index] = sortDirections[oldIndex]; } else { newSortDirections[index] = true; } }); sortDirections = newSortDirections; columnNames.forEach((columnName, index) => { const th = document.createElement('th'); th.textContent = columnName; th.onclick = () => sortTable(index); const arrowSpan = document.createElement('span'); arrowSpan.className = 'sort-arrow ml-1 text-gray-400 opacity-0 transition-opacity duration-200'; th.appendChild(arrowSpan); tableHeaders.appendChild(th); }); data.forEach(row => { const tr = document.createElement('tr'); for (let i = 0; i < columnNames.length; i++) { const td = document.createElement('td'); let value = row[i]; const colName = columnNames[i]; const colType = columnTypes[colName] || getColumnType(colName); if (value !== null && value !== undefined) { value = String(value).replace(/[\r\n]+/g, ' ').trim(); } if (value !== null && value !== undefined) { if (colType === 'numeric') { td.textContent = parseFloat(value).toFixed(2); } else if (colType === 'integer_numeric') { td.textContent = parseInt(value, 10); } else if (colType === 'numeric_string') { td.textContent = String(value); } else { td.textContent = String(value); } } else { td.textContent = ''; } tr.appendChild(td); } tableBody.appendChild(tr); }); }
         function sortTable(columnIndex) { if (isRenamingColumns) { return; } const table = document.getElementById('resultTable'); const tbody = table.getElementsByTagName('tbody')[0]; const rows = Array.from(tbody.getElementsByTagName('tr')); const headerCell = table.querySelector(`th:nth-child(${columnIndex + 1})`); const headerText = headerCell.textContent.replace(/[\u2191\u2193]/g, '').trim(); const currentArrow = headerCell.querySelector('.sort-arrow'); document.querySelectorAll('#tableHeaders th .sort-arrow').forEach(arrow => { arrow.classList.remove('opacity-100'); arrow.classList.add('opacity-0'); arrow.innerHTML = ''; }); sortDirections[columnIndex] = !sortDirections[columnIndex]; const colType = columnTypes[headerText] || getColumnType(headerText); const sortedRows = rows.sort((a, b) => { const textA = a.cells[columnIndex].textContent.trim(); const textB = b.cells[columnIndex].textContent.trim(); let valA, valB; if (colType === 'numeric' || colType === 'integer_numeric') { valA = parseFloat(textA.replace(',', '.')); valB = parseFloat(textB.replace(',', '.')); valA = isNaN(valA) ? (sortDirections[columnIndex] ? Infinity : -Infinity) : valA; valB = isNaN(valB) ? (sortDirections[columnIndex] ? Infinity : -Infinity) : valB; return sortDirections[columnIndex] ? valA - valB : valB - valA; } else if (colType === 'numeric_string') { valA = parseInt(textA); valB = parseInt(textB); valA = isNaN(valA) ? (sortDirections[columnIndex] ? Infinity : -Infinity) : valA; valB = isNaN(valB) ? (sortDirections[columnIndex] ? Infinity : -Infinity) : valB; return sortDirections[columnIndex] ? valA - valB : valB - valA; } else { return sortDirections[columnIndex] ? textA.localeCompare(textB, undefined, { numeric: true, sensitivity: 'base' }) : textB.localeCompare(textA, undefined, { numeric: true, sensitivity: 'base' }); } }); tbody.innerHTML = ''; sortedRows.forEach(row => tbody.appendChild(row)); currentArrow.classList.add('opacity-100'); currentArrow.innerHTML = sortDirections[columnIndex] ? '<i class="fas fa-arrow-up"></i>' : '<i class="fas fa-arrow-down"></i>'; }
         const themeToggle = document.getElementById('themeToggle'); const themeIcon = document.getElementById('themeIcon'); const htmlElement = document.documentElement; function updateThemeToggle(isDark) { if (isDark) { themeIcon.classList.remove('fa-moon'); themeIcon.classList.add('fa-sun'); themeToggle.title = 'Mudar para modo claro'; } else { themeIcon.classList.remove('fa-sun'); themeIcon.classList.add('fa-moon'); themeToggle.title = 'Mudar para modo escuro'; } } function applyTheme(theme) { if (theme === 'dark') { htmlElement.classList.add('dark'); updateThemeToggle(true); } else { htmlElement.classList.remove('dark'); updateThemeToggle(false); } } const savedTheme = localStorage.getItem('theme'); if (savedTheme) { applyTheme(savedTheme); } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) { applyTheme('dark'); } else { applyTheme('light'); }
