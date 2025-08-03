@@ -4,23 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Organizador de Dados de Concurso</title>
-
     <link rel="icon" type="image/png" href="favicon.png">
-
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        // Configuração para habilitar o modo escuro baseado em classe
         tailwind.config = {
             darkMode: 'class',
-            theme: {
-                extend: {},
-            }
+            theme: { extend: {} }
         }
     </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
     <style>
-        /* ... (todo o seu CSS continua aqui, sem alterações) ... */
         body { font-family: 'Inter', Arial, sans-serif; background-color: #f3f4f6; color: #1f2937; transition: background-color 0.3s ease, color 0.3s ease; }
         html.dark body { background-color: #1a202c; color: #e2e8f0; }
         textarea, select, input[type="text"] { border-radius: 0.5rem; border: 1px solid #4CAF50; padding: 0.75rem; width: 70%; box-sizing: border-box; color: #004d40; outline: none; transition: border-color 0.2s, box-shadow 0.2s, background-color 0.3s ease, color 0.3s ease; background-color: #ffffff; }
@@ -74,12 +68,18 @@
 
     <header class="w-full bg-white shadow-md py-4 text-center dark:bg-gray-800 dark:text-gray-100">
         <div class="relative max-w-4xl mx-auto flex items-center justify-center px-4">
-            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-gray-100 mr-4">Organizador de Dados de Concurso</h1>
-            <button id="themeToggle" class="bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-200 px-3 py-1 rounded-full text-lg shadow-sm hover:shadow-md transition-all duration-200" title="Mudar para modo escuro">
+            
+            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-gray-100 flex items-center justify-center">
+                <img src="favicon.png" alt="Ícone" class="w-8 h-8 mr-4">
+                <span>Organizador de Dados de Concurso</span>
+            </h1>
+            
+            <button id="themeToggle" class="ml-4 bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-200 px-3 py-1 rounded-full text-lg shadow-sm hover:shadow-md transition-all duration-200" title="Mudar para modo escuro">
                 <i class="fas fa-moon" id="themeIcon"></i>
             </button>
         </div>
     </header>
+
     <div class="max-w-4xl mx-auto w-full px-4 py-8 space-y-8">
         <div class="bg-white shadow-lg rounded-lg p-6 text-center dark:bg-gray-700 dark:text-gray-100">
             <form id="organizeForm" class="space-y-4">
@@ -138,8 +138,7 @@
             </div>
             <div id="manualMappingArea" class="mt-4 p-4 border border-gray-300 rounded-lg bg-gray-50 dark:bg-gray-800 dark:border-gray-600" style="display: none;">
                 <p class="font-semibold text-center mb-3 text-gray-800 dark:text-gray-200">Defina os Nomes das Colunas:</p>
-                <div id="columnMappingInputs" class="flex flex-wrap justify-center gap-4 mb-4">
-                </div>
+                <div id="columnMappingInputs" class="flex flex-wrap justify-center gap-4 mb-4"></div>
                 <button type="button" id="applyMappingButton" onclick="applyManualMapping()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg mx-auto block tooltip-container">
                     <i class="fas fa-check"></i> Aplicar Mapeamento
                     <span class="tooltip-text">Reorganize os dados com base nos nomes de coluna que você selecionou.</span>
@@ -148,9 +147,7 @@
             <h4 class="text-sm text-gray-600 italic mb-4 text-center dark:text-gray-400"><i>Ao clicar no cabeçalho da tabela, os dados são organizados conforme a coluna clicada!</i></h4>
             <div class="overflow-x-auto">
                 <table id="resultTable" class="min-w-full">
-                    <thead>
-                        <tr id="tableHeaders"></tr>
-                    </thead>
+                    <thead><tr id="tableHeaders"></tr></thead>
                     <tbody id="tableBody"></tbody>
                 </table>
             </div>
@@ -159,7 +156,6 @@
     <footer class="w-full mt-12 bg-gray-50 text-gray-600 py-6 px-4 rounded-lg shadow-inner dark:bg-gray-900 dark:text-gray-400">
         <div class="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-8">
             <img src="minha_foto.jpg" alt="Foto do Autor Júnior Chaves" class="footer-img w-48 h-48 rounded-full object-cover border-4 border-green-500 shadow-md">
-            
             <div class="text-center sm:text-left space-y-2">
                 <p class="font-bold text-lg text-gray-800 dark:text-gray-200">Desenvolvido por Júnior Chaves</p>
                 <p class="text-sm">Conecte-se comigo nas redes sociais:</p>
@@ -172,13 +168,12 @@
         </div>
         <p class="text-xs text-gray-500 mt-4 text-center dark:text-gray-500">© <span id="currentYear"></span> Júnior Chaves. Todos os direitos reservados.</p>
     </footer>
-
     <div id="toast-notification" class="fixed bottom-5 right-5 bg-green-600 text-white py-3 px-6 rounded-lg shadow-lg transform translate-y-20 opacity-0 transition-all duration-500 ease-in-out">
         Mensagem de sucesso!
     </div>
 
     <script>
-        // ... (todo o seu JavaScript continua aqui, exatamente como na última versão que funcionou) ...
+        // ... (todo o seu JavaScript continua aqui, sem alterações) ...
         document.getElementById('currentYear').textContent = new Date().getFullYear();
         let sortDirections = {}; let currentColumnNames = []; let columnTypes = {}; let isRenamingColumns = false; let lastInferredData = null;
         const typeMapping = { 'classificacao': 'integer_numeric', 'posicao': 'integer_numeric', 'ranking': 'integer_numeric', 'inscricao': 'numeric_string', 'matricula': 'numeric_string', 'nota': 'numeric', 'pontuacao': 'numeric', 'total': 'numeric', 'acertos': 'numeric', 'idade': 'integer_numeric' };
@@ -200,88 +195,8 @@
         themeToggle.addEventListener('click', () => { if (htmlElement.classList.contains('dark')) { applyTheme('light'); localStorage.setItem('theme', 'light'); } else { applyTheme('dark'); localStorage.setItem('theme', 'dark'); } });
         function searchTable() { let input = document.getElementById('searchInput').value.toUpperCase(); let table = document.getElementById('resultTable'); let tr = table.getElementsByTagName('tr'); for (let i = 1; i < tr.length; i++) { let td = tr[i].getElementsByTagName('td'); let found = false; for (let j = 0; j < td.length; j++) { if (td[j] && td[j].innerHTML.toUpperCase().indexOf(input) > -1) { found = true; break; } } tr[i].style.display = found ? '' : 'none'; } }
         function generatePDF() { if (isRenamingColumns) { toggleColumnRename(); } try { const { jsPDF } = window.jspdf; const doc = new jsPDF(); const margin = 10; let y = margin; const lineHeight = 10; const pageWidth = doc.internal.pageSize.getWidth(); doc.setFontSize(16); doc.setFont("helvetica", "bold"); const customTitle = document.getElementById('pdfTitleInput').value.trim(); const title = customTitle === '' ? "Relatório de Resultados" : customTitle; const splitTitle = doc.splitTextToSize(title, pageWidth - 2 * margin); doc.text(splitTitle, pageWidth / 2, y, { align: 'center' }); y += (splitTitle.length * lineHeight) + lineHeight; const table = document.getElementById('resultTable'); if (!table || table.querySelector('tbody').children.length === 0) { alert("Erro: Gere a tabela primeiro clicando em 'Organizar'!"); return; } const headers = Array.from(document.querySelectorAll('#tableHeaders th')).map(th => th.textContent.replace(/[\u2191\u2193]/g, '').trim()); const rows = Array.from(table.querySelectorAll('tbody tr')).map(tr => Array.from(tr.querySelectorAll('td')).map(td => td.textContent.replace(/\s*\n\s*/g, ' ').trim())); doc.autoTable({ head: [headers], body: rows, startY: y, margin: { left: margin, right: margin }, styles: { fontSize: 10, cellPadding: 2, halign: 'center', valign: 'middle', lineColor: [226, 232, 240], lineWidth: 0.5 }, headStyles: { fillColor: [76, 175, 80], textColor: 255, fontStyle: 'bold', halign: 'center', valign: 'middle' }, alternateRowStyles: { fillColor: [248, 250, 252] }, didDrawPage: function(data) { } }); window.open(doc.output('bloburl'), '_blank'); } catch (error) { console.error("Erro ao gerar PDF:", error); alert("Erro ao gerar PDF. Veja o console para detalhes."); } }
-        
-        function exportToCSV() {
-            if (isRenamingColumns) {
-                toggleColumnRename(); 
-            }
-            const table = document.getElementById('resultTable');
-            const visibleRows = Array.from(table.querySelectorAll('tbody tr:not([style*="display: none"])'));
-
-            if (visibleRows.length === 0) {
-                alert("Não há dados visíveis para exportar. Limpe a busca ou verifique os dados.");
-                return;
-            }
-
-            const headers = Array.from(table.querySelectorAll('thead th'))
-                .map(th => {
-                    let headerText = th.textContent.replace(/[\u2191\u2193]/g, '').trim();
-                    headerText = headerText.replace(/[\r\n]+/g, ' ').trim();
-                    return `"${headerText.replace(/"/g, '""')}"`;
-                });
-            
-            const rows = visibleRows.map(tr => {
-                return Array.from(tr.querySelectorAll('td'))
-                    .map(td => `"${td.textContent.replace(/"/g, '""')}"`)
-                    .join(';');
-            });
-
-            const csvContent = headers.join(';') + '\n' + rows.join('\n');
-            const bom = "\uFEFF"; 
-            const blob = new Blob([bom + csvContent], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = 'dados_organizados.csv';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(link.href);
-            showToast('Arquivo CSV gerado com sucesso!');
-        }
-        
-        function toggleColumnRename() {
-            isRenamingColumns = !isRenamingColumns;
-            const headers = document.querySelectorAll('#tableHeaders th');
-            const button = document.getElementById('toggleRenameHeadersButton');
-
-            if (isRenamingColumns) {
-                button.innerHTML = '<i class="fas fa-save"></i> Salvar Nomes';
-                button.classList.remove('bg-purple-600', 'hover:bg-purple-700', 'dark:bg-purple-500', 'dark:hover:bg-purple-400');
-                button.classList.add('bg-green-600', 'hover:bg-green-700', 'dark:bg-green-500', 'dark:hover:bg-green-400');
-                
-                headers.forEach((th, index) => {
-                    th.onclick = null; 
-                    th.classList.add('editable-header');
-                    const originalText = th.textContent.replace(/[\u2191\u2193]/g, '').trim();
-                    th.innerHTML = `<input type="text" value="${originalText}" class="w-full bg-transparent text-center font-semibold p-0" data-original-index="${index}">`;
-                });
-
-                const firstInput = headers[0].querySelector('input');
-                if (firstInput) firstInput.focus();
-
-            } else {
-                button.innerHTML = '<i class="fas fa-pencil-alt"></i> Renomear Cabeçalhos';
-                button.classList.remove('bg-green-600', 'hover:bg-green-700', 'dark:bg-green-500', 'dark:hover:bg-green-400');
-                button.classList.add('bg-purple-600', 'hover:bg-purple-700', 'dark:bg-purple-500', 'dark:hover:bg-purple-400');
-
-                const newColumnNames = [];
-                headers.forEach(th => {
-                    const input = th.querySelector('input');
-                    const newName = input ? input.value.trim() : th.textContent.trim();
-                    newColumnNames.push(newName);
-                    
-                    th.innerHTML = newName;
-                    th.classList.remove('editable-header');
-                    const originalIndex = parseInt(input.getAttribute('data-original-index'));
-                    th.onclick = () => sortTable(originalIndex);
-                    
-                    const arrowSpan = document.createElement('span');
-                    arrowSpan.className = 'sort-arrow ml-1 text-gray-400 opacity-0 transition-opacity duration-200';
-                    th.appendChild(arrowSpan);
-                });
-                currentColumnNames = newColumnNames; 
-            }
-        }
+        function exportToCSV() { if (isRenamingColumns) { toggleColumnRename(); } const table = document.getElementById('resultTable'); const visibleRows = Array.from(table.querySelectorAll('tbody tr:not([style*="display: none"])')); if (visibleRows.length === 0) { alert("Não há dados visíveis para exportar. Limpe a busca ou verifique os dados."); return; } const headers = Array.from(table.querySelectorAll('thead th')) .map(th => { let headerText = th.textContent.replace(/[\u2191\u2193]/g, '').trim(); headerText = headerText.replace(/[\r\n]+/g, ' ').trim(); return `"${headerText.replace(/"/g, '""')}"`; }); const rows = visibleRows.map(tr => { return Array.from(tr.querySelectorAll('td')) .map(td => `"${td.textContent.replace(/"/g, '""')}"`) .join(';'); }); const csvContent = headers.join(';') + '\n' + rows.join('\n'); const bom = "\uFEFF"; const blob = new Blob([bom + csvContent], { type: 'text/csv;charset=utf-8;' }); const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = 'dados_organizados.csv'; document.body.appendChild(link); link.click(); document.body.removeChild(link); URL.revokeObjectURL(link.href); showToast('Arquivo CSV gerado com sucesso!'); }
+        function toggleColumnRename() { isRenamingColumns = !isRenamingColumns; const headers = document.querySelectorAll('#tableHeaders th'); const button = document.getElementById('toggleRenameHeadersButton'); if (isRenamingColumns) { button.innerHTML = '<i class="fas fa-save"></i> Salvar Nomes'; button.classList.remove('bg-purple-600', 'hover:bg-purple-700', 'dark:bg-purple-500', 'dark:hover:bg-purple-400'); button.classList.add('bg-green-600', 'hover:bg-green-700', 'dark:bg-green-500', 'dark:hover:bg-green-400'); headers.forEach((th, index) => { th.onclick = null; th.classList.add('editable-header'); const originalText = th.textContent.replace(/[\u2191\u2193]/g, '').trim(); th.innerHTML = `<input type="text" value="${originalText}" class="w-full bg-transparent text-center font-semibold p-0" data-original-index="${index}">`; }); const firstInput = headers[0].querySelector('input'); if (firstInput) firstInput.focus(); } else { button.innerHTML = '<i class="fas fa-pencil-alt"></i> Renomear Cabeçalhos'; button.classList.remove('bg-green-600', 'hover:bg-green-700', 'dark:bg-green-500', 'dark:hover:bg-green-400'); button.classList.add('bg-purple-600', 'hover:bg-purple-700', 'dark:bg-purple-500', 'dark:hover:bg-purple-400'); const newColumnNames = []; headers.forEach(th => { const input = th.querySelector('input'); const newName = input ? input.value.trim() : th.textContent.trim(); newColumnNames.push(newName); th.innerHTML = newName; th.classList.remove('editable-header'); const originalIndex = parseInt(input.getAttribute('data-original-index')); th.onclick = () => sortTable(originalIndex); const arrowSpan = document.createElement('span'); arrowSpan.className = 'sort-arrow ml-1 text-gray-400 opacity-0 transition-opacity duration-200'; th.appendChild(arrowSpan); }); currentColumnNames = newColumnNames; } }
     </script>
 </body>
 </html>
