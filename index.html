@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Organizador de Dados de Concurso</title>
     <link rel="icon" type="image/png" href="favicon.png">
+    
+    <link rel="manifest" href="manifest.json">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -30,8 +33,23 @@
         html.dark button:hover:not(:disabled) { background-color: #68d391; color: #1a202c; box-shadow: 0 4px 8px rgba(0,0,0,0.4); }
         html.dark button:disabled { background-color: #2f855a; }
         table { width: 100%; border-collapse: collapse; text-align: center; margin-top: 1rem; margin: auto; border-radius: 0.5rem; overflow: hidden; }
-        th, td { border: 1px solid #e2e8f0; text-align: center; cursor: pointer; padding: 0.5rem; font-size: 0.875rem; }
-        @media (min-width: 640px) { th, td { padding: 0.75rem; font-size: 1rem; } }
+        
+        /* Ajustes para responsividade da tabela no celular */
+        th, td {
+            border: 1px solid #e2e8f0;
+            text-align: center;
+            cursor: pointer;
+            padding: 0.5rem; /* Padding menor para telas pequenas */
+            font-size: 0.875rem; /* Fonte menor para telas pequenas */
+        }
+        /* Media query para telas maiores (a partir de 640px) */
+        @media (min-width: 640px) {
+            th, td {
+                padding: 0.75rem; /* Padding normal */
+                font-size: 1rem;  /* Fonte normal */
+            }
+        }
+
         th { background-color: #4CAF50; color: white; font-weight: 600; position: relative; padding-right: 25px; }
         th .sort-arrow { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); font-size: 0.8em; color: rgba(255, 255, 255, 0.7); }
         td { background-color: #ffffff; }
@@ -59,13 +77,7 @@
         html.dark .tooltip-text::after { border-color: #f8fafc transparent transparent transparent; }
         .editable-header { cursor: text !important; border: 1px dashed #68d391; background-color: rgba(72, 187, 120, 0.2); }
         html.dark .editable-header { border: 1px dashed #9AE6B4; background-color: rgba(104, 211, 145, 0.2); }
-
-        /* ========================================================== */
-        /* CSS PARA O "MODO DE EDIÇÃO" DA TABELA                      */
-        /* ========================================================== */
-        .table-editing-mode th {
-            min-width: 150px;
-        }
+        .table-editing-mode th { min-width: 150px; }
     </style>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -179,12 +191,21 @@
     </div>
 
     <script>
-        // ... (todo o script, com a alteração na função toggleColumnRename) ...
         document.getElementById('currentYear').textContent = new Date().getFullYear();
         let sortDirections = {}; let currentColumnNames = []; let columnTypes = {}; let isRenamingColumns = false; let lastInferredData = null;
         const typeMapping = { 'classificacao': 'integer_numeric', 'posicao': 'integer_numeric', 'ranking': 'integer_numeric', 'inscricao': 'numeric_string', 'matricula': 'numeric_string', 'nota': 'numeric', 'pontuacao': 'numeric', 'total': 'numeric', 'acertos': 'numeric', 'idade': 'integer_numeric' };
         const predefinedColumnOptions = [ { value: '', text: 'Selecione...' }, { value: 'Classificação', text: 'Classificação' }, { value: 'Nome', text: 'Nome' }, { value: 'Inscrição', text: 'Inscrição' }, { value: 'Nota', text: 'Nota' }, { value: 'Pontuação', text: 'Pontuação' }, { value: 'Posição', text: 'Posição' }, { value: 'Matrícula', text: 'Matrícula' }, { value: 'Acertos', text: 'Acertos' }, { value: 'Idade', text: 'Idade' }, { value: 'Outro', text: 'Outro (digite abaixo)' } ];
-        function showToast(message, duration = 3000) { const toast = document.getElementById('toast-notification'); if (!toast) return; toast.textContent = message; toast.classList.remove('translate-y-20', 'opacity-0'); setTimeout(() => { toast.classList.add('translate-y-20', 'opacity-0'); }, duration); }
+        
+        function showToast(message, duration = 3000) {
+            const toast = document.getElementById('toast-notification');
+            if (!toast) return;
+            toast.textContent = message;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, duration);
+        }
+
         function getColumnType(columnName) { const lowerName = columnName.toLowerCase(); for (const key in typeMapping) { if (lowerName.includes(key)) return typeMapping[key]; } if (lowerName.includes('nome')) return 'string'; return 'string'; }
         function isNumeric(str) { if (str === null || str === undefined || str.trim() === '') return false; return /^-?\d+(\.\d+)?$/.test(str.trim()); }
         function isInteger(str) { if (str === null || str === undefined || str.trim() === '') return false; return /^-?\d+$/.test(str.trim()); }
@@ -205,7 +226,7 @@
         
         function toggleColumnRename() {
             isRenamingColumns = !isRenamingColumns;
-            const table = document.getElementById('resultTable'); // Pega a referência da tabela
+            const table = document.getElementById('resultTable');
             const headers = document.querySelectorAll('#tableHeaders th');
             const button = document.getElementById('toggleRenameHeadersButton');
 
