@@ -5,9 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Organizador de Dados de Concurso</title>
     <link rel="icon" type="image/png" href="favicon.png">
-    
     <link rel="manifest" href="manifest.json">
 
+    <meta property="og:title" content="Organizador de Dados de Concurso" />
+    <meta property="og:description" content="Uma ferramenta simples e poderosa para organizar, classificar e exportar listas de candidatos." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://jrchavesac.github.io/organizador_simples/" />
+    <meta property="og:image" content="https://jrchavesac.github.io/organizador_simples/icone-pwa.png" />
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -33,23 +37,8 @@
         html.dark button:hover:not(:disabled) { background-color: #68d391; color: #1a202c; box-shadow: 0 4px 8px rgba(0,0,0,0.4); }
         html.dark button:disabled { background-color: #2f855a; }
         table { width: 100%; border-collapse: collapse; text-align: center; margin-top: 1rem; margin: auto; border-radius: 0.5rem; overflow: hidden; }
-        
-        /* Ajustes para responsividade da tabela no celular */
-        th, td {
-            border: 1px solid #e2e8f0;
-            text-align: center;
-            cursor: pointer;
-            padding: 0.5rem; /* Padding menor para telas pequenas */
-            font-size: 0.875rem; /* Fonte menor para telas pequenas */
-        }
-        /* Media query para telas maiores (a partir de 640px) */
-        @media (min-width: 640px) {
-            th, td {
-                padding: 0.75rem; /* Padding normal */
-                font-size: 1rem;  /* Fonte normal */
-            }
-        }
-
+        th, td { border: 1px solid #e2e8f0; text-align: center; cursor: pointer; padding: 0.5rem; font-size: 0.875rem; }
+        @media (min-width: 640px) { th, td { padding: 0.75rem; font-size: 1rem; } }
         th { background-color: #4CAF50; color: white; font-weight: 600; position: relative; padding-right: 25px; }
         th .sort-arrow { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); font-size: 0.8em; color: rgba(255, 255, 255, 0.7); }
         td { background-color: #ffffff; }
@@ -85,7 +74,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body class="bg-gray-100 text-gray-800 font-sans antialiased items-center">
-
     <header class="w-full bg-white shadow-md py-4 text-center dark:bg-gray-800 dark:text-gray-100">
         <div class="relative max-w-4xl mx-auto flex items-center justify-center px-4">
             <h1 class="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-gray-100 flex items-center justify-center">
@@ -97,7 +85,6 @@
             </button>
         </div>
     </header>
-
     <div class="max-w-4xl mx-auto w-full px-4 py-8 space-y-8">
         <div class="bg-white shadow-lg rounded-lg p-6 text-center dark:bg-gray-700 dark:text-gray-100">
             <form id="organizeForm" class="space-y-4">
@@ -189,23 +176,13 @@
     <div id="toast-notification" class="fixed bottom-5 right-5 bg-green-600 text-white py-3 px-6 rounded-lg shadow-lg transform translate-y-20 opacity-0 transition-all duration-500 ease-in-out">
         Mensagem de sucesso!
     </div>
-
     <script>
+        // O script completo continua aqui, sem nenhuma alteração
         document.getElementById('currentYear').textContent = new Date().getFullYear();
         let sortDirections = {}; let currentColumnNames = []; let columnTypes = {}; let isRenamingColumns = false; let lastInferredData = null;
         const typeMapping = { 'classificacao': 'integer_numeric', 'posicao': 'integer_numeric', 'ranking': 'integer_numeric', 'inscricao': 'numeric_string', 'matricula': 'numeric_string', 'nota': 'numeric', 'pontuacao': 'numeric', 'total': 'numeric', 'acertos': 'numeric', 'idade': 'integer_numeric' };
         const predefinedColumnOptions = [ { value: '', text: 'Selecione...' }, { value: 'Classificação', text: 'Classificação' }, { value: 'Nome', text: 'Nome' }, { value: 'Inscrição', text: 'Inscrição' }, { value: 'Nota', text: 'Nota' }, { value: 'Pontuação', text: 'Pontuação' }, { value: 'Posição', text: 'Posição' }, { value: 'Matrícula', text: 'Matrícula' }, { value: 'Acertos', text: 'Acertos' }, { value: 'Idade', text: 'Idade' }, { value: 'Outro', text: 'Outro (digite abaixo)' } ];
-        
-        function showToast(message, duration = 3000) {
-            const toast = document.getElementById('toast-notification');
-            if (!toast) return;
-            toast.textContent = message;
-            toast.classList.remove('translate-y-20', 'opacity-0');
-            setTimeout(() => {
-                toast.classList.add('translate-y-20', 'opacity-0');
-            }, duration);
-        }
-
+        function showToast(message, duration = 3000) { const toast = document.getElementById('toast-notification'); if (!toast) return; toast.textContent = message; toast.classList.remove('translate-y-20', 'opacity-0'); setTimeout(() => { toast.classList.add('translate-y-20', 'opacity-0'); }, duration); }
         function getColumnType(columnName) { const lowerName = columnName.toLowerCase(); for (const key in typeMapping) { if (lowerName.includes(key)) return typeMapping[key]; } if (lowerName.includes('nome')) return 'string'; return 'string'; }
         function isNumeric(str) { if (str === null || str === undefined || str.trim() === '') return false; return /^-?\d+(\.\d+)?$/.test(str.trim()); }
         function isInteger(str) { if (str === null || str === undefined || str.trim() === '') return false; return /^-?\d+$/.test(str.trim()); }
@@ -223,52 +200,7 @@
         function searchTable() { let input = document.getElementById('searchInput').value.toUpperCase(); let table = document.getElementById('resultTable'); let tr = table.getElementsByTagName('tr'); for (let i = 1; i < tr.length; i++) { let td = tr[i].getElementsByTagName('td'); let found = false; for (let j = 0; j < td.length; j++) { if (td[j] && td[j].innerHTML.toUpperCase().indexOf(input) > -1) { found = true; break; } } tr[i].style.display = found ? '' : 'none'; } }
         function generatePDF() { if (isRenamingColumns) { toggleColumnRename(); } try { const { jsPDF } = window.jspdf; const doc = new jsPDF(); const margin = 10; let y = margin; const lineHeight = 10; const pageWidth = doc.internal.pageSize.getWidth(); doc.setFontSize(16); doc.setFont("helvetica", "bold"); const customTitle = document.getElementById('pdfTitleInput').value.trim(); const title = customTitle === '' ? "Relatório de Resultados" : customTitle; const splitTitle = doc.splitTextToSize(title, pageWidth - 2 * margin); doc.text(splitTitle, pageWidth / 2, y, { align: 'center' }); y += (splitTitle.length * lineHeight) + lineHeight; const table = document.getElementById('resultTable'); if (!table || table.querySelector('tbody').children.length === 0) { alert("Erro: Gere a tabela primeiro clicando em 'Organizar'!"); return; } const headers = Array.from(document.querySelectorAll('#tableHeaders th')).map(th => th.textContent.replace(/[\u2191\u2193]/g, '').trim()); const rows = Array.from(table.querySelectorAll('tbody tr')).map(tr => Array.from(tr.querySelectorAll('td')).map(td => td.textContent.replace(/\s*\n\s*/g, ' ').trim())); doc.autoTable({ head: [headers], body: rows, startY: y, margin: { left: margin, right: margin }, styles: { fontSize: 10, cellPadding: 2, halign: 'center', valign: 'middle', lineColor: [226, 232, 240], lineWidth: 0.5 }, headStyles: { fillColor: [76, 175, 80], textColor: 255, fontStyle: 'bold', halign: 'center', valign: 'middle' }, alternateRowStyles: { fillColor: [248, 250, 252] }, didDrawPage: function(data) { } }); window.open(doc.output('bloburl'), '_blank'); showToast('PDF gerado e aberto em uma nova aba.'); } catch (error) { console.error("Erro ao gerar PDF:", error); alert("Erro ao gerar PDF. Veja o console para detalhes."); } }
         function exportToCSV() { if (isRenamingColumns) { toggleColumnRename(); } const table = document.getElementById('resultTable'); const visibleRows = Array.from(table.querySelectorAll('tbody tr:not([style*="display: none"])')); if (visibleRows.length === 0) { alert("Não há dados visíveis para exportar. Limpe a busca ou verifique os dados."); return; } const headers = Array.from(table.querySelectorAll('thead th')) .map(th => { let headerText = th.textContent.replace(/[\u2191\u2193]/g, '').trim(); headerText = headerText.replace(/[\r\n]+/g, ' ').trim(); return `"${headerText.replace(/"/g, '""')}"`; }); const rows = visibleRows.map(tr => { return Array.from(tr.querySelectorAll('td')) .map(td => `"${td.textContent.replace(/"/g, '""')}"`) .join(';'); }); const csvContent = headers.join(';') + '\n' + rows.join('\n'); const bom = "\uFEFF"; const blob = new Blob([bom + csvContent], { type: 'text/csv;charset=utf-8;' }); const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = 'dados_organizados.csv'; document.body.appendChild(link); link.click(); document.body.removeChild(link); URL.revokeObjectURL(link.href); showToast('Arquivo CSV gerado com sucesso, verifique seus downloads!'); }
-        
-        function toggleColumnRename() {
-            isRenamingColumns = !isRenamingColumns;
-            const table = document.getElementById('resultTable');
-            const headers = document.querySelectorAll('#tableHeaders th');
-            const button = document.getElementById('toggleRenameHeadersButton');
-
-            if (isRenamingColumns) {
-                table.classList.add('table-editing-mode'); // LIGA o modo de edição
-                button.innerHTML = '<i class="fas fa-save"></i> Salvar Nomes';
-                button.classList.remove('bg-purple-600', 'hover:bg-purple-700', 'dark:bg-purple-500', 'dark:hover:bg-purple-400');
-                button.classList.add('bg-green-600', 'hover:bg-green-700', 'dark:bg-green-500', 'dark:hover:bg-green-400');
-                
-                headers.forEach((th, index) => {
-                    th.onclick = null;
-                    th.classList.add('editable-header');
-                    const originalText = th.textContent.replace(/[\u2191\u2193]/g, '').trim();
-                    th.innerHTML = `<input type="text" value="${originalText}" class="w-full bg-transparent text-center font-semibold p-0 text-sm border-none focus:ring-0" data-original-index="${index}">`;
-                });
-
-                const firstInput = headers[0].querySelector('input');
-                if (firstInput) firstInput.focus();
-
-            } else {
-                table.classList.remove('table-editing-mode'); // DESLIGA o modo de edição
-                button.innerHTML = '<i class="fas fa-pencil-alt"></i> Renomear Cabeçalhos';
-                button.classList.remove('bg-green-600', 'hover:bg-green-700', 'dark:bg-green-500', 'dark:hover:bg-green-400');
-                button.classList.add('bg-purple-600', 'hover:bg-purple-700', 'dark:bg-purple-500', 'dark:hover:bg-purple-400');
-                
-                const newColumnNames = [];
-                headers.forEach(th => {
-                    const input = th.querySelector('input');
-                    const newName = input ? input.value.trim() : th.textContent.trim();
-                    newColumnNames.push(newName);
-                    th.innerHTML = newName;
-                    th.classList.remove('editable-header');
-                    const originalIndex = parseInt(input.getAttribute('data-original-index'));
-                    th.onclick = () => sortTable(originalIndex);
-                    const arrowSpan = document.createElement('span');
-                    arrowSpan.className = 'sort-arrow ml-1 text-gray-400 opacity-0 transition-opacity duration-200';
-                    th.appendChild(arrowSpan);
-                });
-                currentColumnNames = newColumnNames;
-                showToast('Nomes dos cabeçalhos atualizados!');
-            }
-        }
+        function toggleColumnRename() { isRenamingColumns = !isRenamingColumns; const table = document.getElementById('resultTable'); const headers = document.querySelectorAll('#tableHeaders th'); const button = document.getElementById('toggleRenameHeadersButton'); if (isRenamingColumns) { table.classList.add('table-editing-mode'); button.innerHTML = '<i class="fas fa-save"></i> Salvar Nomes'; button.classList.remove('bg-purple-600', 'hover:bg-purple-700', 'dark:bg-purple-500', 'dark:hover:bg-purple-400'); button.classList.add('bg-green-600', 'hover:bg-green-700', 'dark:bg-green-500', 'dark:hover:bg-green-400'); headers.forEach((th, index) => { th.onclick = null; th.classList.add('editable-header'); const originalText = th.textContent.replace(/[\u2191\u2193]/g, '').trim(); th.innerHTML = `<input type="text" value="${originalText}" class="w-full bg-transparent text-center font-semibold p-0 text-sm border-none focus:ring-0" data-original-index="${index}">`; }); const firstInput = headers[0].querySelector('input'); if (firstInput) firstInput.focus(); } else { table.classList.remove('table-editing-mode'); button.innerHTML = '<i class="fas fa-pencil-alt"></i> Renomear Cabeçalhos'; button.classList.remove('bg-green-600', 'hover:bg-green-700', 'dark:bg-green-500', 'dark:hover:bg-green-400'); button.classList.add('bg-purple-600', 'hover:bg-purple-700', 'dark:bg-purple-500', 'dark:hover:bg-purple-400'); const newColumnNames = []; headers.forEach(th => { const input = th.querySelector('input'); const newName = input ? input.value.trim() : th.textContent.trim(); newColumnNames.push(newName); th.innerHTML = newName; th.classList.remove('editable-header'); const originalIndex = parseInt(input.getAttribute('data-original-index')); th.onclick = () => sortTable(originalIndex); const arrowSpan = document.createElement('span'); arrowSpan.className = 'sort-arrow ml-1 text-gray-400 opacity-0 transition-opacity duration-200'; th.appendChild(arrowSpan); }); currentColumnNames = newColumnNames; showToast('Nomes dos cabeçalhos atualizados!'); } }
     </script>
 </body>
 </html>
