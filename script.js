@@ -3,7 +3,28 @@ let sortDirections = {}; let currentColumnNames = []; let columnTypes = {}; let 
 let currentTableData = [];
 const typeMapping = { 'classificacao': 'integer_numeric', 'posicao': 'integer_numeric', 'ranking': 'integer_numeric', 'inscricao': 'numeric_string', 'matricula': 'numeric_string', 'nota': 'numeric', 'pontuacao': 'numeric', 'total': 'numeric', 'acertos': 'numeric', 'idade': 'integer_numeric' };
 const predefinedColumnOptions = [ { value: '', text: 'Selecione...' }, { value: 'Classificação', text: 'Classificação' }, { value: 'Nome', text: 'Nome' }, { value: 'Inscrição', text: 'Inscrição' }, { value: 'Nota', text: 'Nota' }, { value: 'Pontuação', text: 'Pontuação' }, { value: 'Posição', text: 'Posição' }, { value: 'Matrícula', text: 'Matrícula' }, { value: 'Acertos', text: 'Acertos' }, { value: 'Idade', text: 'Idade' }, { value: 'Outro', text: 'Outro (digite abaixo)' } ];
-const patterns = [ { name: 'Nome, Inscrição, Nota', regex: /([A-ZÀ-Ÿ\s.-]+?),\s*(\d+),\s*(\d+\.?\d*)\s*(?:\/\s*|$)/gi, columns: ['Nome', 'Inscrição', 'Nota'] }, { name: 'Inscrição; Nome; Nota', regex: /(\d+);\s*([A-ZÀ-Ÿ\s.-]+?);\s*(\d+\.?\d*)\s*(?:\/\s*|$)/gi, columns: ['Inscrição', 'Nome', 'Nota'] }, { name: 'Classificação, Inscrição, Nome, Nota', regex: /(\d+),\s*(\d+),\s*([A-ZÀ-Ÿ\s.-]+?),\s*(\d+\.?\d*)\s*(?:\/\s*|$)/gi, columns: ['Classificação', 'Inscrição', 'Nome', 'Nota'] }, { name: 'Inscrição / Nome / Posição / Nota', regex: /(\d+)\s*\/\s*([A-ZÀ-Ÿ\s.-]+?)\s*\/\s*(\d+)\s*\/\s*(\d+\.?\d*)\s*(?:\/\s*|$)/gi, columns: ['Inscrição', 'Nome', 'Posição', 'Nota'] }, { name: 'Classificação Inscrição Nome Nota (Concatenado)', regex: /(\d+)(\d+)([A-ZÀ-Ÿ\s.-]+?)(\d+\.?\d*)/gi, columns: ['Classificação', 'Inscrição', 'Nome', 'Nota'] }, { name: 'Inscrição Nome Nota (Concatenado)', regex: /(\d+)([A-ZÀ-Ÿ\s.-]+?)(\d+\.?\d*)/gi, columns: ['Inscrição', 'Nome', 'Nota'] }, { name: 'Nome, Idade', regex: /([A-ZÀ-Ÿ\s.-]+?),\s*(\d+)\s*(?:\/\s*|$)/gi, columns: ['Nome', 'Idade'] } ];
+
+const patterns = [
+    {
+        name: 'PRF (Inscrição, Nome, 5 Notas + Soma)',
+        regex: /(\d+),\s*([A-Za-zÀ-ÿ\s.-]+?),\s*(\d+\.\d{2}),\s*(\d+\.\d{2}),\s*(\d+\.\d{2}),\s*(\d+\.\d{2}),\s*(\d+\.\d{2})\s*(?:\/\s*|$)/gi,
+        columns: [ 'Inscrição', 'Nome', 'Nota Bloco I', 'Nota Bloco II', 'Nota Bloco III', 'Nota Final Objetiva', 'Nota Discursiva', 'Nota Final Total' ],
+        postProcess: (row) => {
+            const notaObjetiva = parseFloat(row[5]) || 0;
+            const notaDiscursiva = parseFloat(row[6]) || 0;
+            const total = (notaObjetiva + notaDiscursiva).toFixed(2);
+            row.push(total);
+            return row;
+        }
+    },
+    { name: 'Nome, Inscrição, Nota', regex: /([A-ZÀ-Ÿ\s.-]+?),\s*(\d+),\s*(\d+\.?\d*)\s*(?:\/\s*|$)/gi, columns: ['Nome', 'Inscrição', 'Nota'] }, 
+    { name: 'Inscrição; Nome; Nota', regex: /(\d+);\s*([A-ZÀ-Ÿ\s.-]+?);\s*(\d+\.?\d*)\s*(?:\/\s*|$)/gi, columns: ['Inscrição', 'Nome', 'Nota'] }, 
+    { name: 'Classificação, Inscrição, Nome, Nota', regex: /(\d+),\s*(\d+),\s*([A-ZÀ-Ÿ\s.-]+?),\s*(\d+\.?\d*)\s*(?:\/\s*|$)/gi, columns: ['Classificação', 'Inscrição', 'Nome', 'Nota'] }, 
+    { name: 'Inscrição / Nome / Posição / Nota', regex: /(\d+)\s*\/\s*([A-ZÀ-Ÿ\s.-]+?)\s*\/\s*(\d+)\s*\/\s*(\d+\.?\d*)\s*(?:\/\s*|$)/gi, columns: ['Inscrição', 'Nome', 'Posição', 'Nota'] }, 
+    { name: 'Classificação Inscrição Nome Nota (Concatenado)', regex: /(\d+)(\d+)([A-ZÀ-Ÿ\s.-]+?)(\d+\.?\d*)/gi, columns: ['Classificação', 'Inscrição', 'Nome', 'Nota'] }, 
+    { name: 'Inscrição Nome Nota (Concatenado)', regex: /(\d+)([A-ZÀ-Ÿ\s.-]+?)(\d+\.?\d*)/gi, columns: ['Inscrição', 'Nome', 'Nota'] }, 
+    { name: 'Nome, Idade', regex: /([A-ZÀ-Ÿ\s.-]+?),\s*(\d+)\s*(?:\/\s*|$)/gi, columns: ['Nome', 'Idade'] } 
+];
 
 function showToast(message, duration = 3000) {
     const toast = document.getElementById('toast-notification');
@@ -30,7 +51,78 @@ function toggleActionButtons(disable, exceptId = null) {
 function getColumnType(columnName) { const lowerName = columnName.toLowerCase(); for (const key in typeMapping) { if (lowerName.includes(key)) return typeMapping[key]; } if (lowerName.includes('nome')) return 'string'; return 'string'; }
 function isNumeric(str) { if (str === null || str === undefined || str.trim() === '') return false; return /^-?\d+(\.\d+)?$/.test(str.trim()); }
 function isInteger(str) { if (str === null || str === undefined || str.trim() === '') return false; return /^-?\d+$/.test(str.trim()); }
-function inferAndApplyPattern(rawInputString) { if (!rawInputString) { return { columnNames: [], organizedData: [], patternDetected: true }; } let sanitizedString = rawInputString.replace(/-\s+/g, ''); let processedString = sanitizedString.replace(/\r\n|\r/g, ' ').replace(/º|°/g, '').replace(/(\d+),(\d{1,2})(?![0-9])/g, '$1.$2').trim(); let candidateBlocks = []; let finalColumnNames = []; let patternFound = false; for (const pattern of patterns) { const tempBlocks = []; let match; pattern.regex.lastIndex = 0; while ((match = pattern.regex.exec(processedString)) !== null) { tempBlocks.push(match.slice(1).map(field => field.trim())); } if (tempBlocks.length > 0) { finalColumnNames = pattern.columns; candidateBlocks = tempBlocks; patternFound = true; break; } } if (!patternFound && processedString.length > 0) { const lines = processedString.split('/').map(line => line.trim()).filter(line => line.length > 0); if (lines.length > 0) { const sampleLine = lines[0]; let fields = sampleLine.split(/[\s,;]+/).filter(f => f.length > 0); if (fields.length > 1) { finalColumnNames = Array.from({ length: fields.length }, (_, i) => `Campo ${i + 1}`); candidateBlocks = lines.map(line => line.split(/[\s,;]+/).filter(f => f.length > 0)); candidateBlocks = candidateBlocks.filter(block => block.length === fields.length); if (candidateBlocks.length === 0) { candidateBlocks = [[processedString]]; finalColumnNames = ['Dados Brutos']; } } else { candidateBlocks = [[processedString]]; finalColumnNames = ['Dados Brutos']; } } } const organizedData = []; candidateBlocks.forEach(rowFields => { const rowData = new Array(finalColumnNames.length).fill(null); for (let i = 0; i < Math.min(rowFields.length, finalColumnNames.length); i++) { const value = rowFields[i]; const colName = finalColumnNames[i]; const inferredType = getColumnType(colName); if (value !== null && value !== undefined && value !== '') { let cleanedValue = value.trim(); if (inferredType === 'numeric') rowData[i] = parseFloat(cleanedValue); else if (inferredType === 'integer_numeric') rowData[i] = parseInt(cleanedValue, 10); else rowData[i] = cleanedValue; } } organizedData.push(rowData); }); return { columnNames: finalColumnNames, organizedData, patternDetected: patternFound }; }
+
+function inferAndApplyPattern(rawInputString) {
+    if (!rawInputString) {
+        return { columnNames: [], organizedData: [], patternDetected: true };
+    }
+    let sanitizedString = rawInputString.replace(/-\s+/g, '');
+    let processedString = sanitizedString.replace(/\r\n|\r/g, ' ').replace(/º|°/g, '').replace(/(\d+),(\d{1,2})(?![0-9])/g, '$1.$2').trim();
+    
+    let candidateBlocks = [];
+    let finalColumnNames = [];
+    let patternFound = false;
+
+    for (const pattern of patterns) {
+        let tempBlocks = [];
+        let match;
+        pattern.regex.lastIndex = 0;
+        
+        while ((match = pattern.regex.exec(processedString)) !== null) {
+            tempBlocks.push(match.slice(1).map(field => field.trim()));
+        }
+
+        if (tempBlocks.length > 0) {
+            // Se o padrão tem uma função de pós-processamento, aplique-a
+            if (pattern.postProcess) {
+                tempBlocks = tempBlocks.map(row => pattern.postProcess(row));
+            }
+            finalColumnNames = pattern.columns;
+            candidateBlocks = tempBlocks;
+            patternFound = true;
+            break;
+        }
+    }
+
+    if (!patternFound && processedString.length > 0) {
+        const lines = processedString.split('/').map(line => line.trim()).filter(line => line.length > 0);
+        if (lines.length > 0) {
+            const sampleLine = lines[0];
+            let fields = sampleLine.split(/[\s,;]+/).filter(f => f.length > 0);
+            if (fields.length > 1) {
+                finalColumnNames = Array.from({ length: fields.length }, (_, i) => `Campo ${i + 1}`);
+                candidateBlocks = lines.map(line => line.split(/[\s,;]+/).filter(f => f.length > 0));
+                candidateBlocks = candidateBlocks.filter(block => block.length === fields.length);
+                if (candidateBlocks.length === 0) {
+                    candidateBlocks = [[processedString]];
+                    finalColumnNames = ['Dados Brutos'];
+                }
+            } else {
+                candidateBlocks = [[processedString]];
+                finalColumnNames = ['Dados Brutos'];
+            }
+        }
+    }
+    
+    const organizedData = [];
+    candidateBlocks.forEach(rowFields => {
+        const rowData = new Array(finalColumnNames.length).fill(null);
+        for (let i = 0; i < Math.min(rowFields.length, finalColumnNames.length); i++) {
+            const value = rowFields[i];
+            const colName = finalColumnNames[i];
+            const inferredType = getColumnType(colName);
+            if (value !== null && value !== undefined && value !== '') {
+                let cleanedValue = value.trim();
+                if (inferredType === 'numeric') rowData[i] = parseFloat(cleanedValue);
+                else if (inferredType === 'integer_numeric') rowData[i] = parseInt(cleanedValue, 10);
+                else rowData[i] = cleanedValue;
+            }
+        }
+        organizedData.push(rowData);
+    });
+    return { columnNames: finalColumnNames, organizedData, patternDetected: patternFound };
+}
+
 function organizeData() { const dataInput = document.getElementById('dataInput').value.trim(); const addRankingColumn = document.getElementById('addRankingColumn').checked; const containerResult = document.getElementById('ContainerResult'); const organizeButton = document.getElementById('organizeButton'); const loadingSpinner = document.getElementById('loadingSpinner'); const organizeText = document.getElementById('organizeText'); const patternWarning = document.getElementById('patternWarning'); const manualMappingArea = document.getElementById('manualMappingArea'); const mapColumnsButton = document.getElementById('mapColumnsButton'); if (isRenamingColumns) { toggleColumnRename(); } toggleActionButtons(false); patternWarning.style.display = 'none'; manualMappingArea.style.display = 'none'; if (dataInput === "") { alert("Por favor, digite algum dado na 'Lista dos candidatos' para organizar."); return; } organizeText.style.display = 'none'; loadingSpinner.style.display = 'inline-block'; organizeButton.disabled = true; setTimeout(() => { try { let { columnNames, organizedData, patternDetected } = inferAndApplyPattern(dataInput); lastInferredData = { columnNames, organizedData, patternDetected }; containerResult.style.display = 'block'; mapColumnsButton.style.display = 'flex'; columnTypes = {}; columnNames.forEach(name => { columnTypes[name] = getColumnType(name); }); organizedData.sort((a, b) => { const notaIndex = columnNames.indexOf('Nota'); const classificacaoIndex = columnNames.indexOf('Classificação'); const campoNum1Index = columnNames.indexOf('Campo 1'); const nomeIndex = columnNames.indexOf('Nome'); const inscricaoIndex = columnNames.indexOf('Inscrição'); const posicaoIndex = columnNames.indexOf('Posição'); const idadeIndex = columnNames.indexOf('Idade'); if (notaIndex !== -1 && a[notaIndex] !== null && b[notaIndex] !== null) { const valA = parseFloat(a[notaIndex]); const valB = parseFloat(b[notaIndex]); const comp = (isNaN(valB) ? -Infinity : valB) - (isNaN(valA) ? -Infinity : valA); if (comp !== 0) return comp; } if (idadeIndex !== -1 && a[idadeIndex] !== null && b[idadeIndex] !== null) { const valA = parseInt(a[idadeIndex]); const valB = parseInt(b[idadeIndex]); const comp = (isNaN(valB) ? -Infinity : valB) - (isNaN(valA) ? -Infinity : valA); if (comp !== 0) return comp; } if (classificacaoIndex !== -1 && a[classificacaoIndex] !== null && b[classificacaoIndex] !== null) { const valA = parseInt(a[classificacaoIndex]); const valB = parseInt(b[classificacaoIndex]); const comp = (isNaN(valA) ? Infinity : valA) - (isNaN(valB) ? Infinity : valB); if (comp !== 0) return comp; } else if (campoNum1Index !== -1 && a[campoNum1Index] !== null && b[campoNum1Index] !== null) { const valA = parseInt(a[campoNum1Index]); const valB = parseInt(b[campoNum1Index]); const comp = (isNaN(valA) ? Infinity : valA) - (isNaN(valB) ? Infinity : valB); if (comp !== 0) return comp; } if (inscricaoIndex !== -1 && a[inscricaoIndex] !== null && b[inscricaoIndex] !== null) { const valA = parseInt(a[inscricaoIndex]); const valB = parseInt(b[inscricaoIndex]); const comp = (isNaN(valA) ? Infinity : valA) - (isNaN(valB) ? Infinity : valB); if (comp !== 0) return comp; } if (posicaoIndex !== -1 && a[posicaoIndex] !== null && b[posicaoIndex] !== null) { const valA = parseInt(a[posicaoIndex]); const valB = parseInt(b[posicaoIndex]); const comp = (isNaN(valA) ? Infinity : valA) - (isNaN(valB) ? Infinity : valB); if (comp !== 0) return comp; } if (nomeIndex !== -1 && a[nomeIndex] !== null && b[nomeIndex] !== null) { const nomeA = a[nomeIndex] || ''; const nomeB = b[nomeIndex] || ''; return String(nomeA).localeCompare(String(nomeB), undefined, { numeric: true, sensitivity: 'base' }); } return 0; }); let finalColumnNamesForTable = [...columnNames]; if (addRankingColumn) { const columnsToRemove = ['Classificação', 'Posição', 'Ranking', 'Campo Num 1', 'Campo 1']; columnsToRemove.forEach(colName => { const existingIndex = finalColumnNamesForTable.indexOf(colName); if (existingIndex !== -1) { finalColumnNamesForTable.splice(existingIndex, 1); organizedData.forEach(row => { row.splice(existingIndex, 1); }); } }); organizedData.forEach((row, index) => { row.unshift(index + 1); }); finalColumnNamesForTable.unshift('Classificação'); columnTypes['Classificação'] = 'integer_numeric'; } updateTable(finalColumnNamesForTable, organizedData); document.getElementById('ContainerResult').scrollIntoView({ behavior: 'smooth', block: 'start' }); showToast('Dados organizados com sucesso!'); } finally { organizeText.style.display = 'inline'; loadingSpinner.style.display = 'none'; organizeButton.disabled = false; } }, 100); }
         function showManualMapping() { if (isRenamingColumns) { toggleColumnRename(); } toggleActionButtons(true, 'mapColumnsButton'); document.getElementById('patternWarning').style.display = 'block'; document.getElementById('manualMappingArea').style.display = 'block'; displayManualMappingOptions(currentColumnNames, currentTableData); document.getElementById('manualMappingArea').scrollIntoView({ behavior: 'smooth', block: 'start' }); }
         function displayManualMappingOptions(columnNames, data) { const columnMappingInputsDiv = document.getElementById('columnMappingInputs'); columnMappingInputsDiv.innerHTML = ''; const displayLimit = columnNames.length; columnNames.slice(0, displayLimit).forEach((colName, index) => { const div = document.createElement('div'); div.className = 'flex flex-col items-center'; const label = document.createElement('label'); label.className = 'mb-1 text-sm dark:text-gray-300'; label.textContent = `Coluna ${index + 1}:`; div.appendChild(label); const select = document.createElement('select'); select.className = 'p-2 border rounded-md dark:bg-gray-700 dark:text-gray-100'; select.setAttribute('data-col-index', index); predefinedColumnOptions.forEach(option => { const opt = document.createElement('option'); opt.value = option.value; opt.textContent = option.text; if (option.value === colName) { opt.selected = true; } select.appendChild(opt); }); div.appendChild(select); const customInput = document.createElement('input'); customInput.type = 'text'; customInput.placeholder = 'Nome personalizado'; customInput.className = 'mt-2 p-2 border rounded-md w-32 dark:bg-gray-700 dark:text-gray-100'; if (!predefinedColumnOptions.some(opt => opt.value === colName && opt.value !== '')) { customInput.value = colName; select.value = 'Outro'; customInput.style.display = 'block'; } else { customInput.style.display = 'none'; } div.appendChild(customInput); select.addEventListener('change', (event) => { if (event.target.value === 'Outro') { customInput.style.display = 'block'; customInput.focus(); } else { customInput.style.display = 'none'; customInput.value = ''; } }); columnMappingInputsDiv.appendChild(div); }); document.getElementById('resultTable').style.display = 'none'; document.getElementById('tableHeaders').innerHTML = ''; document.getElementById('tableBody').innerHTML = ''; displayPreviewRows(data, columnNames); }
