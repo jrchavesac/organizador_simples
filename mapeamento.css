@@ -1,0 +1,85 @@
+/* mapeamento.css */
+
+/* Estilos para o novo container de mapeamento manual */
+#manualMappingContainer {
+    display: none;
+    padding: 2rem;
+}
+
+#manualMappingContainer .space-y-6 > * {
+    margin-top: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+#previewTable {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: center;
+    margin: 1rem auto;
+    border-radius: 0.5rem;
+    overflow: hidden;
+}
+
+#previewTable th,
+#previewTable td {
+    border: 1px solid #e2e8f0;
+    text-align: center;
+    padding: 0.5rem;
+    font-size: 0.875rem;
+    white-space: nowrap;
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+html.dark #previewTable th,
+html.dark #previewTable td {
+    border-color: #4a5568;
+}
+
+#previewTable th {
+    background-color: #4CAF50;
+    color: white;
+    font-weight: 600;
+}
+
+html.dark #previewTable th {
+    background-color: #48bb78;
+    color: #1a202c;
+}
+
+#previewTable td {
+    background-color: #ffffff;
+}
+
+html.dark #previewTable td {
+    background-color: #2d3748;
+}
+
+#previewTable tr:nth-child(even) td {
+    background-color: #f8fafc;
+}
+
+html.dark #previewTable tr:nth-child(even) td {
+    background-color: #4a5568;
+}
+
+/* Estilos para o container de opções de ordenação */
+#sortingOptions {
+    margin-top: 1.5rem;
+}
+
+/* Estilos para os inputs de renomear colunas */
+#columnNameInputs input[type="text"] {
+    width: 120px;
+    text-align: center;
+    font-size: 0.875rem;
+    padding: 0.25rem 0.5rem;
+}
+
+@media (min-width: 640px) {
+    #columnNameInputs input[type="text"] {
+        width: 150px;
+        font-size: 1rem;
+    }
+}
