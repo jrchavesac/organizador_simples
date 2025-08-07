@@ -77,7 +77,82 @@ function toggleActionButtons(disable, exceptId = null) {
 function getColumnType(columnName) { const lowerName = columnName.toLowerCase(); for (const key in typeMapping) { if (lowerName.includes(key)) return typeMapping[key]; } if (lowerName.includes('nome')) return 'string'; return 'string'; }
 function isNumeric(str) { if (str === null || str === undefined || str.trim() === '') return false; return /^-?\d+(\.\d+)?$/.test(str.trim()); }
 function isInteger(str) { if (str === null || str === undefined || str.trim() === '') return false; return /^-?\d+$/.test(str.trim()); }
-function inferAndApplyPattern(rawInputString) { if (!rawInputString) { return { columnNames: [], organizedData: [], patternDetected: true }; } let sanitizedString = rawInputString.replace(/-\s+/g, ''); let processedString = sanitizedString.replace(/\r\n|\r/g, ' ').replace(/º|°/g, '').replace(/(\d+),(\d{1,2})(?![0-9])/g, '$1.$2').trim(); let candidateBlocks = []; let finalColumnNames = []; let patternFound = false; for (const pattern of patterns) { const tempBlocks = []; let match; pattern.regex.lastIndex = 0; while ((match = pattern.regex.exec(processedString)) !== null) { tempBlocks.push(match.slice(1).map(field => field ? field.trim() : null)); } if (tempBlocks.length > 0) { finalColumnNames = pattern.columns; candidateBlocks = tempBlocks; patternFound = true; break; } } if (!patternFound && processedString.length > 0) { const lines = processedString.split('/').map(line => line.trim()).filter(line => line.length > 0); if (lines.length > 0) { const sampleLine = lines[0]; let fields = sampleLine.split(/[\s,;]+/).filter(f => f.length > 0); if (fields.length > 1) { finalColumnNames = Array.from({ length: fields.length }, (_, i) => `Campo ${i + 1}`); candidateBlocks = lines.map(line => line.split(/[\s,;]+/).filter(f => f.length > 0)); candidateBlocks = candidateBlocks.filter(block => block.length === fields.length); if (candidateBlocks.length === 0) { candidateBlocks = [[processedString]]; finalColumnNames = ['Dados Brutos']; } } else { candidateBlocks = [[processedString]]; finalColumnNames = ['Dados Brutos']; } } } const organizedData = []; candidateBlocks.forEach(rowFields => { const rowData = new Array(finalColumnNames.length).fill(null); for (let i = 0; i < Math.min(rowFields.length, finalColumnNames.length); i++) { const value = rowFields[i]; const colName = finalColumnNames[i]; const inferredType = getColumnType(colName); if (value !== null && value !== undefined && value !== '') { let cleanedValue = value.trim(); if (inferredType === 'numeric') rowData[i] = parseFloat(cleanedValue); else if (inferredType === 'integer_numeric') rowData[i] = parseInt(cleanedValue, 10); else rowData[i] = cleanedValue; } } organizedData.push(rowData); }); return { columnNames: finalColumnNames, organizedData, patternDetected: patternFound }; }
+
+function inferAndApplyPattern(rawInputString) {
+	if (!rawInputString) {
+		return {
+			columnNames: [],
+			organizedData: [],
+			patternDetected: true
+		};
+	}
+	
+	let sanitizedString = rawInputString.replace(/-\s+/g, '');
+	let processedString = sanitizedString.replace(/\r\n|\r/g, ' ').replace(/º|°/g, '').replace(/(\d+),(\d{1,2})(?![0-9])/g, '$1.$2').trim();
+	let candidateBlocks = [];
+	let finalColumnNames = [];
+	let patternFound = false;
+	for (const pattern of patterns) {
+		const tempBlocks = [];
+		let match;
+		pattern.regex.lastIndex = 0;
+		while ((match = pattern.regex.exec(processedString)) !== null) {
+			tempBlocks.push(match.slice(1).map(field => field ? field.trim() : null));
+		}
+		if (tempBlocks.length > 0) {
+			finalColumnNames = pattern.columns;
+			candidateBlocks = tempBlocks;
+			patternFound = true;
+			break;
+		}
+	}
+	if (!patternFound && processedString.length > 0) {
+		const lines = processedString.split('/').map(line => line.trim()).filter(line => line.length > 0);
+		if (lines.length > 0) {
+			const sampleLine = lines[0];
+			let fields = sampleLine.split(/[\s,;]+/).filter(f => f.length > 0);
+			if (fields.length > 1) {
+				finalColumnNames = Array.from({
+					length: fields.length
+				}, (_, i) => `Campo ${i + 1}`);
+				candidateBlocks = lines.map(line => line.split(/[\s,;]+/).filter(f => f.length > 0));
+				candidateBlocks = candidateBlocks.filter(block => block.length === fields.length);
+				if (candidateBlocks.length === 0) {
+					candidateBlocks = [
+						[processedString]
+					];
+					finalColumnNames = ['Dados Brutos'];
+				}
+			} else {
+				candidateBlocks = [
+					[processedString]
+				];
+				finalColumnNames = ['Dados Brutos'];
+			}
+		}
+	}
+	const organizedData = [];
+	candidateBlocks.forEach(rowFields => {
+		const rowData = new Array(finalColumnNames.length).fill(null);
+		for (let i = 0; i < Math.min(rowFields.length, finalColumnNames.length); i++) {
+			const value = rowFields[i];
+			const colName = finalColumnNames[i];
+			const inferredType = getColumnType(colName);
+			if (value !== null && value !== undefined && value !== '') {
+				let cleanedValue = value.trim();
+				if (inferredType === 'numeric') rowData[i] = parseFloat(cleanedValue);
+				else if (inferredType === 'integer_numeric') rowData[i] = parseInt(cleanedValue, 10);
+				else rowData[i] = cleanedValue;
+			}
+		}
+		organizedData.push(rowData);
+	});
+	return {
+		columnNames: finalColumnNames,
+		organizedData,
+		patternDetected: patternFound
+	};
+}
 
 function parseWithManualSettings() {
     const dataInput = document.getElementById('dataInput').value.trim();
@@ -116,7 +191,6 @@ function parseWithManualSettings() {
     return organizedData;
 }
 
-// Substitua esta função no seu script.js
 function createColumnNameInputs(initialColumnNames) {
     const fieldsCount = parseInt(document.getElementById('fieldCount').value);
     const container = document.getElementById('columnNameInputs');
@@ -204,8 +278,20 @@ function sortData(columnNames, data) {
 }
 
 function organizeData() {
+	// === REDEFINIÇÃO DE VARIÁVEIS NO INÍCIO DA FUNÇÃO ===
+    sortDirections = {};
+    currentColumnNames = [];
+    columnTypes = {};
+    isRenamingColumns = false;
+    lastInferredData = null;
+    currentTableData = []; // Esta variável é a mais importante para ser zerada.
+    lastOriginalColumnNames = [];
+    isManualMapping = false;
+    manualMappingData = null;
+	
+    // ====================================================
     const dataInput = document.getElementById('dataInput').value.trim();
-    const containerResult = document.getElementById('ContainerResult');
+	const containerResult = document.getElementById('ContainerResult');
     const organizeButton = document.getElementById('organizeButton');
     const loadingSpinner = document.getElementById('loadingSpinner');
     const organizeText = document.getElementById('organizeText');
@@ -215,12 +301,7 @@ function organizeData() {
     toggleActionButtons(false);
 
     if (dataInput === "") {
-        const { patternDetected } = inferAndApplyPattern(dataInput);
-        if (!patternDetected) {
-            showManualMappingContainer();
-        } else {
-            alert("Por favor, digite algum dado na 'Lista dos candidatos' para organizar.");
-        }
+        alert("Por favor, digite algum dado na 'Lista dos candidatos' para organizar.");
         return;
     }
 
@@ -230,7 +311,17 @@ function organizeData() {
 
     setTimeout(() => {
         try {
-            let { columnNames, organizedData, patternDetected } = inferAndApplyPattern(dataInput);
+			
+			// === AQUI ESTÁ A CORREÇÃO ===
+            // 1. Chame a função de inferência e armazene o resultado em uma variável temporária.
+            let result = inferAndApplyPattern(dataInput);
+            
+            // 2. Crie uma CÓPIA PROFUNDA dos dados e nomes de colunas.
+            //    Isso garante que não estamos usando uma referência antiga.
+            let organizedData = JSON.parse(JSON.stringify(result.organizedData));
+            let columnNames = [...result.columnNames]; // Copia o array de nomes
+            let patternDetected = result.patternDetected;
+            // ============================
 
             if (!patternDetected) {
                 showManualMappingContainer();
@@ -253,7 +344,8 @@ function organizeData() {
                 organizedData.forEach((row, index) => {
                     row.unshift(index + 1);
                 });
-                columnNames.unshift('Classificação');
+				
+				columnNames.unshift('Classificação');
                 columnTypes['Classificação'] = 'integer_numeric';
             }
 
@@ -443,7 +535,61 @@ function applyManualMapping() {
     showToast('Mapeamento manual aplicado com sucesso!');
 }
 
-function updateTable(columnNames, data) { const tableHeaders = document.getElementById('tableHeaders'); const tableBody = document.getElementById('tableBody'); tableHeaders.innerHTML = ''; tableBody.innerHTML = ''; currentColumnNames = columnNames; currentTableData = data; const newSortDirections = {}; currentColumnNames.forEach((name, index) => { const oldIndex = -1; if (oldIndex !== -1 && sortDirections[oldIndex] !== undefined) { newSortDirections[index] = sortDirections[oldIndex]; } else { newSortDirections[index] = true; } }); sortDirections = newSortDirections; columnNames.forEach((columnName, index) => { const th = document.createElement('th'); th.textContent = columnName; th.onclick = () => sortTable(index); const arrowSpan = document.createElement('span'); arrowSpan.className = 'sort-arrow ml-1 text-gray-400 opacity-0 transition-opacity duration-200'; th.appendChild(arrowSpan); tableHeaders.appendChild(th); }); data.forEach(row => { const tr = document.createElement('tr'); for (let i = 0; i < columnNames.length; i++) { const td = document.createElement('td'); let value = row[i]; const colName = columnNames[i]; const colType = columnTypes[colName] || getColumnType(colName); if (value !== null && value !== undefined) { value = String(value).replace(/[\r\n]+/g, ' ').trim(); } if (value !== null && value !== undefined) { if (colType === 'numeric') { td.textContent = parseFloat(value).toFixed(2); } else if (colType === 'integer_numeric') { td.textContent = parseInt(value, 10); } else if (colType === 'numeric_string') { td.textContent = String(value); } else { td.textContent = String(value); } } else { td.textContent = ''; } tr.appendChild(td); } tableBody.appendChild(tr); }); }
+function updateTable(columnNames, data) {
+	const tableHeaders = document.getElementById('tableHeaders');
+	const tableBody = document.getElementById('tableBody');
+	tableHeaders.innerHTML = '';
+	tableBody.innerHTML = '';
+	currentColumnNames = columnNames;
+	currentTableData = data;
+	const newSortDirections = {};
+	currentColumnNames.forEach((name, index) => {
+		const oldIndex = -1;
+		if (oldIndex !== -1 && sortDirections[oldIndex] !== undefined) {
+			newSortDirections[index] = sortDirections[oldIndex];
+		} else {
+			newSortDirections[index] = true;
+		}
+	});
+	sortDirections = newSortDirections;
+	columnNames.forEach((columnName, index) => {
+		const th = document.createElement('th');
+		th.textContent = columnName;
+		th.onclick = () => sortTable(index);
+		const arrowSpan = document.createElement('span');
+		arrowSpan.className = 'sort-arrow ml-1 text-gray-400 opacity-0 transition-opacity duration-200';
+		th.appendChild(arrowSpan);
+		tableHeaders.appendChild(th);
+	});
+	data.forEach(row => {
+		const tr = document.createElement('tr');
+		for (let i = 0; i < columnNames.length; i++) {
+			const td = document.createElement('td');
+			let value = row[i];
+			const colName = columnNames[i];
+			const colType = columnTypes[colName] || getColumnType(colName);
+			if (value !== null && value !== undefined) {
+				value = String(value).replace(/[\r\n]+/g, ' ').trim();
+			}
+			if (value !== null && value !== undefined) {
+				if (colType === 'numeric') {
+					td.textContent = parseFloat(value).toFixed(2);
+				} else if (colType === 'integer_numeric') {
+					td.textContent = parseInt(value, 10);
+				} else if (colType === 'numeric_string') {
+					td.textContent = String(value);
+				} else {
+					td.textContent = String(value);
+				}
+			} else {
+				td.textContent = '';
+			}
+			tr.appendChild(td);
+		}
+		tableBody.appendChild(tr);
+	});
+}
+
 function sortTable(columnIndex) { if (isRenamingColumns) { return; } const table = document.getElementById('resultTable'); const tbody = table.getElementsByTagName('tbody')[0]; const rows = Array.from(tbody.getElementsByTagName('tr')); const headerCell = table.querySelector(`th:nth-child(${columnIndex + 1})`); const headerText = headerCell.textContent.replace(/[\u2191\u2193]/g, '').trim(); const currentArrow = headerCell.querySelector('.sort-arrow'); document.querySelectorAll('#tableHeaders th .sort-arrow').forEach(arrow => { arrow.classList.remove('opacity-100'); arrow.classList.add('opacity-0'); arrow.innerHTML = ''; }); sortDirections[columnIndex] = !sortDirections[columnIndex]; const colType = columnTypes[headerText] || getColumnType(headerText); const sortedRows = rows.sort((a, b) => { const textA = a.cells[columnIndex].textContent.trim(); const textB = b.cells[columnIndex].textContent.trim(); let valA, valB; if (colType === 'numeric' || colType === 'integer_numeric') { valA = parseFloat(textA.replace(',', '.')); valB = parseFloat(textB.replace(',', '.')); valA = isNaN(valA) ? (sortDirections[columnIndex] ? Infinity : -Infinity) : valA; valB = isNaN(valB) ? (sortDirections[columnIndex] ? Infinity : -Infinity) : valB; return sortDirections[columnIndex] ? valA - valB : valB - valA; } else if (colType === 'numeric_string') { valA = parseInt(textA); valB = parseInt(textB); valA = isNaN(valA) ? (sortDirections[columnIndex] ? Infinity : -Infinity) : valA; valB = isNaN(valB) ? (sortDirections[columnIndex] ? Infinity : -Infinity) : valB; return sortDirections[columnIndex] ? valA - valB : valB - valA; } else { return sortDirections[columnIndex] ? textA.localeCompare(textB, undefined, { numeric: true, sensitivity: 'base' }) : textB.localeCompare(textA, undefined, { numeric: true, sensitivity: 'base' }); } }); tbody.innerHTML = ''; sortedRows.forEach(row => tbody.appendChild(row)); currentArrow.classList.add('opacity-100'); currentArrow.innerHTML = sortDirections[columnIndex] ? '<i class="fas fa-arrow-up"></i>' : '<i class="fas fa-arrow-down"></i>'; }
 const themeToggle = document.getElementById('themeToggle'); const themeIcon = document.getElementById('themeIcon'); const htmlElement = document.documentElement; function updateThemeToggle(isDark) { if (isDark) { themeIcon.classList.remove('fa-moon'); themeIcon.classList.add('fa-sun'); themeToggle.title = 'Mudar para modo claro'; } else { themeIcon.classList.remove('fa-sun'); themeIcon.classList.add('fa-moon'); themeToggle.title = 'Mudar para modo escuro'; } } function applyTheme(theme) { if (theme === 'dark') { htmlElement.classList.add('dark'); updateThemeToggle(true); } else { htmlElement.classList.remove('dark'); updateThemeToggle(false); } } const savedTheme = localStorage.getItem('theme'); if (savedTheme) { applyTheme(savedTheme); } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) { applyTheme('dark'); } else { applyTheme('light'); }
 window.onload = function() { document.getElementById('currentYear').textContent = new Date().getFullYear(); document.getElementById('ContainerResult').style.display = 'none'; document.getElementById('mapColumnsButton').style.display = 'none'; };
