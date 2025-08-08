@@ -277,19 +277,23 @@ function sortData(columnNames, data) {
     });
 }
 
-function organizeData() {
-	// === REDEFINIÇÃO DE VARIÁVEIS NO INÍCIO DA FUNÇÃO ===
-    sortDirections = {};
+function resetVariaveis() {
+	sortDirections = {};
     currentColumnNames = [];
     columnTypes = {};
     isRenamingColumns = false;
     lastInferredData = null;
-    currentTableData = []; // Esta variável é a mais importante para ser zerada.
+    currentTableData = [];
     lastOriginalColumnNames = [];
     isManualMapping = false;
     manualMappingData = null;
 	
-    // ====================================================
+}
+
+function organizeData() {
+	
+	resetVariaveis();
+	
     const dataInput = document.getElementById('dataInput').value.trim();
 	const containerResult = document.getElementById('ContainerResult');
     const organizeButton = document.getElementById('organizeButton');
@@ -312,11 +316,10 @@ function organizeData() {
     setTimeout(() => {
         try {
 			
-			// === AQUI ESTÁ A CORREÇÃO ===
-            // 1. Chame a função de inferência e armazene o resultado em uma variável temporária.
+            // 1. Chama a função de inferência e armazene o resultado em uma variável temporária.
             let result = inferAndApplyPattern(dataInput);
             
-            // 2. Crie uma CÓPIA PROFUNDA dos dados e nomes de colunas.
+            // 2. Cria uma CÓPIA PROFUNDA dos dados e nomes de colunas.
             //    Isso garante que não estamos usando uma referência antiga.
             let organizedData = JSON.parse(JSON.stringify(result.organizedData));
             let columnNames = [...result.columnNames]; // Copia o array de nomes
@@ -383,7 +386,7 @@ function showManualMappingContainer() {
     
     let initialFields;
 
-    // AQUI ESTÁ A MUDANÇA: Lógica para separadores ambíguos no mapeamento manual
+    // Lógica para separadores ambíguos no mapeamento manual
     if (colSep === rowSep && userFieldCount > 0) {
         // Se os separadores de linha e coluna são os mesmos e o usuário
         // definiu a quantidade de campos, usamos essa informação para dividir.
@@ -436,7 +439,7 @@ function createColumnNameInputs(initialColumnNames) {
         input.name = `colName${i}`;
         input.className = 'shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 dark:text-gray-300 dark:bg-gray-800 leading-tight focus:outline-none focus:shadow-outline';
         
-        // AQUI ESTÁ A MUDANÇA: Usamos o array de nomes de colunas que recebemos como parâmetro
+        // Usamos o array de nomes de colunas que recebemos como parâmetro
         if (initialColumnNames && initialColumnNames[i]) {
             input.value = initialColumnNames[i];
         }
@@ -451,6 +454,7 @@ function hideManualMappingContainer() {
     isManualMapping = false;
     document.getElementById('organizeForm').style.display = 'block';
     document.getElementById('manualMappingContainer').style.display = 'none';
+	document.getElementById('ContainerResult').style.display = 'block';
 }
 
 function updatePreviewTable() {
@@ -594,10 +598,185 @@ function sortTable(columnIndex) { if (isRenamingColumns) { return; } const table
 const themeToggle = document.getElementById('themeToggle'); const themeIcon = document.getElementById('themeIcon'); const htmlElement = document.documentElement; function updateThemeToggle(isDark) { if (isDark) { themeIcon.classList.remove('fa-moon'); themeIcon.classList.add('fa-sun'); themeToggle.title = 'Mudar para modo claro'; } else { themeIcon.classList.remove('fa-sun'); themeIcon.classList.add('fa-moon'); themeToggle.title = 'Mudar para modo escuro'; } } function applyTheme(theme) { if (theme === 'dark') { htmlElement.classList.add('dark'); updateThemeToggle(true); } else { htmlElement.classList.remove('dark'); updateThemeToggle(false); } } const savedTheme = localStorage.getItem('theme'); if (savedTheme) { applyTheme(savedTheme); } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) { applyTheme('dark'); } else { applyTheme('light'); }
 window.onload = function() { document.getElementById('currentYear').textContent = new Date().getFullYear(); document.getElementById('ContainerResult').style.display = 'none'; document.getElementById('mapColumnsButton').style.display = 'none'; };
 themeToggle.addEventListener('click', () => { if (htmlElement.classList.contains('dark')) { applyTheme('light'); localStorage.setItem('theme', 'light'); } else { applyTheme('dark'); localStorage.setItem('theme', 'dark'); } });
+
+// Função de pesquisa na tabela gerada na página
 function searchTable() { let input = document.getElementById('searchInput').value.toUpperCase(); let table = document.getElementById('resultTable'); let tr = table.getElementsByTagName('tr'); for (let i = 1; i < tr.length; i++) { let td = tr[i].getElementsByTagName('td'); let found = false; for (let j = 0; j < td.length; j++) { if (td[j] && td[j].innerHTML.toUpperCase().indexOf(input) > -1) { found = true; break; } } tr[i].style.display = found ? '' : 'none'; } }
-function generatePDF() { if (isRenamingColumns) { toggleColumnRename(); } try { const { jsPDF } = window.jspdf; const doc = new jsPDF(); const margin = 10; let y = margin; const lineHeight = 10; const pageWidth = doc.internal.pageSize.getWidth(); doc.setFontSize(16); doc.setFont("helvetica", "bold"); const customTitle = document.getElementById('pdfTitleInput').value.trim(); const title = customTitle === '' ? "Relatório de Resultados" : customTitle; const splitTitle = doc.splitTextToSize(title, pageWidth - 2 * margin); doc.text(splitTitle, pageWidth / 2, y, { align: 'center' }); y += (splitTitle.length * lineHeight) + lineHeight; const table = document.getElementById('resultTable'); if (!table || table.querySelector('tbody').children.length === 0) { alert("Erro: Gere a tabela primeiro clicando em 'Organizar'!"); return; } const headers = Array.from(document.querySelectorAll('#tableHeaders th')).map(th => th.textContent.replace(/[\u2191\u2193]/g, '').trim()); const rows = Array.from(table.querySelectorAll('tbody tr')).map(tr => Array.from(tr.querySelectorAll('td')).map(td => td.textContent.replace(/\s*\n\s*/g, ' ').trim())); doc.autoTable({ head: [headers], body: rows, startY: y, margin: { left: margin, right: margin }, styles: { fontSize: 10, cellPadding: 2, halign: 'center', valign: 'middle', lineColor: [226, 232, 240], lineWidth: 0.5 }, headStyles: { fillColor: [76, 175, 80], textColor: 255, fontStyle: 'bold', halign: 'center', valign: 'middle' }, alternateRowStyles: { fillColor: [248, 250, 252] }, didDrawPage: function(data) { } }); window.open(doc.output('bloburl'), '_blank'); showToast('PDF gerado e aberto em uma nova aba.'); } catch (error) { console.error("Erro ao gerar PDF:", error); alert("Erro ao gerar PDF. Veja o console para detalhes."); } }
+
+// Função que gera um documento PDF com o conteúdo da tabela de resultados e o abre em uma nova aba.
+// O PDF inclui um título personalizável e a tabela com os dados e cabeçalhos.
+function generatePDF() {
+    // Verifica se a tabela está no modo de renomeação. Se sim, salva as alterações.
+    if (isRenamingColumns) {
+        toggleColumnRename();
+    }
+
+    try {
+        // Inicializa o objeto jsPDF para criar o documento
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        
+        // Define as margens e a altura da linha para o layout
+        const margin = 10;
+        let y = margin;
+        const lineHeight = 10;
+        const pageWidth = doc.internal.pageSize.getWidth();
+
+        // --- Configuração do Título do PDF ---
+        doc.setFontSize(16);
+        doc.setFont("helvetica", "bold");
+        
+        // Pega o título personalizado do input ou usa um título padrão
+        const customTitle = document.getElementById('pdfTitleInput').value.trim();
+        const title = customTitle === '' ? "Relatório de Resultados" : customTitle;
+        
+        // Divide o título em múltiplas linhas se for muito longo
+        const splitTitle = doc.splitTextToSize(title, pageWidth - 2 * margin);
+        doc.text(splitTitle, pageWidth / 2, y, { align: 'center' });
+        
+        // Atualiza a posição Y para a próxima seção (após o título)
+        y += (splitTitle.length * lineHeight) + (lineHeight/5);
+
+        // --- Coleta de Dados da Tabela ---
+        const table = document.getElementById('resultTable');
+        if (!table || table.querySelector('tbody').children.length === 0) {
+            alert("Erro: Gere a tabela primeiro clicando em 'Organizar'!");
+            return;
+        }
+
+        // Extrai os cabeçalhos, removendo setas de ordenação
+        const headers = Array.from(document.querySelectorAll('#tableHeaders th'))
+                            .map(th => th.textContent.replace(/[\u2191\u2193]/g, '').trim());
+        
+        // Extrai os dados das linhas da tabela
+        const rows = Array.from(table.querySelectorAll('tbody tr'))
+                         .map(tr => Array.from(tr.querySelectorAll('td'))
+                                         .map(td => td.textContent.replace(/\s*\n\s*/g, ' ').trim()));
+
+        // --- Geração da Tabela no PDF com autoTable ---
+        doc.autoTable({
+            head: [headers],
+            body: rows,
+            startY: y, // Inicia a tabela após o título
+            margin: { left: margin, right: margin },
+            styles: {
+                fontSize: 10,
+                cellPadding: 2,
+                halign: 'center',
+                valign: 'middle',
+                lineColor: [226, 232, 240],
+                lineWidth: 0.5
+            },
+            headStyles: {
+                fillColor: [76, 175, 80],
+                textColor: 255,
+                fontStyle: 'bold',
+                halign: 'center',
+                valign: 'middle'
+            },
+            alternateRowStyles: {
+                fillColor: [248, 250, 252]
+            },
+            didDrawPage: function(data) { /* Esta função é executada após cada página ser desenhada, útil para adicionar rodapés. */ }
+        });
+
+        // --- Finalização ---
+        // Abre o PDF gerado em uma nova aba
+        window.open(doc.output('bloburl'), '_blank');
+        
+        // Mostra uma notificação de sucesso ao usuário
+        showToast('PDF gerado e aberto em uma nova aba.');
+        
+    } catch (error) {
+        // --- Tratamento de Erros ---
+        // Se algo falhar, exibe uma mensagem de erro e registra o erro no console
+        console.error("Erro ao gerar PDF:", error);
+        alert("Erro ao gerar PDF. Veja o console para detalhes.");
+    }
+}
+
+// Função para exportar para CSV
 function exportToCSV() { if (isRenamingColumns) { toggleColumnRename(); } const table = document.getElementById('resultTable'); const visibleRows = Array.from(table.querySelectorAll('tbody tr:not([style*="display: none"])')); if (visibleRows.length === 0) { alert("Não há dados visíveis para exportar. Limpe a busca ou verifique os dados."); return; } const headers = Array.from(table.querySelectorAll('thead th')) .map(th => { let headerText = th.textContent.replace(/[\u2191\u2193]/g, '').trim(); headerText = headerText.replace(/[\r\n]+/g, ' ').trim(); return `"${headerText.replace(/"/g, '""')}"`; }); const rows = visibleRows.map(tr => { return Array.from(tr.querySelectorAll('td')) .map(td => `"${td.textContent.replace(/"/g, '""')}"`) .join(';'); }); const csvContent = headers.join(';') + '\n' + rows.join('\n'); const bom = "\uFEFF"; const blob = new Blob([bom + csvContent], { type: 'text/csv;charset=utf-8;' }); const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = 'dados_organizados.csv'; document.body.appendChild(link); link.click(); document.body.removeChild(link); URL.revokeObjectURL(link.href); showToast('Arquivo CSV gerado com sucesso, verifique seus downloads!'); }
-function toggleColumnRename() { isRenamingColumns = !isRenamingColumns; const table = document.getElementById('resultTable'); const headers = document.querySelectorAll('#tableHeaders th'); const button = document.getElementById('toggleRenameHeadersButton'); const icon = button.querySelector('i'); const textSpan = button.querySelector('span:not(.tooltip-text)'); const tooltip = button.querySelector('.tooltip-text'); if (isManualMapping) { return; } if (isRenamingColumns) { toggleActionButtons(true, 'toggleRenameHeadersButton'); table.classList.add('table-editing-mode'); icon.classList.remove('fa-pencil-alt'); icon.classList.add('fa-save'); textSpan.textContent = 'Salvar Nomes'; tooltip.textContent = 'Salva os novos nomes dos cabeçalhos.'; button.classList.remove('bg-purple-600', 'hover:bg-purple-700', 'dark:bg-purple-500', 'dark:hover:bg-purple-400'); button.classList.add('bg-green-600', 'hover:bg-green-700', 'dark:bg-green-500', 'dark:hover:bg-green-400'); headers.forEach((th, index) => { th.onclick = null; th.classList.add('editable-header'); const originalText = th.textContent.replace(/[\u2191\u2193]/g, '').trim(); th.innerHTML = `<input type="text" value="${originalText}" class="w-full bg-transparent text-center font-semibold p-0 text-sm border-none focus:ring-0" data-original-index="${index}">`; }); const firstInput = headers[0].querySelector('input'); if (firstInput) firstInput.focus(); } else { toggleActionButtons(false); table.classList.remove('table-editing-mode'); icon.classList.remove('fa-save'); icon.classList.add('fa-pencil-alt'); textSpan.textContent = 'Renomear Cabeçalhos'; tooltip.textContent = 'Muda os nomes dos cabeçalhos.'; button.classList.remove('bg-green-600', 'hover:bg-green-700', 'dark:bg-green-500', 'dark:hover:bg-green-400'); button.classList.add('bg-purple-600', 'hover:bg-purple-700', 'dark:bg-purple-500', 'dark:hover:bg-purple-400'); const newColumnNames = []; headers.forEach(th => { const input = th.querySelector('input'); const newName = input ? input.value.trim() : th.textContent.trim(); newColumnNames.push(newName); th.innerHTML = newName; th.classList.remove('editable-header'); const originalIndex = parseInt(input.getAttribute('data-original-index')); th.onclick = () => sortTable(originalIndex); const arrowSpan = document.createElement('span'); arrowSpan.className = 'sort-arrow ml-1 text-gray-400 opacity-0 transition-opacity duration-200'; th.appendChild(arrowSpan); }); currentColumnNames = newColumnNames; showToast('Nomes dos cabeçalhos atualizados!'); } }
+
+// Função que alterna a tabela entre o modo de visualização e o modo de edição para renomear os cabeçalhos.
+function toggleColumnRename() {
+    // Altera o estado global para controlar o modo da tabela
+    isRenamingColumns = !isRenamingColumns;
+
+    // Seleciona os elementos da interface que serão modificados
+    const table = document.getElementById('resultTable');
+    const headers = document.querySelectorAll('#tableHeaders th');
+    const button = document.getElementById('toggleRenameHeadersButton');
+    const icon = button.querySelector('i');
+    const textSpan = button.querySelector('span:not(.tooltip-text)');
+    const tooltip = button.querySelector('.tooltip-text');
+
+    // Impede a execução se o modo de mapeamento manual estiver ativo
+    if (isManualMapping) {
+        return;
+    }
+
+    // Lógica para o MODO DE EDIÇÃO (isRenamingColumns é true)
+    if (isRenamingColumns) {
+        toggleActionButtons(true, 'toggleRenameHeadersButton');
+        table.classList.add('table-editing-mode');
+        
+        // Atualiza a aparência e o texto do botão para 'Salvar'
+        icon.classList.remove('fa-pencil-alt');
+        icon.classList.add('fa-save');
+        textSpan.textContent = 'Salvar Nomes';
+        tooltip.textContent = 'Salva os novos nomes dos cabeçalhos.';
+        button.classList.remove('bg-purple-600', 'hover:bg-purple-700', 'dark:bg-purple-500', 'dark:hover:bg-purple-400');
+        button.classList.add('bg-green-600', 'hover:bg-green-700', 'dark:bg-green-500', 'dark:hover:bg-green-400');
+
+        // Substitui cada cabeçalho por um campo de texto para edição
+        headers.forEach((th, index) => {
+            th.onclick = null; // Desativa a ordenação
+            th.classList.add('editable-header');
+            const originalText = th.textContent.replace(/[\u2191\u2193]/g, '').trim();
+            th.innerHTML = `<input type="text" value="${originalText}" class="w-full bg-transparent text-center font-semibold p-0 text-sm border-none focus:ring-0" data-original-index="${index}">`;
+        });
+        
+        // Coloca o foco no primeiro campo para o usuário começar a digitar
+        const firstInput = headers[0].querySelector('input');
+        if (firstInput) firstInput.focus();
+
+    // Lógica para o MODO NORMAL (isRenamingColumns é false)
+    } else {
+        toggleActionButtons(false);
+        table.classList.remove('table-editing-mode');
+
+        // Restaura a aparência e o texto do botão para 'Renomear'
+        icon.classList.remove('fa-save');
+        icon.classList.add('fa-pencil-alt');
+        textSpan.textContent = 'Renomear Cabeçalhos';
+        tooltip.textContent = 'Muda os nomes dos cabeçalhos.';
+        button.classList.remove('bg-green-600', 'hover:bg-green-700', 'dark:bg-green-500', 'dark:hover:bg-green-400');
+        button.classList.add('bg-purple-600', 'hover:bg-purple-700', 'dark:bg-purple-500', 'dark:hover:bg-purple-400');
+        
+        const newColumnNames = [];
+        // Salva os novos nomes e restaura a funcionalidade de ordenação
+        headers.forEach(th => {
+            const input = th.querySelector('input');
+            const newName = input ? input.value.trim() : th.textContent.trim();
+            newColumnNames.push(newName);
+            
+            // Restaura o cabeçalho para texto simples e reativa a ordenação
+            th.innerHTML = newName;
+            th.classList.remove('editable-header');
+            const originalIndex = parseInt(input.getAttribute('data-original-index'));
+            th.onclick = () => sortTable(originalIndex);
+            
+            // Adiciona a seta de ordenação (visualmente invisível)
+            const arrowSpan = document.createElement('span');
+            arrowSpan.className = 'sort-arrow ml-1 text-gray-400 opacity-0 transition-opacity duration-200';
+            th.appendChild(arrowSpan);
+        });
+        
+        // Atualiza a variável global com os novos nomes das colunas
+        currentColumnNames = newColumnNames;
+        showToast('Nomes dos cabeçalhos atualizados!');
+    }
+}
 
 // ==========================================================
 // INICIALIZAÇÃO DOS EVENTOS DO MAPEAMENTO MANUAL
