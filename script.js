@@ -107,11 +107,6 @@ function inferAndApplyPattern(rawInputString) {
 	processedString = processedString.replace(/-\s+/g, '');
     processedString = processedString.replace(/º|°/g, '').replace(/(\d+),(\d{1,2})(?![0-9])/g, '$1.$2').trim();
     
-	// --- LINHA ADICIONADA PARA DEPURAR ---
-    console.log("6. String processada final antes de aplicar os padrões:");
-    console.log(processedString);
-    //
-	
 	let candidateBlocks = [];
 	let finalColumnNames = [];
 	let patternFound = false;
