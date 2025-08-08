@@ -16,20 +16,20 @@ const patterns = [
     // == PADRÕES REORDENADOS PARA PRIORIDADE CORRETA ==
     { 
         name: 'Classificação, Inscrição, Nome, Nota', 
-        regex: /(\d+),\s*(\d+),\s*([A-ZÀ-Ÿ\s.-]+?),\s*(\d+\.?\d*)\s*(?:\/\s*|$)/gi, 
+        regex: /(\d+),\s*(\d+),\s*([A-ZÀ-Ÿ\s.()-]+?),\s*(\d+\.?\d*)\s*(?:\/\s*|$)/gi, 
         columns: ['Classificação', 'Inscrição', 'Nome', 'Nota'] 
     },
     { 
         name: 'Inscrição, Nome, Nota', 
-        regex: /(\d+),\s*([A-ZÀ-Ÿ\s.-]+?),\s*(\d+\.?\d*)\s*(?:\/\s*|$)/gi, 
+        regex: /(\d+),\s*([A-ZÀ-Ÿ\s.()-]+?),\s*(\d+\.?\d*)\s*(?:\/\s*|$)/gi, 
         columns: ['Inscrição', 'Nome', 'Nota'] 
     },
-    { name: 'Nome, Inscrição, Nota', regex: /([A-ZÀ-Ÿ\s.-]+?),\s*(\d+),\s*(\d+\.?\d*)\s*(?:\/\s*|$)/gi, columns: ['Nome', 'Inscrição', 'Nota'] }, 
-    { name: 'Inscrição; Nome; Nota', regex: /(\d+);\s*([A-ZÀ-Ÿ\s.-]+?);\s*(\d+\.?\d*)\s*(?:\/\s*|$)/gi, columns: ['Inscrição', 'Nome', 'Nota'] }, 
-    { name: 'Inscrição / Nome / Posição / Nota', regex: /(\d+)\s*\/\s*([A-ZÀ-Ÿ\s.-]+?)\s*\/\s*(\d+)\s*\/\s*(\d+\.?\d*)\s*(?:\/\s*|$)/gi, columns: ['Inscrição', 'Nome', 'Posição', 'Nota'] }, 
-    { name: 'Classificação Inscrição Nome Nota (Concatenado)', regex: /(\d+)(\d+)([A-ZÀ-Ÿ\s.-]+?)(\d+\.?\d*)/gi, columns: ['Classificação', 'Inscrição', 'Nome', 'Nota'] }, 
-    { name: 'Inscrição Nome Nota (Concatenado)', regex: /(\d+)([A-ZÀ-Ÿ\s.-]+?)(\d+\.?\d*)/gi, columns: ['Inscrição', 'Nome', 'Nota'] }, 
-    { name: 'Nome, Idade', regex: /([A-ZÀ-Ÿ\s.-]+?),\s*(\d+)\s*(?:\/\s*|$)/gi, columns: ['Nome', 'Idade'] },
+    { name: 'Nome, Inscrição, Nota', regex: /([A-ZÀ-Ÿ\s.()-]+?),\s*(\d+),\s*(\d+\.?\d*)\s*(?:\/\s*|$)/gi, columns: ['Nome', 'Inscrição', 'Nota'] }, 
+    { name: 'Inscrição; Nome; Nota', regex: /(\d+);\s*([A-ZÀ-Ÿ\s.()-]+?);\s*(\d+\.?\d*)\s*(?:\/\s*|$)/gi, columns: ['Inscrição', 'Nome', 'Nota'] }, 
+    { name: 'Inscrição / Nome / Posição / Nota', regex: /(\d+)\s*\/\s*([A-ZÀ-Ÿ\s.()-]+?)\s*\/\s*(\d+)\s*\/\s*(\d+\.?\d*)\s*(?:\/\s*|$)/gi, columns: ['Inscrição', 'Nome', 'Posição', 'Nota'] }, 
+    { name: 'Classificação Inscrição Nome Nota (Concatenado)', regex: /(\d+)(\d+)([A-ZÀ-Ÿ\s.()-]+?)(\d+\.?\d*)/gi, columns: ['Classificação', 'Inscrição', 'Nome', 'Nota'] }, 
+    { name: 'Inscrição Nome Nota (Concatenado)', regex: /(\d+)([A-ZÀ-Ÿ\s.()-]+?)(\d+\.?\d*)/gi, columns: ['Inscrição', 'Nome', 'Nota'] }, 
+    { name: 'Nome, Idade', regex: /([A-ZÀ-Ÿ\s.()-]+?),\s*(\d+)\s*(?:\/\s*|$)/gi, columns: ['Nome', 'Idade'] },
     {
       name: 'Classificação, Nome, Nota (Tabulado)',
       regex: /(\d+)[ºª]?\s*(?:\t|\s{2,})([A-ZÀ-Ÿ\s.-]+?)(?:\t|\s{2,})(\d+\.?\d*)/gi,
@@ -79,6 +79,7 @@ function isNumeric(str) { if (str === null || str === undefined || str.trim() ==
 function isInteger(str) { if (str === null || str === undefined || str.trim() === '') return false; return /^-?\d+$/.test(str.trim()); }
 
 function inferAndApplyPattern(rawInputString) {
+	
 	if (!rawInputString) {
 		return {
 			columnNames: [],
@@ -87,11 +88,34 @@ function inferAndApplyPattern(rawInputString) {
 		};
 	}
 	
-	let sanitizedString = rawInputString.replace(/-\s+/g, '');
-	let processedString = sanitizedString.replace(/\r\n|\r/g, ' ').replace(/º|°/g, '').replace(/(\d+),(\d{1,2})(?![0-9])/g, '$1.$2').trim();
+    // --- LÓGICA DE LIMPEZA CORRIGIDA AQUI ---
+    // 1. Divide a string de entrada em um array de linhas.
+    const lines = rawInputString.split(/\r\n|\r|\n/);
+
+    // 2. Define a regex para encontrar a linha do cabeçalho do diário oficial.
+    // Usamos uma regex simples para garantir que a linha inteira seja removida.
+    const regexDiarioOficial = /DIÁRIO OFICIAL/i;
+
+    // 3. Filtra as linhas, removendo a que contém o cabeçalho.
+    const filteredLines = lines.filter(line => !regexDiarioOficial.test(line));
+
+    // 4. Junta as linhas restantes de volta em uma única string, separadas por espaço.
+    let processedString = filteredLines.join(' ');
+    // ----------------------------------------------------------------------
+    
+    // 5. Continua o processamento da string como você já fazia, mas agora a string já está limpa e em uma única linha.
+	processedString = processedString.replace(/-\s+/g, '');
+    processedString = processedString.replace(/º|°/g, '').replace(/(\d+),(\d{1,2})(?![0-9])/g, '$1.$2').trim();
+    
+	// --- LINHA ADICIONADA PARA DEPURAR ---
+    console.log("6. String processada final antes de aplicar os padrões:");
+    console.log(processedString);
+    //
+	
 	let candidateBlocks = [];
 	let finalColumnNames = [];
 	let patternFound = false;
+
 	for (const pattern of patterns) {
 		const tempBlocks = [];
 		let match;
@@ -106,6 +130,7 @@ function inferAndApplyPattern(rawInputString) {
 			break;
 		}
 	}
+	
 	if (!patternFound && processedString.length > 0) {
 		const lines = processedString.split('/').map(line => line.trim()).filter(line => line.length > 0);
 		if (lines.length > 0) {
@@ -131,6 +156,7 @@ function inferAndApplyPattern(rawInputString) {
 			}
 		}
 	}
+	
 	const organizedData = [];
 	candidateBlocks.forEach(rowFields => {
 		const rowData = new Array(finalColumnNames.length).fill(null);
@@ -147,6 +173,7 @@ function inferAndApplyPattern(rawInputString) {
 		}
 		organizedData.push(rowData);
 	});
+	
 	return {
 		columnNames: finalColumnNames,
 		organizedData,
