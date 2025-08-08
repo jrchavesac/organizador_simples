@@ -23,7 +23,7 @@ html.dark button:disabled { background-color: #2f855a !important; opacity: 0.5; 
 table { width: 100%; border-collapse: collapse; text-align: center; margin-top: 1rem; margin: auto; border-radius: 0.5rem; overflow: hidden; }
 th, td { border: 1px solid #e2e8f0; text-align: center; cursor: pointer; padding: 0.5rem; font-size: 0.875rem; }
 @media (min-width: 640px) { th, td { padding: 0.75rem; font-size: 1rem; } }
-th { background-color: #4CAF50; color: white; font-weight: 600; position: relative; padding-right: 25px; }
+th { background-color: #4CAF50; color: white; font-weight: 600; position: relative; padding: 0.5rem; }
 th .sort-arrow { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); font-size: 0.8em; color: rgba(255, 255, 255, 0.7); }
 td { background-color: #ffffff; }
 tr:nth-child(even) td { background-color: #f8fafc; }
