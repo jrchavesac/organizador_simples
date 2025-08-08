@@ -14,6 +14,11 @@ let manualMappingData = null;
 
 const patterns = [
     // == PADRÕES REORDENADOS PARA PRIORIDADE CORRETA ==
+	{
+        name: 'PRF (Inscrição, Nome, 5 Notas)',
+        regex: /(\d+),\s*([A-ZÀ-Ÿ\s.()-]+?),\s*(\d+\.?\d*),\s*(\d+\.?\d*),\s*(\d+\.?\d*),\s*(\d+\.?\d*),\s*(\d+\.?\d*)\s*(?:\/\s*|$)/gi,
+        columns: ['Inscrição', 'Nome', 'Nota Bloco I', 'Nota Bloco II', 'Nota Bloco III', 'Nota Objetiva', 'Nota Discursiva']
+    },
     { 
         name: 'Classificação, Inscrição, Nome, Nota', 
         regex: /(\d+),\s*(\d+),\s*([A-ZÀ-Ÿ\s.()-]+?),\s*(\d+\.?\d*)\s*(?:\/\s*|$)/gi, 
@@ -347,6 +352,27 @@ function organizeData() {
             let columnNames = [...result.columnNames]; // Copia o array de nomes
             let patternDetected = result.patternDetected;
             // ============================
+
+			// Lógica para calcular e adicionar a Nota Final Total do padrão PRF
+            const isPrfPattern = columnNames.includes('Nota Objetiva') && columnNames.includes('Nota Discursiva');
+            if (isPrfPattern) {
+                console.log('Padrão PRF detectado. Calculando a Nota Final Total.');
+                
+                columnNames.push('Nota Final Total');
+
+                organizedData = organizedData.map(row => {
+                    // Os índices são baseados no array 'columnNames'
+                    const notaObjetivaIndex = columnNames.indexOf('Nota Objetiva');
+                    const notaDiscursivaIndex = columnNames.indexOf('Nota Discursiva');
+                    
+                    const notaObjetiva = parseFloat(row[notaObjetivaIndex]);
+                    const notaDiscursiva = parseFloat(row[notaDiscursivaIndex]);
+                    const notaFinalTotal = notaObjetiva + notaDiscursiva;
+
+                    // Retorna a linha original com a nova nota adicionada ao final
+                    return [...row, notaFinalTotal];
+                });
+            }
 
             if (!patternDetected) {
                 showManualMappingContainer();
