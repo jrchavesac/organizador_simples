@@ -1,5 +1,5 @@
 {
-  "name": "Organizador de Dados de Concurso",
+  "name": "Organizador de Resultados de Concurso",
   "short_name": "Organizador",
   "description": "Uma ferramenta para organizar listas de candidatos de concursos.",
   "start_url": ".",
@@ -15,3 +15,4 @@
     }
   ]
 }
+
