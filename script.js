@@ -15,9 +15,74 @@ let manualMappingData = null;
 const patterns = [
     // == PADRÕES REORDENADOS PARA PRIORIDADE CORRETA ==
 	{
+        name: 'PF (Agente e Escrivão)',
+        regex: /(\d+),\s*([A-ZÀ-Ÿ\s.()-]+?),\s*(\d+\.?\d*),\s*(\d+),\s*(\d+\.?\d*),\s*(\d+),\s*(\d+\.?\d*),\s*(\d+),\s*(\d+\.?\d*),\s*(\d+\.?\d*)\s*(?:\/\s*|$)/gi,
+        columns: [
+            'Inscrição',
+            'Nome',
+            'Nota Básicos Bloco I',
+            'Acertos Básicos Bloco I',
+            'Nota Básicos Bloco II',
+            'Acertos Básicos Bloco II',
+            'Nota Específicos Bloco III',
+            'Acertos Específicos Bloco III',
+            'Nota Objetiva',
+            'Nota Discursiva (P2)'
+        ],
+        calculation: {
+            source1: 'Nota Objetiva',
+            source2: 'Nota Discursiva (P2)',
+            destination: 'Nota Final Total'
+        }
+    }, // <-- Vírgula importante
+    {
+        name: 'PF (Delegado)',
+        regex: /(\d+),\s*([A-ZÀ-Ÿ\s.()-]+?),\s*(\d+\.?\d*),\s*(\d+),\s*(\d+\.?\d*),\s*(\d+\.?\d*),\s*(\d+\.?\d*),\s*(\d+\.?\d*),\s*(\d+\.?\d*)\s*(?:\/\s*|$)/gi,
+        columns: [
+            'Inscrição',
+            'Nome',
+            'Nota Específicos (P1)',
+            'Acertos Específicos (P1)',
+            'Nota Discursiva Q1',
+            'Nota Discursiva Q2',
+            'Nota Discursiva Q3',
+            'Nota Discursiva Peça Prof.',
+            'Nota Discursiva Total'
+        ],
+        calculation: {
+            source1: 'Nota Específicos (P1)',
+            source2: 'Nota Discursiva Total',
+            destination: 'Nota Final Total'
+        }
+    }, // <-- Vírgula importante
+    {
+        name: 'PF (Perito)',
+        regex: /(\d+),\s*([A-ZÀ-Ÿ\s.()-]+?),\s*(\d+\.?\d*),\s*(\d+),\s*(\d+\.?\d*),\s*(\d+),\s*(\d+\.?\d*),\s*(\d+\.?\d*)\s*(?:\/\s*|$)/gi,
+        columns: [
+            'Inscrição',
+            'Nome',
+            'Nota Básicos (P1)',
+            'Acertos Básicos (P1)',
+            'Nota Específicos (P1)',
+            'Acertos Específicos (P1)',
+            'Nota Objetiva',
+            'Nota Discursiva (P2)'
+        ],
+        calculation: {
+            source1: 'Nota Objetiva',
+            source2: 'Nota Discursiva (P2)',
+            destination: 'Nota Final Total'
+        }
+    }, // <-- Vírgula importante
+    {
         name: 'PRF (Inscrição, Nome, 5 Notas)',
         regex: /(\d+),\s*([A-ZÀ-Ÿ\s.()-]+?),\s*(\d+\.?\d*),\s*(\d+\.?\d*),\s*(\d+\.?\d*),\s*(\d+\.?\d*),\s*(\d+\.?\d*)\s*(?:\/\s*|$)/gi,
-        columns: ['Inscrição', 'Nome', 'Nota Bloco I', 'Nota Bloco II', 'Nota Bloco III', 'Nota Objetiva', 'Nota Discursiva']
+        columns: ['Inscrição', 'Nome', 'Nota Bloco I', 'Nota Bloco II', 'Nota Bloco III', 'Nota Objetiva', 'Nota Discursiva'],
+        calculation: {
+            source1: 'Nota Objetiva',
+            source2: 'Nota Discursiva',
+            destination: 'Nota Final Total'
+        }
     },
     { 
         name: 'Classificação, Inscrição, Nome, Nota', 
@@ -89,7 +154,8 @@ function inferAndApplyPattern(rawInputString) {
 		return {
 			columnNames: [],
 			organizedData: [],
-			patternDetected: true
+			// ✨ CORREÇÃO 1: Deve ser 'null' ou 'false', não 'true'
+			patternDetected: null 
 		};
 	}
 	
@@ -109,12 +175,12 @@ function inferAndApplyPattern(rawInputString) {
     // ----------------------------------------------------------------------
     
     // 5. Continua o processamento da string como você já fazia, mas agora a string já está limpa e em uma única linha.
-	processedString = processedString.replace(/-\s+/g, '');
+    processedString = processedString.replace(/-\s+/g, '');
     processedString = processedString.replace(/º|°/g, '').replace(/(\d+),(\d{1,2})(?![0-9])/g, '$1.$2').trim();
     
 	let candidateBlocks = [];
 	let finalColumnNames = [];
-	let patternFound = false;
+	let patternFound = null; // Agora 'patternFound' armazenará o objeto do padrão
 
 	for (const pattern of patterns) {
 		const tempBlocks = [];
@@ -126,7 +192,7 @@ function inferAndApplyPattern(rawInputString) {
 		if (tempBlocks.length > 0) {
 			finalColumnNames = pattern.columns;
 			candidateBlocks = tempBlocks;
-			patternFound = true;
+			patternFound = pattern; // ✨ A CORREÇÃO PRINCIPAL: Armazena o objeto do padrão
 			break;
 		}
 	}
@@ -177,7 +243,8 @@ function inferAndApplyPattern(rawInputString) {
 	return {
 		columnNames: finalColumnNames,
 		organizedData,
-		patternDetected: patternFound
+		// ✨ A CORREÇÃO PRINCIPAL: Retorna o objeto do padrão, não o booleano.
+		patternDetected: patternFound 
 	};
 }
 
@@ -353,26 +420,26 @@ function organizeData() {
             let patternDetected = result.patternDetected;
             // ============================
 
-			// Lógica para calcular e adicionar a Nota Final Total do padrão PRF
-            const isPrfPattern = columnNames.includes('Nota Objetiva') && columnNames.includes('Nota Discursiva');
-            if (isPrfPattern) {
-                console.log('Padrão PRF detectado. Calculando a Nota Final Total.');
+			console.log('Objeto de padrão detectado:', patternDetected);
+			// ✨ NOVO BLOCO GENÉRICO PARA O CÁLCULO ✨
+            // Verifica se o padrão detectado tem uma propriedade de cálculo
+            if (patternDetected && patternDetected.calculation) {
+                console.log('Padrão com cálculo detectado. Calculando a Nota Final Total.');
                 
-                columnNames.push('Nota Final Total');
+                const { source1, source2, destination } = patternDetected.calculation;
+                
+                // Adiciona a nova coluna de destino
+                columnNames.push(destination);
 
+                // Mapeia os dados e realiza o cálculo
                 organizedData = organizedData.map(row => {
-                    // Os índices são baseados no array 'columnNames'
-                    const notaObjetivaIndex = columnNames.indexOf('Nota Objetiva');
-                    const notaDiscursivaIndex = columnNames.indexOf('Nota Discursiva');
-                    
-                    const notaObjetiva = parseFloat(row[notaObjetivaIndex]);
-                    const notaDiscursiva = parseFloat(row[notaDiscursivaIndex]);
-                    const notaFinalTotal = notaObjetiva + notaDiscursiva;
-
-                    // Retorna a linha original com a nova nota adicionada ao final
-                    return [...row, notaFinalTotal];
+                    const value1 = parseFloat(row[columnNames.indexOf(source1)]);
+                    const value2 = parseFloat(row[columnNames.indexOf(source2)]);
+                    const total = value1 + value2;
+                    return [...row, total];
                 });
             }
+            // ✨ FIM DO NOVO BLOCO ✨
 
             if (!patternDetected) {
                 showManualMappingContainer();
@@ -508,7 +575,7 @@ function hideManualMappingContainer() {
 function updatePreviewTable() {
     const fieldsCount = parseInt(document.getElementById('fieldCount').value);
     // 1. Pega os dados já devidamente processados em formato de array 2D
-    const organizedData = parseWithManualSettings(); 
+    let organizedData = parseWithManualSettings(); 
 
     // 2. Pega os nomes das colunas que o usuário digitou
     const columnNames = [];
@@ -517,8 +584,8 @@ function updatePreviewTable() {
         const colName = colNameInput ? colNameInput.value.trim() : `Coluna ${i + 1}`;
         columnNames.push(colName || `Coluna ${i + 1}`);
     }
-
-    // 3. APLICA A MESMA ORDENAÇÃO INTELIGENTE DO RESULTADO FINAL
+	
+	// 3. APLICA A MESMA ORDENAÇÃO INTELIGENTE DO RESULTADO FINAL
     sortData(columnNames, organizedData);
 
     // 4. Monta o cabeçalho da pré-visualização
@@ -557,7 +624,7 @@ function applyManualMapping() {
 
     let organizedData = parseWithManualSettings();
 
-    if (organizedData.length === 0) {
+	if (organizedData.length === 0) {
         showToast('Nenhum dado válido para aplicar o mapeamento.', 'warning');
         return;
     }
