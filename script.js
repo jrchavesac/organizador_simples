@@ -726,14 +726,35 @@ function generatePDF() {
     }
 
     try {
-        // Inicializa o objeto jsPDF para criar o documento
         const { jsPDF } = window.jspdf;
-        const doc = new jsPDF();
         
         // Define as margens e a altura da linha para o layout
         const margin = 10;
         let y = margin;
         const lineHeight = 10;
+        
+        // --- Coleta de Dados da Tabela ---
+        const table = document.getElementById('resultTable');
+        if (!table || table.querySelector('tbody').children.length === 0) {
+            alert("Erro: Gere a tabela primeiro clicando em 'Organizar'!");
+            return;
+        }
+
+        // Extrai os cabeçalhos, removendo setas de ordenação
+        const headers = Array.from(document.querySelectorAll('#tableHeaders th'))
+            .map(th => th.textContent.replace(/[\u2191\u2193]/g, '').trim());
+
+        // ✨ NOVO: Define a orientação do PDF com base no número de colunas.
+        // Se houver mais de 7 colunas, a orientação será 'l' (landscape/paisagem).
+        const orientation = headers.length > 7 ? 'l' : 'p';
+        
+        // Cria o objeto jsPDF com a orientação correta
+        const doc = new jsPDF({
+            orientation: orientation,
+            unit: 'mm',
+            format: 'a4'
+        });
+        
         const pageWidth = doc.internal.pageSize.getWidth();
 
         // --- Configuração do Título do PDF ---
@@ -749,23 +770,12 @@ function generatePDF() {
         doc.text(splitTitle, pageWidth / 2, y, { align: 'center' });
         
         // Atualiza a posição Y para a próxima seção (após o título)
-        y += (splitTitle.length * lineHeight) + (lineHeight/5);
+        y += (splitTitle.length * lineHeight) + (lineHeight / 5);
 
-        // --- Coleta de Dados da Tabela ---
-        const table = document.getElementById('resultTable');
-        if (!table || table.querySelector('tbody').children.length === 0) {
-            alert("Erro: Gere a tabela primeiro clicando em 'Organizar'!");
-            return;
-        }
-
-        // Extrai os cabeçalhos, removendo setas de ordenação
-        const headers = Array.from(document.querySelectorAll('#tableHeaders th'))
-                            .map(th => th.textContent.replace(/[\u2191\u2193]/g, '').trim());
-        
         // Extrai os dados das linhas da tabela
         const rows = Array.from(table.querySelectorAll('tbody tr'))
-                         .map(tr => Array.from(tr.querySelectorAll('td'))
-                                         .map(td => td.textContent.replace(/\s*\n\s*/g, ' ').trim()));
+            .map(tr => Array.from(tr.querySelectorAll('td'))
+                .map(td => td.textContent.replace(/\s*\n\s*/g, ' ').trim()));
 
         // --- Geração da Tabela no PDF com autoTable ---
         doc.autoTable({
