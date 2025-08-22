@@ -243,6 +243,7 @@ function inferAndApplyPattern(rawInputString) {
 	return {
 		columnNames: finalColumnNames,
 		organizedData,
+		// ✨ A CORREÇÃO PRINCIPAL: Retorna o objeto do padrão, não o booleano.
 		patternDetected: patternFound 
 	};
 }
@@ -678,32 +679,52 @@ function updateTable(columnNames, data) {
         }
     });
     sortDirections = newSortDirections;
+    const globalTooltip = document.getElementById('global-tooltip');
+
     columnNames.forEach((columnName, index) => {
         const th = document.createElement('th');
-        th.className = 'relative group'; // Adiciona classes para o posicionamento do botão
-    
-        // Botão de exclusão
+        // Mantemos o padding vertical no TH
+        th.className = 'relative group py-2';
+
         const deleteBtn = document.createElement('button');
-        // 👇 Alteração na classe aqui!
-        // A nova classe para o botão de exclusão
-		deleteBtn.className = 'absolute top-0 left-0 p-1 text-red-500 opacity-0 group-hover:opacity-100 group-hover:text-red-700 transition-opacity duration-200';
-        deleteBtn.textContent = '×'; // Símbolo "x"
+        // Botão de exclusão é posicionado de forma absoluta
+        deleteBtn.className = 'absolute top-0 left-0 p-1 text-red-500 opacity-0 group-hover:opacity-100 group-hover:text-red-700 transition-opacity duration-200';
+        deleteBtn.textContent = '×';
         deleteBtn.onclick = (e) => {
-            e.stopPropagation(); // Impede a ordenação da coluna ao clicar no botão
+            e.stopPropagation();
             deleteColumn(index);
         };
-    
+        
+        deleteBtn.addEventListener('mouseenter', () => {
+            globalTooltip.classList.remove('opacity-0');
+        });
+        deleteBtn.addEventListener('mouseleave', () => {
+            globalTooltip.classList.add('opacity-0');
+        });
+        deleteBtn.addEventListener('mousemove', (e) => {
+            globalTooltip.style.left = e.clientX + 15 + 'px';
+            globalTooltip.style.top = e.clientY + 15 + 'px';
+        });
+        
+        // 👇 AQUI: Criamos um container flex para o texto e a seta
+        const contentContainer = document.createElement('div');
+        contentContainer.className = 'flex items-center justify-center px-4';
+
         const textSpan = document.createElement('span');
         textSpan.textContent = columnName;
-    
+        
         const arrowSpan = document.createElement('span');
-        arrowSpan.className = 'sort-arrow ml-1 text-gray-400 opacity-0 transition-opacity duration-200';
-    
+        // 👇 AQUI: A seta fica ao lado do texto com uma margem, sem ser absolute
+        arrowSpan.className = 'sort-arrow ml-1 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity duration-200';
+        
+        contentContainer.appendChild(textSpan);
+        contentContainer.appendChild(arrowSpan);
+
         th.appendChild(deleteBtn);
-		th.appendChild(textSpan);
-        th.appendChild(arrowSpan);
-        th.onclick = () => sortTable(index); // Mantém a ordenação ao clicar no resto do cabeçalho
-    
+        th.appendChild(contentContainer);
+        
+        th.onclick = () => sortTable(index);
+        
         tableHeaders.appendChild(th);
     });
     data.forEach(row => {
@@ -1005,4 +1026,3 @@ document.addEventListener('DOMContentLoaded', (event) => {
         updatePreviewTable();
     });
 });
-
