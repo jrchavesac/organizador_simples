@@ -13,7 +13,7 @@ let isManualMapping = false;
 let manualMappingData = null;
 
 const patterns = [
-    // == PADRÕES REORDENADOS PARA PRIORIDADE CORRETA ==
+    // == PADRÕES ORDENADOS PELA PRIORIDADE CORRETA ==
 	{
         name: 'PF (Agente e Escrivão)',
         regex: /(\d+),\s*([A-ZÀ-Ÿ\s.()-]+?),\s*(\d+\.?\d*),\s*(\d+),\s*(\d+\.?\d*),\s*(\d+),\s*(\d+\.?\d*),\s*(\d+),\s*(\d+\.?\d*),\s*(\d+\.?\d*)\s*(?:\/\s*|$)/gi,
@@ -34,7 +34,7 @@ const patterns = [
             source2: 'Nota Discursiva (P2)',
             destination: 'Nota Final Total'
         }
-    }, // <-- Vírgula importante
+    }, 
     {
         name: 'PF (Delegado)',
         regex: /(\d+),\s*([A-ZÀ-Ÿ\s.()-]+?),\s*(\d+\.?\d*),\s*(\d+),\s*(\d+\.?\d*),\s*(\d+\.?\d*),\s*(\d+\.?\d*),\s*(\d+\.?\d*),\s*(\d+\.?\d*)\s*(?:\/\s*|$)/gi,
@@ -54,7 +54,7 @@ const patterns = [
             source2: 'Nota Discursiva Total',
             destination: 'Nota Final Total'
         }
-    }, // <-- Vírgula importante
+    }, 
     {
         name: 'PF (Perito)',
         regex: /(\d+),\s*([A-ZÀ-Ÿ\s.()-]+?),\s*(\d+\.?\d*),\s*(\d+),\s*(\d+\.?\d*),\s*(\d+),\s*(\d+\.?\d*),\s*(\d+\.?\d*)\s*(?:\/\s*|$)/gi,
@@ -73,7 +73,7 @@ const patterns = [
             source2: 'Nota Discursiva (P2)',
             destination: 'Nota Final Total'
         }
-    }, // <-- Vírgula importante
+    }, 
     {
         name: 'PRF (Inscrição, Nome, 5 Notas)',
         regex: /(\d+),\s*([A-ZÀ-Ÿ\s.()-]+?),\s*(\d+\.?\d*),\s*(\d+\.?\d*),\s*(\d+\.?\d*),\s*(\d+\.?\d*),\s*(\d+\.?\d*)\s*(?:\/\s*|$)/gi,
@@ -243,7 +243,6 @@ function inferAndApplyPattern(rawInputString) {
 	return {
 		columnNames: finalColumnNames,
 		organizedData,
-		// ✨ A CORREÇÃO PRINCIPAL: Retorna o objeto do padrão, não o booleano.
 		patternDetected: patternFound 
 	};
 }
@@ -421,8 +420,7 @@ function organizeData() {
             // ============================
 
 			console.log('Objeto de padrão detectado:', patternDetected);
-			// ✨ NOVO BLOCO GENÉRICO PARA O CÁLCULO ✨
-            // Verifica se o padrão detectado tem uma propriedade de cálculo
+			
             if (patternDetected && patternDetected.calculation) {
                 console.log('Padrão com cálculo detectado. Calculando a Nota Final Total.');
                 
@@ -439,8 +437,7 @@ function organizeData() {
                     return [...row, total];
                 });
             }
-            // ✨ FIM DO NOVO BLOCO ✨
-
+            
             if (!patternDetected) {
                 showManualMappingContainer();
                 return;
@@ -454,7 +451,6 @@ function organizeData() {
                 columnTypes[name] = getColumnType(name);
             });
             
-            // USA A NOVA FUNÇÃO CENTRAL DE ORDENAÇÃO
             sortData(columnNames, organizedData);
 
             const hasExistingClassification = columnNames.some(name => /classificação|posição|ranking/i.test(name));
@@ -574,21 +570,17 @@ function hideManualMappingContainer() {
 
 function updatePreviewTable() {
     const fieldsCount = parseInt(document.getElementById('fieldCount').value);
-    // 1. Pega os dados já devidamente processados em formato de array 2D
-    let organizedData = parseWithManualSettings(); 
+    let organizedData = parseWithManualSettings();
 
-    // 2. Pega os nomes das colunas que o usuário digitou
     const columnNames = [];
     for (let i = 0; i < fieldsCount; i++) {
         const colNameInput = document.getElementById(`colName${i}`);
         const colName = colNameInput ? colNameInput.value.trim() : `Coluna ${i + 1}`;
         columnNames.push(colName || `Coluna ${i + 1}`);
     }
-	
-	// 3. APLICA A MESMA ORDENAÇÃO INTELIGENTE DO RESULTADO FINAL
+
     sortData(columnNames, organizedData);
 
-    // 4. Monta o cabeçalho da pré-visualização
     const previewTableHeaders = document.getElementById('previewTableHeaders');
     previewTableHeaders.innerHTML = '';
     columnNames.forEach(name => {
@@ -598,16 +590,31 @@ function updatePreviewTable() {
         previewTableHeaders.appendChild(th);
     });
 
-    // 5. Monta o corpo da tabela de pré-visualização com os dados já ordenados
     const previewTableBody = document.getElementById('previewTableBody');
     previewTableBody.innerHTML = '';
-    organizedData.slice(0, 5).forEach(row => { // 'row' já é um array de campos
+    organizedData.slice(0, 5).forEach(row => {
         const tr = document.createElement('tr');
-        // Garante que criamos o mesmo número de células que cabeçalhos
         for (let i = 0; i < fieldsCount; i++) {
             const td = document.createElement('td');
             td.className = 'border px-4 py-2 dark:border-gray-500';
-            td.textContent = row[i] || ''; // Pega o campo correspondente
+
+            const colName = columnNames[i];
+            const cellValue = row[i];
+            
+            // ✨ NOVO: Converte o valor para número antes de formatar
+            const numericValue = parseFloat(cellValue);
+
+            let displayValue = cellValue || '';
+            
+            // Agora a verificação é feita sobre 'numericValue'
+            if (!isNaN(numericValue) && (colName.includes('Nota') || colName.includes('Acertos')) && (numericValue % 1 === 0)) {
+                displayValue = parseInt(numericValue, 10);
+            } else {
+                // Caso não seja um número inteiro, usa o valor original
+                displayValue = cellValue;
+            }
+
+            td.textContent = displayValue;
             tr.appendChild(td);
         }
         previewTableBody.appendChild(tr);
@@ -655,58 +662,98 @@ function applyManualMapping() {
 }
 
 function updateTable(columnNames, data) {
-	const tableHeaders = document.getElementById('tableHeaders');
-	const tableBody = document.getElementById('tableBody');
-	tableHeaders.innerHTML = '';
-	tableBody.innerHTML = '';
-	currentColumnNames = columnNames;
-	currentTableData = data;
-	const newSortDirections = {};
-	currentColumnNames.forEach((name, index) => {
-		const oldIndex = -1;
-		if (oldIndex !== -1 && sortDirections[oldIndex] !== undefined) {
-			newSortDirections[index] = sortDirections[oldIndex];
-		} else {
-			newSortDirections[index] = true;
-		}
-	});
-	sortDirections = newSortDirections;
-	columnNames.forEach((columnName, index) => {
-		const th = document.createElement('th');
-		th.textContent = columnName;
-		th.onclick = () => sortTable(index);
-		const arrowSpan = document.createElement('span');
-		arrowSpan.className = 'sort-arrow ml-1 text-gray-400 opacity-0 transition-opacity duration-200';
-		th.appendChild(arrowSpan);
-		tableHeaders.appendChild(th);
-	});
-	data.forEach(row => {
-		const tr = document.createElement('tr');
-		for (let i = 0; i < columnNames.length; i++) {
-			const td = document.createElement('td');
-			let value = row[i];
-			const colName = columnNames[i];
-			const colType = columnTypes[colName] || getColumnType(colName);
-			if (value !== null && value !== undefined) {
-				value = String(value).replace(/[\r\n]+/g, ' ').trim();
-			}
-			if (value !== null && value !== undefined) {
-				if (colType === 'numeric') {
-					td.textContent = parseFloat(value).toFixed(2);
-				} else if (colType === 'integer_numeric') {
-					td.textContent = parseInt(value, 10);
-				} else if (colType === 'numeric_string') {
-					td.textContent = String(value);
-				} else {
-					td.textContent = String(value);
-				}
-			} else {
-				td.textContent = '';
-			}
-			tr.appendChild(td);
-		}
-		tableBody.appendChild(tr);
-	});
+    const tableHeaders = document.getElementById('tableHeaders');
+    const tableBody = document.getElementById('tableBody');
+    tableHeaders.innerHTML = '';
+    tableBody.innerHTML = '';
+    currentColumnNames = columnNames;
+    currentTableData = data;
+    const newSortDirections = {};
+    currentColumnNames.forEach((name, index) => {
+        const oldIndex = -1;
+        if (oldIndex !== -1 && sortDirections[oldIndex] !== undefined) {
+            newSortDirections[index] = sortDirections[oldIndex];
+        } else {
+            newSortDirections[index] = true;
+        }
+    });
+    sortDirections = newSortDirections;
+    columnNames.forEach((columnName, index) => {
+        const th = document.createElement('th');
+        th.className = 'relative group'; // Adiciona classes para o posicionamento do botão
+    
+        // Botão de exclusão
+        const deleteBtn = document.createElement('button');
+        // 👇 Alteração na classe aqui!
+        // A nova classe para o botão de exclusão
+		deleteBtn.className = 'absolute top-0 right-0 p-1 text-red-500 opacity-0 group-hover:opacity-100 group-hover:text-red-700 transition-opacity duration-200';
+        deleteBtn.textContent = '×'; // Símbolo "x"
+        deleteBtn.onclick = (e) => {
+            e.stopPropagation(); // Impede a ordenação da coluna ao clicar no botão
+            deleteColumn(index);
+        };
+    
+        const textSpan = document.createElement('span');
+        textSpan.textContent = columnName;
+    
+        const arrowSpan = document.createElement('span');
+        arrowSpan.className = 'sort-arrow ml-1 text-gray-400 opacity-0 transition-opacity duration-200';
+    
+        th.appendChild(deleteBtn);
+		th.appendChild(textSpan);
+        th.appendChild(arrowSpan);
+        th.onclick = () => sortTable(index); // Mantém a ordenação ao clicar no resto do cabeçalho
+    
+        tableHeaders.appendChild(th);
+    });
+    data.forEach(row => {
+        const tr = document.createElement('tr');
+        for (let i = 0; i < columnNames.length; i++) {
+            const td = document.createElement('td');
+            let value = row[i];
+            const colName = columnNames[i];
+            const colType = columnTypes[colName] || getColumnType(colName);
+            if (value !== null && value !== undefined) {
+                value = String(value).replace(/[\r\n]+/g, ' ').trim();
+            }
+            if (value !== null && value !== undefined) {
+                if (colType === 'numeric') {
+                    if (colName.includes('Acertos') || (parseFloat(value) % 1 === 0)) {
+                        td.textContent = parseInt(value, 10);
+                    } else {
+                        td.textContent = parseFloat(value).toFixed(2);
+                    }
+                } else if (colType === 'integer_numeric') {
+                    td.textContent = parseInt(value, 10);
+                } else if (colType === 'numeric_string') {
+                    td.textContent = String(value);
+                } else {
+                    td.textContent = String(value);
+                }
+            } else {
+                td.textContent = '';
+            }
+            tr.appendChild(td);
+        }
+        tableBody.appendChild(tr);
+    });
+}
+
+// Adicione esta nova função ao seu script.js
+function deleteColumn(columnIndex) {
+    if (confirm(`Tem certeza que deseja excluir a coluna "${currentColumnNames[columnIndex]}"?`)) {
+        // Remove o nome da coluna do array
+        currentColumnNames.splice(columnIndex, 1);
+
+        // Remove o dado correspondente de cada linha na tabela
+        currentTableData.forEach(row => {
+            row.splice(columnIndex, 1);
+        });
+
+        // Recarrega a tabela com os dados atualizados
+        updateTable(currentColumnNames, currentTableData);
+        showToast('Coluna excluída com sucesso!');
+    }
 }
 
 function sortTable(columnIndex) { if (isRenamingColumns) { return; } const table = document.getElementById('resultTable'); const tbody = table.getElementsByTagName('tbody')[0]; const rows = Array.from(tbody.getElementsByTagName('tr')); const headerCell = table.querySelector(`th:nth-child(${columnIndex + 1})`); const headerText = headerCell.textContent.replace(/[\u2191\u2193]/g, '').trim(); const currentArrow = headerCell.querySelector('.sort-arrow'); document.querySelectorAll('#tableHeaders th .sort-arrow').forEach(arrow => { arrow.classList.remove('opacity-100'); arrow.classList.add('opacity-0'); arrow.innerHTML = ''; }); sortDirections[columnIndex] = !sortDirections[columnIndex]; const colType = columnTypes[headerText] || getColumnType(headerText); const sortedRows = rows.sort((a, b) => { const textA = a.cells[columnIndex].textContent.trim(); const textB = b.cells[columnIndex].textContent.trim(); let valA, valB; if (colType === 'numeric' || colType === 'integer_numeric') { valA = parseFloat(textA.replace(',', '.')); valB = parseFloat(textB.replace(',', '.')); valA = isNaN(valA) ? (sortDirections[columnIndex] ? Infinity : -Infinity) : valA; valB = isNaN(valB) ? (sortDirections[columnIndex] ? Infinity : -Infinity) : valB; return sortDirections[columnIndex] ? valA - valB : valB - valA; } else if (colType === 'numeric_string') { valA = parseInt(textA); valB = parseInt(textB); valA = isNaN(valA) ? (sortDirections[columnIndex] ? Infinity : -Infinity) : valA; valB = isNaN(valB) ? (sortDirections[columnIndex] ? Infinity : -Infinity) : valB; return sortDirections[columnIndex] ? valA - valB : valB - valA; } else { return sortDirections[columnIndex] ? textA.localeCompare(textB, undefined, { numeric: true, sensitivity: 'base' }) : textB.localeCompare(textA, undefined, { numeric: true, sensitivity: 'base' }); } }); tbody.innerHTML = ''; sortedRows.forEach(row => tbody.appendChild(row)); currentArrow.classList.add('opacity-100'); currentArrow.innerHTML = sortDirections[columnIndex] ? '<i class="fas fa-arrow-up"></i>' : '<i class="fas fa-arrow-down"></i>'; }
@@ -741,10 +788,11 @@ function generatePDF() {
         }
 
         // Extrai os cabeçalhos, removendo setas de ordenação
-        const headers = Array.from(document.querySelectorAll('#tableHeaders th'))
-            .map(th => th.textContent.replace(/[\u2191\u2193]/g, '').trim());
+        // ...
+		const headers = Array.from(document.querySelectorAll('#tableHeaders th'))
+			.map(th => th.textContent.replace(/[\u2191\u2193]/g, '').replace('×', '').trim());
 
-        // ✨ NOVO: Define a orientação do PDF com base no número de colunas.
+
         // Se houver mais de 7 colunas, a orientação será 'l' (landscape/paisagem).
         const orientation = headers.length > 7 ? 'l' : 'p';
         
@@ -819,11 +867,44 @@ function generatePDF() {
     }
 }
 
-// Função para exportar para CSV
-function exportToCSV() { if (isRenamingColumns) { toggleColumnRename(); } const table = document.getElementById('resultTable'); const visibleRows = Array.from(table.querySelectorAll('tbody tr:not([style*="display: none"])')); if (visibleRows.length === 0) { alert("Não há dados visíveis para exportar. Limpe a busca ou verifique os dados."); return; } const headers = Array.from(table.querySelectorAll('thead th')) .map(th => { let headerText = th.textContent.replace(/[\u2191\u2193]/g, '').trim(); headerText = headerText.replace(/[\r\n]+/g, ' ').trim(); return `"${headerText.replace(/"/g, '""')}"`; }); const rows = visibleRows.map(tr => { return Array.from(tr.querySelectorAll('td')) .map(td => `"${td.textContent.replace(/"/g, '""')}"`) .join(';'); }); const csvContent = headers.join(';') + '\n' + rows.join('\n'); const bom = "\uFEFF"; const blob = new Blob([bom + csvContent], { type: 'text/csv;charset=utf-8;' }); const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = 'dados_organizados.csv'; document.body.appendChild(link); link.click(); document.body.removeChild(link); URL.revokeObjectURL(link.href); showToast('Arquivo CSV gerado com sucesso, verifique seus downloads!'); }
-
-// Função que alterna a tabela entre o modo de visualização e o modo de edição para renomear os cabeçalhos.
-function toggleColumnRename() {
+	function exportToCSV() {
+		if (isRenamingColumns) {
+			toggleColumnRename();
+		}
+		const table = document.getElementById('resultTable');
+		const visibleRows = Array.from(table.querySelectorAll('tbody tr:not([style*="display: none"])'));
+		if (visibleRows.length === 0) {
+			alert("Não há dados visíveis para exportar. Limpe a busca ou verifique os dados.");
+			return;
+		}
+		const headers = Array.from(table.querySelectorAll('thead th'))
+			.map(th => {
+				let headerText = th.textContent.replace(/[\u2191\u2193]/g, '').trim();
+				// 👇 AQUI está a mudança: Remove o ícone de exclusão (×)
+				headerText = headerText.replace('×', '').trim();
+				headerText = headerText.replace(/[\r\n]+/g, ' ').trim();
+				return `"${headerText.replace(/"/g, '""')}"`;
+			});
+		const rows = visibleRows.map(tr => {
+			return Array.from(tr.querySelectorAll('td'))
+				.map(td => `"${td.textContent.replace(/"/g, '""')}"`)
+				.join(';');
+		});
+		const csvContent = headers.join(';') + '\n' + rows.join('\n');
+		const bom = "\uFEFF";
+		const blob = new Blob([bom + csvContent], { type: 'text/csv;charset=utf-8;' });
+		const link = document.createElement('a');
+		link.href = URL.createObjectURL(blob);
+		link.download = 'dados_organizados.csv';
+		document.body.appendChild(link);
+		link.click();
+		document.body.removeChild(link);
+		URL.revokeObjectURL(link.href);
+		showToast('Arquivo CSV gerado com sucesso, verifique seus downloads!');
+	}
+	
+	// Função que alterna a tabela entre o modo de visualização e o modo de edição para renomear os cabeçalhos.
+	function toggleColumnRename() {
     // Altera o estado global para controlar o modo da tabela
     isRenamingColumns = !isRenamingColumns;
 
