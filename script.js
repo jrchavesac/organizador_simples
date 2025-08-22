@@ -686,7 +686,7 @@ function updateTable(columnNames, data) {
         const deleteBtn = document.createElement('button');
         // 👇 Alteração na classe aqui!
         // A nova classe para o botão de exclusão
-		deleteBtn.className = 'absolute top-0 right-0 p-1 text-red-500 opacity-0 group-hover:opacity-100 group-hover:text-red-700 transition-opacity duration-200';
+		deleteBtn.className = 'absolute top-0 left-0 p-1 text-red-500 opacity-0 group-hover:opacity-100 group-hover:text-red-700 transition-opacity duration-200';
         deleteBtn.textContent = '×'; // Símbolo "x"
         deleteBtn.onclick = (e) => {
             e.stopPropagation(); // Impede a ordenação da coluna ao clicar no botão
@@ -1005,3 +1005,4 @@ document.addEventListener('DOMContentLoaded', (event) => {
         updatePreviewTable();
     });
 });
+
