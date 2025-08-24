@@ -696,7 +696,7 @@ function updateTable(columnNames, data) {
         };
         
         deleteBtn.addEventListener('mouseenter', () => {
-            globalTooltip.classList.remove('opacity-0');
+            globalTooltip.classList.remove('opacity-0', 'invisible');
         });
         deleteBtn.addEventListener('mouseleave', () => {
             globalTooltip.classList.add('opacity-0');
@@ -774,6 +774,7 @@ function deleteColumn(columnIndex) {
         // Recarrega a tabela com os dados atualizados
         updateTable(currentColumnNames, currentTableData);
         showToast('Coluna excluída com sucesso!');
+		document.getElementById('global-tooltip').classList.add('opacity-0', 'invisible');
     }
 }
 
