@@ -13,7 +13,7 @@ let isManualMapping = false;
 let manualMappingData = null;
 
 const patterns = [
-    // == PADRÕES ORDENADOS PELA PRIORIDADE CORRETA ==
+    // == PADRÕES PREVISTOS ORDENADOS PELA PRIORIDADE CORRETA ==
 	{
         name: 'PF (Agente e Escrivão)',
         regex: /(\d+),\s*([A-ZÀ-Ÿ\s.()-]+?),\s*(\d+\.?\d*),\s*(\d+),\s*(\d+\.?\d*),\s*(\d+),\s*(\d+\.?\d*),\s*(\d+),\s*(\d+\.?\d*),\s*(\d+\.?\d*)\s*(?:\/\s*|$)/gi,
@@ -154,12 +154,12 @@ function inferAndApplyPattern(rawInputString) {
 		return {
 			columnNames: [],
 			organizedData: [],
-			// ✨ CORREÇÃO 1: Deve ser 'null' ou 'false', não 'true'
+			// Deve ser 'null' ou 'false', não 'true'
 			patternDetected: null 
 		};
 	}
 	
-    // --- LÓGICA DE LIMPEZA CORRIGIDA AQUI ---
+    // --- LÓGICA DE LIMPEZA DA STRING ---
     // 1. Divide a string de entrada em um array de linhas.
     const lines = rawInputString.split(/\r\n|\r|\n/);
 
@@ -174,9 +174,14 @@ function inferAndApplyPattern(rawInputString) {
     let processedString = filteredLines.join(' ');
     // ----------------------------------------------------------------------
     
-    // 5. Continua o processamento da string como você já fazia, mas agora a string já está limpa e em uma única linha.
     processedString = processedString.replace(/-\s+/g, '');
     processedString = processedString.replace(/º|°/g, '').replace(/(\d+),(\d{1,2})(?![0-9])/g, '$1.$2').trim();
+    
+    // 5. Remove o ponto final da lista se houver
+    processedString = processedString.replace(/\.\s*$/, '');
+    
+	// 6. Remove espaços em branco, tabs e quebras de linha do início e do fim da string.
+    processedString = processedString.trim();
     
 	let candidateBlocks = [];
 	let finalColumnNames = [];
@@ -192,7 +197,7 @@ function inferAndApplyPattern(rawInputString) {
 		if (tempBlocks.length > 0) {
 			finalColumnNames = pattern.columns;
 			candidateBlocks = tempBlocks;
-			patternFound = pattern; // ✨ A CORREÇÃO PRINCIPAL: Armazena o objeto do padrão
+			patternFound = pattern; // Armazena o objeto do padrão
 			break;
 		}
 	}
@@ -243,7 +248,7 @@ function inferAndApplyPattern(rawInputString) {
 	return {
 		columnNames: finalColumnNames,
 		organizedData,
-		// ✨ A CORREÇÃO PRINCIPAL: Retorna o objeto do padrão, não o booleano.
+		// Retorna o objeto do padrão, não o booleano.
 		patternDetected: patternFound 
 	};
 }
@@ -602,7 +607,7 @@ function updatePreviewTable() {
             const colName = columnNames[i];
             const cellValue = row[i];
             
-            // ✨ NOVO: Converte o valor para número antes de formatar
+            // Converte o valor para número antes de formatar
             const numericValue = parseFloat(cellValue);
 
             let displayValue = cellValue || '';
@@ -683,30 +688,31 @@ function updateTable(columnNames, data) {
 
     columnNames.forEach((columnName, index) => {
         const th = document.createElement('th');
-        // Mantemos o padding vertical no TH
         th.className = 'relative group py-2';
 
-        const deleteBtn = document.createElement('button');
-        // Botão de exclusão é posicionado de forma absoluta
-        deleteBtn.className = 'absolute top-0 left-0 p-1 text-red-500 opacity-0 group-hover:opacity-100 group-hover:text-red-700 transition-opacity duration-200';
-        deleteBtn.textContent = '×';
-        deleteBtn.onclick = (e) => {
-            e.stopPropagation();
-            deleteColumn(index);
-        };
+        // ⭐ AQUI: Adicionamos esta condição para não criar o botão quando estiver renomeando.
+        if (!isRenamingColumns) {
+            const deleteBtn = document.createElement('button');
+            deleteBtn.className = 'absolute top-0 left-0 p-1 text-red-500 opacity-0 group-hover:opacity-100 group-hover:text-red-700 transition-opacity duration-200';
+            deleteBtn.textContent = '×';
+            deleteBtn.onclick = (e) => {
+                e.stopPropagation();
+                deleteColumn(index);
+            };
+            
+            deleteBtn.addEventListener('mouseenter', () => {
+                globalTooltip.classList.remove('opacity-0', 'invisible');
+            });
+            deleteBtn.addEventListener('mouseleave', () => {
+                globalTooltip.classList.add('opacity-0', 'invisible');
+            });
+            deleteBtn.addEventListener('mousemove', (e) => {
+                globalTooltip.style.left = e.clientX + 15 + 'px';
+                globalTooltip.style.top = e.clientY + 15 + 'px';
+            });
+            th.appendChild(deleteBtn);
+        }
         
-        deleteBtn.addEventListener('mouseenter', () => {
-            globalTooltip.classList.remove('opacity-0', 'invisible');
-        });
-        deleteBtn.addEventListener('mouseleave', () => {
-            globalTooltip.classList.add('opacity-0');
-        });
-        deleteBtn.addEventListener('mousemove', (e) => {
-            globalTooltip.style.left = e.clientX + 15 + 'px';
-            globalTooltip.style.top = e.clientY + 15 + 'px';
-        });
-        
-        // 👇 AQUI: Criamos um container flex para o texto e a seta
         const contentContainer = document.createElement('div');
         contentContainer.className = 'flex items-center justify-center px-4';
 
@@ -714,19 +720,17 @@ function updateTable(columnNames, data) {
         textSpan.textContent = columnName;
         
         const arrowSpan = document.createElement('span');
-        // 👇 AQUI: A seta fica ao lado do texto com uma margem, sem ser absolute
         arrowSpan.className = 'sort-arrow ml-1 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity duration-200';
         
         contentContainer.appendChild(textSpan);
         contentContainer.appendChild(arrowSpan);
 
-        th.appendChild(deleteBtn);
         th.appendChild(contentContainer);
-        
         th.onclick = () => sortTable(index);
         
         tableHeaders.appendChild(th);
     });
+
     data.forEach(row => {
         const tr = document.createElement('tr');
         for (let i = 0; i < columnNames.length; i++) {
@@ -927,84 +931,67 @@ function generatePDF() {
 	
 	// Função que alterna a tabela entre o modo de visualização e o modo de edição para renomear os cabeçalhos.
 	function toggleColumnRename() {
-    // Altera o estado global para controlar o modo da tabela
-    isRenamingColumns = !isRenamingColumns;
+		isRenamingColumns = !isRenamingColumns;
 
-    // Seleciona os elementos da interface que serão modificados
-    const table = document.getElementById('resultTable');
-    const headers = document.querySelectorAll('#tableHeaders th');
-    const button = document.getElementById('toggleRenameHeadersButton');
-    const icon = button.querySelector('i');
-    const textSpan = button.querySelector('span:not(.tooltip-text)');
-    const tooltip = button.querySelector('.tooltip-text');
+		const table = document.getElementById('resultTable');
+		const headers = document.querySelectorAll('#tableHeaders th');
+		const button = document.getElementById('toggleRenameHeadersButton');
+		const icon = button.querySelector('i');
+		const textSpan = button.querySelector('span:not(.tooltip-text)');
+		const tooltip = button.querySelector('.tooltip-text');
 
-    // Impede a execução se o modo de mapeamento manual estiver ativo
-    if (isManualMapping) {
-        return;
-    }
+		if (isManualMapping) {
+			return;
+		}
 
-    // Lógica para o MODO DE EDIÇÃO (isRenamingColumns é true)
-    if (isRenamingColumns) {
-        toggleActionButtons(true, 'toggleRenameHeadersButton');
-        table.classList.add('table-editing-mode');
-        
-        // Atualiza a aparência e o texto do botão para 'Salvar'
-        icon.classList.remove('fa-pencil-alt');
-        icon.classList.add('fa-save');
-        textSpan.textContent = 'Salvar Nomes';
-        tooltip.textContent = 'Salva os novos nomes dos cabeçalhos.';
-        button.classList.remove('bg-purple-600', 'hover:bg-purple-700', 'dark:bg-purple-500', 'dark:hover:bg-purple-400');
-        button.classList.add('bg-green-600', 'hover:bg-green-700', 'dark:bg-green-500', 'dark:hover:bg-green-400');
+		if (isRenamingColumns) {
+			toggleActionButtons(true, 'toggleRenameHeadersButton');
+			table.classList.add('table-editing-mode');
+			
+			icon.classList.remove('fa-pencil-alt');
+			icon.classList.add('fa-save');
+			textSpan.textContent = 'Salvar Nomes';
+			tooltip.textContent = 'Salve os novos nomes dos cabeçalhos.';
+			button.classList.remove('bg-purple-600', 'hover:bg-purple-700', 'dark:bg-purple-500', 'dark:hover:bg-purple-400');
+			button.classList.add('bg-green-600', 'hover:bg-green-700', 'dark:bg-green-500', 'dark:hover:bg-green-400');
 
-        // Substitui cada cabeçalho por um campo de texto para edição
-        headers.forEach((th, index) => {
-            th.onclick = null; // Desativa a ordenação
-            th.classList.add('editable-header');
-            const originalText = th.textContent.replace(/[\u2191\u2193]/g, '').trim();
-            th.innerHTML = `<input type="text" value="${originalText}" class="w-full bg-transparent text-center font-semibold p-0 text-sm border-none focus:ring-0" data-original-index="${index}">`;
-        });
-        
-        // Coloca o foco no primeiro campo para o usuário começar a digitar
-        const firstInput = headers[0].querySelector('input');
-        if (firstInput) firstInput.focus();
+			headers.forEach((th, index) => {
+				th.onclick = null; 
+				th.classList.add('editable-header');
+				
+				// ⭐ AQUI: Pegamos o texto apenas do elemento que contém o nome da coluna, sem os botões.
+				const originalText = th.querySelector('.flex.items-center.justify-center.px-4 span').textContent.trim();
+				
+				th.innerHTML = `<input type="text" value="${originalText}" class="w-full bg-transparent text-center font-semibold p-0 text-sm border-none focus:ring-0" data-original-index="${index}">`;
+			});
+			
+			const firstInput = headers[0].querySelector('input');
+			if (firstInput) firstInput.focus();
+			
+		} else {
+			toggleActionButtons(false);
+			table.classList.remove('table-editing-mode');
 
-    // Lógica para o MODO NORMAL (isRenamingColumns é false)
-    } else {
-        toggleActionButtons(false);
-        table.classList.remove('table-editing-mode');
-
-        // Restaura a aparência e o texto do botão para 'Renomear'
-        icon.classList.remove('fa-save');
-        icon.classList.add('fa-pencil-alt');
-        textSpan.textContent = 'Renomear Cabeçalhos';
-        tooltip.textContent = 'Muda os nomes dos cabeçalhos.';
-        button.classList.remove('bg-green-600', 'hover:bg-green-700', 'dark:bg-green-500', 'dark:hover:bg-green-400');
-        button.classList.add('bg-purple-600', 'hover:bg-purple-700', 'dark:bg-purple-500', 'dark:hover:bg-purple-400');
-        
-        const newColumnNames = [];
-        // Salva os novos nomes e restaura a funcionalidade de ordenação
-        headers.forEach(th => {
-            const input = th.querySelector('input');
-            const newName = input ? input.value.trim() : th.textContent.trim();
-            newColumnNames.push(newName);
-            
-            // Restaura o cabeçalho para texto simples e reativa a ordenação
-            th.innerHTML = newName;
-            th.classList.remove('editable-header');
-            const originalIndex = parseInt(input.getAttribute('data-original-index'));
-            th.onclick = () => sortTable(originalIndex);
-            
-            // Adiciona a seta de ordenação (visualmente invisível)
-            const arrowSpan = document.createElement('span');
-            arrowSpan.className = 'sort-arrow ml-1 text-gray-400 opacity-0 transition-opacity duration-200';
-            th.appendChild(arrowSpan);
-        });
-        
-        // Atualiza a variável global com os novos nomes das colunas
-        currentColumnNames = newColumnNames;
-        showToast('Nomes dos cabeçalhos atualizados!');
-    }
-}
+			icon.classList.remove('fa-save');
+			icon.classList.add('fa-pencil-alt');
+			textSpan.textContent = 'Renomear Cabeçalhos';
+			tooltip.textContent = 'Mude os nomes dos cabeçalhos.';
+			button.classList.remove('bg-green-600', 'hover:bg-green-700', 'dark:bg-green-500', 'dark:hover:bg-green-400');
+			button.classList.add('bg-purple-600', 'hover:bg-purple-700', 'dark:bg-purple-500', 'dark:hover:bg-purple-400');
+			
+			const newColumnNames = [];
+			headers.forEach(th => {
+				const input = th.querySelector('input');
+				const newName = input ? input.value.trim() : th.textContent.trim();
+				newColumnNames.push(newName);
+			});
+			
+			currentColumnNames = newColumnNames;
+			updateTable(currentColumnNames, currentTableData);
+			
+			showToast('Nomes dos cabeçalhos atualizados!');
+		}
+	}
 
 // ==========================================================
 // INICIALIZAÇÃO DOS EVENTOS DO MAPEAMENTO MANUAL
