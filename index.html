@@ -49,18 +49,18 @@
                 <div class="form-group flex flex-col items-center tooltip-container">
                     <label for="dataInput" class="text-lg font-semibold text-green-600 mb-2 dark:text-green-400">Lista dos Candidatos:</label>
                     <textarea id="dataInput" name="dataInput" rows="4" class="w-full max-w-md resize-y max-h-96 min-h-28"></textarea>
-                    <span class="tooltip-text">Insira a lista dos candidatos.</span>
+                    <span class="tooltip-text"><strong>Insira a lista dos candidatos.</strong></span>
                 </div>
                 <div class="form-group flex flex-col items-center tooltip-container">
                     <label for="pdfTitleInput" class="text-lg font-semibold text-green-600 mb-2 dark:text-green-400">Nome do Cargo (opcional):</label>
                     <input type="text" id="pdfTitleInput" placeholder="Ex: Analista Administrativo" class="w-full max-w-md">
-                    <span class="tooltip-text">Digite o cargo para o PDF gerado.</span>
+                    <span class="tooltip-text"><strong>Digite o cargo para o PDF gerado.</strong></span>
                 </div>
                 <div class="mt-6 flex justify-center">
                     <button type="button" id="organizeButton" onclick="organizeData()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg text-lg transition-all duration-200 dark:bg-green-500 dark:hover:bg-green-400 dark:text-gray-900 tooltip-container">
                         <i class="fas fa-sort-alpha-down"></i> <span id="organizeText">Organizar</span>
                         <i class="fas fa-spinner fa-spin ml-2" id="loadingSpinner" style="display: none;"></i>
-                        <span class="tooltip-text">Clique para organizar os dados.</span>
+                        <span class="tooltip-text"><strong>Clique para organizar os dados.</strong></span>
                     </button>
                 </div>
             </form>
@@ -125,7 +125,7 @@
             <h2 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-4 text-center dark:text-gray-100">Resultado Organizado</h2>
             <div class="searchContainer flex flex-col items-center mb-4 tooltip-container">
                 <input type="text" id="searchInput" onkeyup="searchTable()" placeholder="Digite para pesquisar..." class="w-full max-w-sm dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600">
-                <span class="tooltip-text">A tabela atualiza ao digitar.</span>
+                <span class="tooltip-text"><strong>A tabela atualiza ao digitar.</strong></span>
             </div>
             
             <div class="mb-6 grid grid-cols-2 gap-3 md:flex md:gap-4 justify-center">
@@ -185,4 +185,3 @@
     <script src="script.js"></script>
 </body>
 </html>
-
