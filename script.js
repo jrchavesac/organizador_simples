@@ -390,17 +390,18 @@ function resetVariaveis() {
 }
 
 function organizeData() {
-	
-	resetVariaveis();
-	
+    resetVariaveis();
+
     const dataInput = document.getElementById('dataInput').value.trim();
-	const containerResult = document.getElementById('ContainerResult');
+    const containerResult = document.getElementById('ContainerResult');
     const organizeButton = document.getElementById('organizeButton');
     const loadingSpinner = document.getElementById('loadingSpinner');
     const organizeText = document.getElementById('organizeText');
     const mapColumnsButton = document.getElementById('mapColumnsButton');
 
-    if (isRenamingColumns) { toggleColumnRename(); }
+    if (isRenamingColumns) {
+        toggleColumnRename();
+    }
     toggleActionButtons(false);
 
     if (dataInput === "") {
@@ -413,29 +414,61 @@ function organizeData() {
     organizeButton.disabled = true;
 
     setTimeout(() => {
+        let organizedData;
+        let columnNames;
+        let patternDetected;
+        let isCsv = false;
+
         try {
-			
-            // 1. Chama a função de inferência e armazene o resultado em uma variável temporária.
-            let result = inferAndApplyPattern(dataInput);
-            
-            // 2. Cria uma CÓPIA PROFUNDA dos dados e nomes de colunas.
-            //    Isso garante que não estamos usando uma referência antiga.
-            let organizedData = JSON.parse(JSON.stringify(result.organizedData));
-            let columnNames = [...result.columnNames]; // Copia o array de nomes
-            let patternDetected = result.patternDetected;
-            // ============================
+            const lines = dataInput.split('\n');
+            const hasMultipleLines = lines.length > 1;
+            let delimiter = '';
 
-			console.log('Objeto de padrão detectado:', patternDetected);
-			
+            // Lógica de detecção de CSV mais rigorosa
+            if (hasMultipleLines && lines[0].includes('"')) {
+                if (lines[0].includes(';')) {
+                    delimiter = ';';
+                } else if (lines[0].includes(',')) {
+                    delimiter = ',';
+                }
+            }
+            
+            if (delimiter) {
+                isCsv = true;
+                columnNames = lines[0].split(delimiter).map(name => name.replace(/"/g, '').trim());
+                organizedData = lines.slice(1).map(line => line.split(delimiter).map(field => field.replace(/"/g, '').trim()));
+                organizedData = organizedData.filter(row => row.some(field => field.length > 0));
+
+                if (organizedData.length === 0) {
+                    throw new Error("CSV não possui dados válidos.");
+                }
+
+                currentColumnNames = columnNames;
+                currentTableData = organizedData;
+                updateTable(currentColumnNames, currentTableData);
+                containerResult.style.display = 'block';
+				mapColumnsButton.style.display = 'none';
+                showToast("Dados do CSV organizados!");
+                return;
+            }
+            // Fim da lógica para CSV
+
+            // Lógica para texto simples
+            const result = inferAndApplyPattern(dataInput);
+            organizedData = JSON.parse(JSON.stringify(result.organizedData));
+            columnNames = [...result.columnNames];
+            patternDetected = result.patternDetected;
+
+            if (!patternDetected) {
+                showToast("Padrão não detectado. Por favor, mapeie os dados manualmente.");
+                showManualMappingContainer();
+                document.getElementById('manualMappingContainer').scrollIntoView({ behavior: 'smooth', block: 'start' });
+                return;
+            }
+
             if (patternDetected && patternDetected.calculation) {
-                console.log('Padrão com cálculo detectado. Calculando a Nota Final Total.');
-                
                 const { source1, source2, destination } = patternDetected.calculation;
-                
-                // Adiciona a nova coluna de destino
                 columnNames.push(destination);
-
-                // Mapeia os dados e realiza o cálculo
                 organizedData = organizedData.map(row => {
                     const value1 = parseFloat(row[columnNames.indexOf(source1)]);
                     const value2 = parseFloat(row[columnNames.indexOf(source2)]);
@@ -443,20 +476,15 @@ function organizeData() {
                     return [...row, total];
                 });
             }
-            
-            if (!patternDetected) {
-                showManualMappingContainer();
-                return;
-            }
-            
+
             lastOriginalColumnNames = [...columnNames];
             lastInferredData = { columnNames, organizedData, patternDetected };
-            
+
             columnTypes = {};
             columnNames.forEach(name => {
                 columnTypes[name] = getColumnType(name);
             });
-            
+
             sortData(columnNames, organizedData);
 
             const hasExistingClassification = columnNames.some(name => /classificação|posição|ranking/i.test(name));
@@ -464,19 +492,25 @@ function organizeData() {
                 organizedData.forEach((row, index) => {
                     row.unshift(index + 1);
                 });
-				
-				columnNames.unshift('Classificação');
+                columnNames.unshift('Classificação');
                 columnTypes['Classificação'] = 'integer_numeric';
             }
 
-            updateTable(columnNames, organizedData);
+            currentColumnNames = columnNames;
+            currentTableData = organizedData;
+
+            updateTable(currentColumnNames, currentTableData);
             
             containerResult.style.display = 'block';
             mapColumnsButton.style.display = 'flex';
             document.getElementById('manualMappingContainer').style.display = 'none';
             document.querySelector('form').style.display = 'block';
             containerResult.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            showToast('Dados organizados com sucesso!');
+            showToast("Dados organizados automaticamente!");
+
+        } catch (error) {
+            console.error(error);
+            showToast("Ocorreu um erro ao organizar os dados.");
         } finally {
             organizeText.style.display = 'inline';
             loadingSpinner.style.display = 'none';
@@ -993,10 +1027,10 @@ function generatePDF() {
 		}
 	}
 
-// ==========================================================
-// INICIALIZAÇÃO DOS EVENTOS DO MAPEAMENTO MANUAL
-// ==========================================================
-document.addEventListener('DOMContentLoaded', (event) => {
+	// ==========================================================
+	// INICIALIZAÇÃO DOS EVENTOS DO MAPEAMENTO MANUAL
+	// ==========================================================
+	document.addEventListener('DOMContentLoaded', (event) => {
     // Listeners para os seletores e campo de contagem
     document.getElementById('rowSeparator').addEventListener('change', updatePreviewTable);
     document.getElementById('columnSeparator').addEventListener('change', updatePreviewTable);
