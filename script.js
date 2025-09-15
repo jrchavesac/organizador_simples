@@ -84,6 +84,17 @@ const patterns = [
             destination: 'Nota Final Total'
         }
     },
+	{
+        name: 'Inscrição, Nome, Nota P1, Nota P2, Nota Objetiva',
+        regex: /(\d+),\s*([A-ZÀ-Ÿ\s.()-]+?),\s*(\d+\.?\d*),\s*(\d+\.?\d*),\s*(\d+\.?\d*)\s*(?:\/\s*|$)/gi,
+        columns: [
+            'Inscrição',
+            'Nome',
+            'Nota P1',
+            'Nota P2',
+            'Nota Objetiva'
+        ]
+    },
     { 
         name: 'Classificação, Inscrição, Nome, Nota', 
         regex: /(\d+),\s*(\d+),\s*([A-ZÀ-Ÿ\s.()-]+?),\s*(\d+\.?\d*)\s*(?:\/\s*|$)/gi, 
@@ -119,7 +130,13 @@ const patterns = [
       name: 'Inscrição, Nome, Múltiplas Notas (Ponto e Vírgula)',
       regex: /(\d+);\s*([A-ZÀ-Ÿ\s.-]+?);\s*(\d+\.?\d*);\s*(\d+\.?\d*);\s*(\d+\.?\d*);\s*(\d+\.?\d*)/gi,
       columns: ['Inscrição', 'Nome', 'Nota (Port.)', 'Nota (Mat.)', 'Nota (Espec.)', 'Nota Final']
-    }
+    },
+	{
+        name: 'Lista de Nomes (separados por vírgula)',
+        // Regex para capturar nomes separados por vírgula, espaço, ou barra
+        regex: /([A-ZÀ-Ÿ\s.()-]+?)(?:,|$|\s*\/\s*)/gi,
+        columns: ['Nome']
+    }
 ];
 
 function showToast(message, duration = 3000) {
@@ -328,52 +345,68 @@ function createColumnNameInputs(initialColumnNames) {
 }
 
 function sortData(columnNames, data) {
-    data.sort((a, b) => {
-        const sortIndexes = {
-            notaFinal: columnNames.indexOf('Nota Final') !== -1 ? columnNames.indexOf('Nota Final') : columnNames.indexOf('Nota Final Total'),
-            nota: columnNames.indexOf('Nota'),
-            classificacao: columnNames.findIndex(name => /classificação|posição|ranking/i.test(name)),
-            nome: columnNames.indexOf('Nome'),
-            idade: columnNames.indexOf('Idade')
-        };
+    data.sort((a, b) => {
+        const sortIndexes = {
+            notaObjetiva: columnNames.indexOf('Nota Objetiva'),
+            notaP2: columnNames.indexOf('Nota P2'),
+            notaFinal: columnNames.indexOf('Nota Final') !== -1 ? columnNames.indexOf('Nota Final') : columnNames.indexOf('Nota Final Total'),
+            nota: columnNames.indexOf('Nota'),
+            classificacao: columnNames.findIndex(name => /classificação|posição|ranking/i.test(name)),
+            nome: columnNames.indexOf('Nome'),
+            idade: columnNames.indexOf('Idade')
+        };
 
-        // Prioridade 1: Classificação (se existir)
-        if (sortIndexes.classificacao !== -1) {
-            const valA = a[sortIndexes.classificacao] !== null ? parseInt(a[sortIndexes.classificacao]) : Infinity;
-            const valB = b[sortIndexes.classificacao] !== null ? parseInt(b[sortIndexes.classificacao]) : Infinity;
-            if (valA !== valB) return valA - valB;
-        }
-        
-        // Prioridade 2: Nota Final (se existir)
-        if (sortIndexes.notaFinal !== -1) {
-            const valA = a[sortIndexes.notaFinal] !== null ? parseFloat(a[sortIndexes.notaFinal]) : -Infinity;
-            const valB = b[sortIndexes.notaFinal] !== null ? parseFloat(b[sortIndexes.notaFinal]) : -Infinity;
-            if (valA !== valB) return valB - valA;
-        }
+        // Prioridade 1: Nota Objetiva (para o seu novo padrão)
+        if (sortIndexes.notaObjetiva !== -1) {
+            const valA = a[sortIndexes.notaObjetiva] !== null ? parseFloat(a[sortIndexes.notaObjetiva]) : -Infinity;
+            const valB = b[sortIndexes.notaObjetiva] !== null ? parseFloat(b[sortIndexes.notaObjetiva]) : -Infinity;
+            if (valA !== valB) return valB - valA;
+            // Critério de desempate: Nota P2
+            if (sortIndexes.notaP2 !== -1) {
+                const desempateA = a[sortIndexes.notaP2] !== null ? parseFloat(a[sortIndexes.notaP2]) : -Infinity;
+                const desempateB = b[sortIndexes.notaP2] !== null ? parseFloat(b[sortIndexes.notaP2]) : -Infinity;
+                if (desempateA !== desempateB) return desempateB - desempateA;
+            }
+        }
+        
+        // Critérios de ordenação antigos (mantidos para compatibilidade)
+        // Prioridade 1: Classificação (se existir)
+        if (sortIndexes.classificacao !== -1) {
+            const valA = a[sortIndexes.classificacao] !== null ? parseInt(a[sortIndexes.classificacao]) : Infinity;
+            const valB = b[sortIndexes.classificacao] !== null ? parseInt(b[sortIndexes.classificacao]) : Infinity;
+            if (valA !== valB) return valA - valB;
+        }
+        
+        // Prioridade 2: Nota Final (se existir)
+        if (sortIndexes.notaFinal !== -1) {
+            const valA = a[sortIndexes.notaFinal] !== null ? parseFloat(a[sortIndexes.notaFinal]) : -Infinity;
+            const valB = b[sortIndexes.notaFinal] !== null ? parseFloat(b[sortIndexes.notaFinal]) : -Infinity;
+            if (valA !== valB) return valB - valA;
+        }
 
-        // Prioridade 3: Nota (para casos mais simples)
-        if (sortIndexes.nota !== -1) {
-            const valA = a[sortIndexes.nota] !== null ? parseFloat(a[sortIndexes.nota]) : -Infinity;
-            const valB = b[sortIndexes.nota] !== null ? parseFloat(b[sortIndexes.nota]) : -Infinity;
-            if (valA !== valB) return valB - valA;
-        }
+        // Prioridade 3: Nota (para casos mais simples)
+        if (sortIndexes.nota !== -1) {
+            const valA = a[sortIndexes.nota] !== null ? parseFloat(a[sortIndexes.nota]) : -Infinity;
+            const valB = b[sortIndexes.nota] !== null ? parseFloat(b[sortIndexes.nota]) : -Infinity;
+            if (valA !== valB) return valB - valA;
+        }
 
-        // Critério de Desempate: Idade
-        if (sortIndexes.idade !== -1) {
-            const valA = a[sortIndexes.idade] !== null ? parseInt(a[sortIndexes.idade]) : -Infinity;
-            const valB = b[sortIndexes.idade] !== null ? parseInt(b[sortIndexes.idade]) : -Infinity;
-            if (valA !== valB) return valB - valA;
-        }
+        // Critério de Desempate: Idade
+        if (sortIndexes.idade !== -1) {
+            const valA = a[sortIndexes.idade] !== null ? parseInt(a[sortIndexes.idade]) : -Infinity;
+            const valB = b[sortIndexes.idade] !== null ? parseInt(b[sortIndexes.idade]) : -Infinity;
+            if (valA !== valB) return valB - valA;
+        }
 
-        // Critério Final: Nome
-        if (sortIndexes.nome !== -1) {
-            const nomeA = a[sortIndexes.nome] || '';
-            const nomeB = b[sortIndexes.nome] || '';
-            return String(nomeA).localeCompare(String(nomeB), undefined, { numeric: true, sensitivity: 'base' });
-        }
+        // Critério Final: Nome
+        if (sortIndexes.nome !== -1) {
+            const nomeA = a[sortIndexes.nome] || '';
+            const nomeB = b[sortIndexes.nome] || '';
+            return String(nomeA).localeCompare(String(nomeB), undefined, { numeric: true, sensitivity: 'base' });
+        }
 
-        return 0;
-    });
+        return 0;
+    });
 }
 
 function resetVariaveis() {
@@ -485,7 +518,9 @@ function organizeData() {
                 columnTypes[name] = getColumnType(name);
             });
 
-            sortData(columnNames, organizedData);
+            if (patternDetected && patternDetected.name !== 'Lista de Nomes (separados por vírgula)') {
+	            sortData(columnNames, organizedData);
+	        }
 
             const hasExistingClassification = columnNames.some(name => /classificação|posição|ranking/i.test(name));
             if (!hasExistingClassification) {
