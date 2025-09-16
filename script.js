@@ -225,7 +225,7 @@ function showToast(message, duration = 3000) {
 }
 
 function toggleActionButtons(disable, exceptId = null) {
-    const buttonIds = ['generatePdfButton', 'exportCsvButton', 'toggleRenameHeadersButton', 'mapColumnsButton'];
+    const buttonIds = ['gerarPdfButton', 'exportCsvButton', 'toggleRenameHeadersButton', 'mapColumnsButton'];
     buttonIds.forEach(id => {
         if (id !== exceptId) {
             const button = document.getElementById(id);
@@ -366,7 +366,7 @@ function parseWithManualSettings() {
     return organizedData;
 }
 
-function sortData(columnNames, data) {
+function ordenarDados(columnNames, data) {
     data.sort((a, b) => {
         const sortIndexes = {
             notaObjetiva: columnNames.indexOf('Nota Objetiva'),
@@ -486,7 +486,7 @@ function organizeData() {
 
                 appState.currentColumnNames = columnNames;
                 appState.currentTableData = organizedData;
-                updateTable(appState.currentColumnNames, appState.currentTableData);
+                atualizarTabela(appState.currentColumnNames, appState.currentTableData);
                 containerResult.style.display = 'block';
                 mapColumnsButton.style.display = 'none';
                 showToast("Dados do CSV organizados!");
@@ -537,7 +537,7 @@ function organizeData() {
             });
 
             if (patternDetected && patternDetected.name !== 'Lista de Nomes (separados por vírgula)') {
-                sortData(columnNames, organizedData);
+                ordenarDados(columnNames, organizedData);
             }
 
             const hasExistingClassification = columnNames.some(name => /classificação|posição|ranking/i.test(name));
@@ -552,7 +552,7 @@ function organizeData() {
             appState.currentColumnNames = columnNames;
             appState.currentTableData = organizedData;
 
-            updateTable(appState.currentColumnNames, appState.currentTableData);
+            atualizarTabela(appState.currentColumnNames, appState.currentTableData);
 
             containerResult.style.display = 'block';
             mapColumnsButton.style.display = 'flex';
@@ -666,7 +666,7 @@ function updatePreviewTable() {
         columnNames.push(colName || `Coluna ${i + 1}`);
     }
 
-    sortData(columnNames, organizedData);
+    ordenarDados(columnNames, organizedData);
 
     const previewTableHeaders = document.getElementById('previewTableHeaders');
     previewTableHeaders.innerHTML = '';
@@ -724,7 +724,7 @@ function applyManualMapping() {
         appState.columnTypes[name] = getColumnType(name);
     });
 
-    sortData(newColumnNames, organizedData);
+    ordenarDados(newColumnNames, organizedData);
 
     const addRank = !newColumnNames.some(name => /classificação|posição|ranking/i.test(name));
     let finalColumnNamesForTable = [...newColumnNames];
@@ -735,7 +735,7 @@ function applyManualMapping() {
         finalColumnNamesForTable.unshift('Classificação');
     }
 
-    updateTable(finalColumnNamesForTable, organizedData);
+    atualizarTabela(finalColumnNamesForTable, organizedData);
     document.getElementById('ContainerResult').style.display = 'block';
     hideManualMappingContainer();
     document.getElementById('ContainerResult').scrollIntoView({
@@ -744,7 +744,7 @@ function applyManualMapping() {
     showToast('Mapeamento manual aplicado com sucesso!');
 }
 
-function updateTable(columnNames, data) {
+function atualizarTabela(columnNames, data) {
     const tableHeaders = document.getElementById('tableHeaders');
     const tableBody = document.getElementById('tableBody');
     tableHeaders.innerHTML = '';
@@ -800,7 +800,7 @@ function updateTable(columnNames, data) {
         contentContainer.appendChild(arrowSpan);
 
         th.appendChild(contentContainer);
-        th.onclick = () => sortTable(index);
+        th.onclick = () => ordenarTabela(index);
 
         tableHeaders.appendChild(th);
     });
@@ -844,13 +844,13 @@ function deleteColumn(columnIndex) {
         appState.currentTableData.forEach(row => {
             row.splice(columnIndex, 1);
         });
-        updateTable(appState.currentColumnNames, appState.currentTableData);
+        atualizarTabela(appState.currentColumnNames, appState.currentTableData);
         showToast('Coluna excluída com sucesso!');
         document.getElementById('global-tooltip').classList.add('opacity-0', 'invisible');
     }
 }
 
-function sortTable(columnIndex) {
+function ordenarTabela(columnIndex) {
     if (appState.isRenamingColumns) {
         return;
     }
@@ -946,7 +946,7 @@ themeToggle.addEventListener('click', () => {
     }
 });
 
-function searchTable() {
+function pesquisarTabela() {
     let input = document.getElementById('searchInput').value.toUpperCase();
     let table = document.getElementById('resultTable');
     let tr = table.getElementsByTagName('tr');
@@ -963,7 +963,7 @@ function searchTable() {
     }
 }
 
-function generatePDF() {
+function gerarPDF() {
     if (appState.isRenamingColumns) {
         toggleColumnRename();
     }
@@ -1045,7 +1045,7 @@ function generatePDF() {
     }
 }
 
-function exportToCSV() {
+function exportarCSV() {
     if (appState.isRenamingColumns) {
         toggleColumnRename();
     }
@@ -1139,7 +1139,7 @@ function toggleColumnRename() {
         });
 
         appState.currentColumnNames = newColumnNames;
-        updateTable(appState.currentColumnNames, appState.currentTableData);
+        atualizarTabela(appState.currentColumnNames, appState.currentTableData);
         showToast('Nomes dos cabeçalhos atualizados!');
     }
 }
