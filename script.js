@@ -622,14 +622,34 @@ function showManualMappingContainer() {
 function limparEntradaDados(inputString) {
     if (!inputString) return "";
 
+    // 1. Divide o texto em linhas para aplicar a lógica de filtro
     const lines = inputString.split(/\r\n|\r|\n/);
-    const regexDiarioOficial = /DIÁRIO OFICIAL/i;
-    const filteredLines = lines.filter(line => !regexDiarioOficial.test(line));
+
+    // 2. Define os padrões de "lixo" para filtrar as linhas
+    const junkPatterns = [
+        /DIÁRIO OFICIAL/i,
+        /ESTADO DO ACRE/i,
+        /SECRETARIA DE ESTADO DE PLANEJAMENTO E GESTÃO/i,
+        /INSTITUTO SOCIOEDUCATIVO/i,
+        // Adiciona um padrão para remover linhas que contêm datas
+        /\b(?:segunda|terça|quarta|quinta|sexta|sábado|domingo)-feira,/i,
+        // Adiciona um padrão para remover linhas que contêm apenas um número (provável número de página)
+        /^\s*\d+\s*$/
+    ];
+
+    // 3. Filtra as linhas, mantendo apenas aquelas que não contêm "lixo"
+    const filteredLines = lines.filter(line => !junkPatterns.some(regex => regex.test(line)));
+    
+    // 4. Junta as linhas filtradas em uma única string
     let processedString = filteredLines.join(' ');
 
+    // 5. Normaliza a string removendo lixo restante
     processedString = processedString.replace(/-\s+/g, '');
     processedString = processedString.replace(/º|°/g, '').replace(/(\d+),(\d{1,2})(?![0-9])/g, '$1.$2').trim();
     processedString = processedString.replace(/\.\s*$/, '').trim();
+
+    // 6. Normaliza espaços para evitar múltiplos espaços entre os dados
+    processedString = processedString.replace(/\s{2,}/g, ' ');
 
     return processedString;
 }
