@@ -1,4 +1,5 @@
 document.getElementById('currentYear').textContent = new Date().getFullYear();
+
 const typeMapping = {
     'classificacao': 'integer_numeric',
     'posicao': 'integer_numeric',
@@ -11,6 +12,7 @@ const typeMapping = {
     'acertos': 'numeric',
     'idade': 'integer_numeric'
 };
+
 const predefinedColumnOptions = [{
     value: '',
     text: 'Selecione...'
@@ -147,7 +149,7 @@ const patterns = [
         regex: /(\d+),\s*(\d+),\s*([A-ZÀ-Ÿ\s.()-]+?),\s*(\d+\.?\d*)\s*(?:\/\s*|$)/gi,
         columns: ['Classificação', 'Inscrição', 'Nome', 'Nota']
     },
-	{
+    {
         name: 'Inscrição, Nome, Nota, Classificação',
         regex: /(\d+),\s*([A-ZÀ-Ÿ\s.()-]+?),\s*(\d+\.?\d*),\s*(\d+)\s*(?:\/\s*|$)/gi,
         columns: ['Inscrição', 'Nome', 'Nota', 'Classificação']
@@ -214,116 +216,116 @@ const patterns = [
     }
 ];
 
-function showToast(message, duration = 3000) {
+function mostrarToast(mensagem, duracao = 3000) {
     const toast = document.getElementById('toast-notification');
     if (!toast) return;
-    toast.textContent = message;
+    toast.textContent = mensagem;
     toast.classList.remove('translate-y-20', 'opacity-0');
     setTimeout(() => {
         toast.classList.add('translate-y-20', 'opacity-0');
-    }, duration);
+    }, duracao);
 }
 
-function toggleActionButtons(disable, exceptId = null) {
+function alternarBotoesAcao(desabilitar, excetoId = null) {
     const buttonIds = ['gerarPdfButton', 'exportCsvButton', 'toggleRenameHeadersButton', 'mapColumnsButton'];
     buttonIds.forEach(id => {
-        if (id !== exceptId) {
+        if (id !== excetoId) {
             const button = document.getElementById(id);
             if (button) {
-                button.disabled = disable;
+                button.disabled = desabilitar;
             }
         }
     });
 }
 
-function getColumnType(columnName) {
-    const lowerName = columnName.toLowerCase();
+function obterTipoColuna(nomeColuna) {
+    const nomeMinusculo = nomeColuna.toLowerCase();
     for (const key in typeMapping) {
-        if (lowerName.includes(key)) return typeMapping[key];
+        if (nomeMinusculo.includes(key)) return typeMapping[key];
     }
-    if (lowerName.includes('nome')) return 'string';
+    if (nomeMinusculo.includes('nome')) return 'string';
     return 'string';
 }
 
-function inferAndApplyPattern(processedString) {
-    if (!processedString) {
+function inferirEAplicarPadrao(textoProcessado) {
+    if (!textoProcessado) {
         return {
-            columnNames: [],
-            organizedData: [],
-            patternDetected: null
+            nomesColunas: [],
+            dadosOrganizados: [],
+            padraoDetectado: null
         };
     }
 
-    let candidateBlocks = [];
-    let finalColumnNames = [];
-    let patternFound = null;
+    let blocosCandidatos = [];
+    let nomesColunasFinais = [];
+    let padraoEncontrado = null;
 
-    for (const pattern of patterns) {
+    for (const padrao of patterns) {
         const tempBlocks = [];
         let match;
-        pattern.regex.lastIndex = 0;
-        while ((match = pattern.regex.exec(processedString)) !== null) {
+        padrao.regex.lastIndex = 0;
+        while ((match = padrao.regex.exec(textoProcessado)) !== null) {
             tempBlocks.push(match.slice(1).map(field => field ? field.trim() : null));
         }
         if (tempBlocks.length > 0) {
-            finalColumnNames = pattern.columns;
-            candidateBlocks = tempBlocks;
-            patternFound = pattern;
+            nomesColunasFinais = padrao.columns;
+            blocosCandidatos = tempBlocks;
+            padraoEncontrado = padrao;
             break;
         }
     }
 
-    if (!patternFound && processedString.length > 0) {
-        const lines = processedString.split('/').map(line => line.trim()).filter(line => line.length > 0);
-        if (lines.length > 0) {
-            const sampleLine = lines[0];
-            let fields = sampleLine.split(/[\s,;]+/).filter(f => f.length > 0);
-            if (fields.length > 1) {
-                finalColumnNames = Array.from({
-                    length: fields.length
+    if (!padraoEncontrado && textoProcessado.length > 0) {
+        const linhas = textoProcessado.split('/').map(linha => linha.trim()).filter(linha => linha.length > 0);
+        if (linhas.length > 0) {
+            const linhaExemplo = linhas[0];
+            let campos = linhaExemplo.split(/[\s,;]+/).filter(f => f.length > 0);
+            if (campos.length > 1) {
+                nomesColunasFinais = Array.from({
+                    length: campos.length
                 }, (_, i) => `Campo ${i + 1}`);
-                candidateBlocks = lines.map(line => line.split(/[\s,;]+/).filter(f => f.length > 0));
-                candidateBlocks = candidateBlocks.filter(block => block.length === fields.length);
-                if (candidateBlocks.length === 0) {
-                    candidateBlocks = [
-                        [processedString]
+                blocosCandidatos = linhas.map(linha => linha.split(/[\s,;]+/).filter(f => f.length > 0));
+                blocosCandidatos = blocosCandidatos.filter(bloco => bloco.length === campos.length);
+                if (blocosCandidatos.length === 0) {
+                    blocosCandidatos = [
+                        [textoProcessado]
                     ];
-                    finalColumnNames = ['Dados Brutos'];
+                    nomesColunasFinais = ['Dados Brutos'];
                 }
             } else {
-                candidateBlocks = [
-                    [processedString]
+                blocosCandidatos = [
+                    [textoProcessado]
                 ];
-                finalColumnNames = ['Dados Brutos'];
+                nomesColunasFinais = ['Dados Brutos'];
             }
         }
     }
 
-    const organizedData = [];
-    candidateBlocks.forEach(rowFields => {
-        const rowData = new Array(finalColumnNames.length).fill(null);
-        for (let i = 0; i < Math.min(rowFields.length, finalColumnNames.length); i++) {
-            const value = rowFields[i];
-            const colName = finalColumnNames[i];
-            const inferredType = getColumnType(colName);
-            if (value !== null && value !== undefined && value !== '') {
-                let cleanedValue = value.trim();
-                if (inferredType === 'numeric') rowData[i] = parseFloat(cleanedValue);
-                else if (inferredType === 'integer_numeric') rowData[i] = parseInt(cleanedValue, 10);
-                else rowData[i] = cleanedValue;
+    const dadosOrganizados = [];
+    blocosCandidatos.forEach(camposLinha => {
+        const dadosLinha = new Array(nomesColunasFinais.length).fill(null);
+        for (let i = 0; i < Math.min(camposLinha.length, nomesColunasFinais.length); i++) {
+            const valor = camposLinha[i];
+            const nomeCol = nomesColunasFinais[i];
+            const tipoInferido = obterTipoColuna(nomeCol);
+            if (valor !== null && valor !== undefined && valor !== '') {
+                let valorLimpo = valor.trim();
+                if (tipoInferido === 'numeric') dadosLinha[i] = parseFloat(valorLimpo);
+                else if (tipoInferido === 'integer_numeric') dadosLinha[i] = parseInt(valorLimpo, 10);
+                else dadosLinha[i] = valorLimpo;
             }
         }
-        organizedData.push(rowData);
+        dadosOrganizados.push(dadosLinha);
     });
 
     return {
-        columnNames: finalColumnNames,
-        organizedData,
-        patternDetected: patternFound
+        nomesColunas: nomesColunasFinais,
+        dadosOrganizados,
+        padraoDetectado: padraoEncontrado
     };
 }
 
-function parseWithManualSettings() {
+function analisarComConfiguracoesManuais() {
     const dataInput = document.getElementById('dataInput').value.trim();
     const rowSep = document.getElementById('rowSeparator').value.replace(/\\n/g, '\n');
     const colSep = document.getElementById('columnSeparator').value.replace(/\\t/g, '\t');
@@ -331,7 +333,7 @@ function parseWithManualSettings() {
 
     if (!dataInput) return [];
 
-    let organizedData = [];
+    let dadosOrganizados = [];
 
     if (colSep === rowSep && fieldsCount > 0) {
         const allFields = dataInput.split(colSep).map(f => f.trim()).filter(Boolean);
@@ -341,11 +343,11 @@ function parseWithManualSettings() {
             while (chunk.length < fieldsCount) {
                 chunk.push('');
             }
-            organizedData.push(chunk);
+            dadosOrganizados.push(chunk);
         }
     } else {
         const lines = dataInput.split(rowSep).filter(line => line.trim() !== '');
-        organizedData = lines.map(line => {
+        dadosOrganizados = lines.map(line => {
             const fields = line.split(colSep).map(field => field.trim());
             while (fields.length < fieldsCount) {
                 fields.push('');
@@ -353,64 +355,74 @@ function parseWithManualSettings() {
             return fields.slice(0, fieldsCount);
         });
     }
-    return organizedData;
+    return dadosOrganizados;
 }
 
-function ordenarDados(columnNames, data) {
-    data.sort((a, b) => {
-        const sortIndexes = {
-            notaObjetiva: columnNames.indexOf('Nota Objetiva'),
-            notaP2: columnNames.indexOf('Nota P2'),
-            notaFinal: columnNames.indexOf('Nota Final') !== -1 ? columnNames.indexOf('Nota Final') : columnNames.indexOf('Nota Final Total'),
-            nota: columnNames.indexOf('Nota'),
-            classificacao: columnNames.findIndex(name => /classificação|posição|ranking/i.test(name)),
-            nome: columnNames.indexOf('Nome'),
-            idade: columnNames.indexOf('Idade')
-        };
+// ** CORREÇÃO APLICADA AQUI **
+// A lógica de ordenação agora é mais robusta e independente do tipo de mapeamento.
+function ordenarTabela(indiceColuna, éOrdenacaoInicial = false) {
+    if (!éOrdenacaoInicial && appState.isRenamingColumns) {
+        return;
+    }
+    
+    // Obtém o nome da coluna e seu tipo, para usar como dica de ordenação
+    const nomeColuna = appState.currentColumnNames[indiceColuna];
+    const tipoColuna = appState.columnTypes[nomeColuna] || obterTipoColuna(nomeColuna);
 
-        if (sortIndexes.notaObjetiva !== -1) {
-            const valA = a[sortIndexes.notaObjetiva] !== null ? parseFloat(a[sortIndexes.notaObjetiva]) : -Infinity;
-            const valB = b[sortIndexes.notaObjetiva] !== null ? parseFloat(b[sortIndexes.notaObjetiva]) : -Infinity;
-            if (valA !== valB) return valB - valA;
-            if (sortIndexes.notaP2 !== -1) {
-                const desempateA = a[sortIndexes.notaP2] !== null ? parseFloat(a[sortIndexes.notaP2]) : -Infinity;
-                const desempateB = b[sortIndexes.notaP2] !== null ? parseFloat(b[sortIndexes.notaP2]) : -Infinity;
-                if (desempateA !== desempateB) return desempateB - desempateA;
-            }
+    if (!éOrdenacaoInicial) {
+        appState.sortDirections[indiceColuna] = !appState.sortDirections[indiceColuna];
+    } else {
+        appState.sortDirections = {};
+        appState.sortDirections[indiceColuna] = (tipoColuna === 'numeric' || tipoColuna === 'integer_numeric') ? false : true;
+    }
+    
+    const direcao = appState.sortDirections[indiceColuna] ? 1 : -1;
+
+    appState.currentTableData.sort((a, b) => {
+        let valA = a[indiceColuna];
+        let valB = b[indiceColuna];
+
+        // Tenta sempre a ordenação numérica primeiro, se os valores forem válidos
+        const numA = parseFloat(String(valA).replace(',', '.'));
+        const numB = parseFloat(String(valB).replace(',', '.'));
+        
+        const aIsNum = isFinite(numA);
+        const bIsNum = isFinite(numB);
+
+        // Se ambos são numéricos, use a ordenação numérica
+        if (aIsNum && bIsNum) {
+            return (numA - numB) * direcao;
         }
-        if (sortIndexes.classificacao !== -1) {
-            const valA = a[sortIndexes.classificacao] !== null ? parseInt(a[sortIndexes.classificacao]) : Infinity;
-            const valB = b[sortIndexes.classificacao] !== null ? parseInt(b[sortIndexes.classificacao]) : Infinity;
-            if (valA !== valB) return valA - valB;
-        }
-        if (sortIndexes.notaFinal !== -1) {
-            const valA = a[sortIndexes.notaFinal] !== null ? parseFloat(a[sortIndexes.notaFinal]) : -Infinity;
-            const valB = b[sortIndexes.notaFinal] !== null ? parseFloat(b[sortIndexes.notaFinal]) : -Infinity;
-            if (valA !== valB) return valB - valA;
-        }
-        if (sortIndexes.nota !== -1) {
-            const valA = a[sortIndexes.nota] !== null ? parseFloat(a[sortIndexes.nota]) : -Infinity;
-            const valB = b[sortIndexes.nota] !== null ? parseFloat(b[sortIndexes.nota]) : -Infinity;
-            if (valA !== valB) return valB - valA;
-        }
-        if (sortIndexes.idade !== -1) {
-            const valA = a[sortIndexes.idade] !== null ? parseInt(a[sortIndexes.idade]) : -Infinity;
-            const valB = b[sortIndexes.idade] !== null ? parseInt(b[sortIndexes.idade]) : -Infinity;
-            if (valA !== valB) return valB - valA;
-        }
-        if (sortIndexes.nome !== -1) {
-            const nomeA = a[sortIndexes.nome] || '';
-            const nomeB = b[sortIndexes.nome] || '';
-            return String(nomeA).localeCompare(String(nomeB), undefined, {
-                numeric: true,
-                sensitivity: 'base'
-            });
-        }
-        return 0;
+
+        // Caso um ou ambos não sejam numéricos, use a ordenação de texto
+        const strA = String(valA || '').toLowerCase();
+        const strB = String(valB || '').toLowerCase();
+        
+        // Trata valores vazios para que fiquem no final
+        if (strA === '' && strB !== '') return direcao;
+        if (strB === '' && strA !== '') return -direcao;
+        if (strA === '' && strB === '') return 0;
+        
+        return strA.localeCompare(strB, 'pt', { sensitivity: 'base' }) * direcao;
     });
+
+    atualizarTabela(appState.currentColumnNames, appState.currentTableData);
 }
 
-function resetAppState() {
+// Função auxiliar para determinar qual coluna ordenar na inicialização
+function obterIndiceDeOrdenacaoInicial(nomesDasColunas) {
+    const colunasDeOrdenacaoPadrao = ['Nota Objetiva', 'Nota Final Total', 'Nota', 'Classificação', 'Posição', 'Ranking', 'Idade', 'Nome'];
+    for (const nomeCol of colunasDeOrdenacaoPadrao) {
+        const index = nomesDasColunas.indexOf(nomeCol);
+        if (index !== -1) {
+            return index;
+        }
+    }
+    return -1; // Não encontrou coluna para ordenação padrão
+}
+
+
+function reiniciarEstadoApp() {
     appState.sortDirections = {};
     appState.currentColumnNames = [];
     appState.columnTypes = {};
@@ -422,17 +434,12 @@ function resetAppState() {
     appState.manualMappingData = null;
 }
 
-function organizeData() {
-    resetAppState();
-    
-	const dataInput = document.getElementById('dataInput').value.trim();
-
-    // 1. Chame a função de limpeza e armazene o resultado
+function organizarDados() {
+    reiniciarEstadoApp();
+    const dataInput = document.getElementById('dataInput').value.trim();
     const dadosLimpos = limparEntradaDados(dataInput);
-    
-    // ⭐ 2. Atualize o valor do campo de entrada com os dados limpos
     document.getElementById('dataInput').value = dadosLimpos;
-	
+    
     const containerResult = document.getElementById('ContainerResult');
     const organizeButton = document.getElementById('organizeButton');
     const loadingSpinner = document.getElementById('loadingSpinner');
@@ -440,12 +447,12 @@ function organizeData() {
     const mapColumnsButton = document.getElementById('mapColumnsButton');
 
     if (appState.isRenamingColumns) {
-        toggleColumnRename();
+        alternarRenomeacaoColunas();
     }
-    toggleActionButtons(false);
+    alternarBotoesAcao(false);
 
     if (dataInput === "") {
-        alert("Por favor, digite algum dado na 'Lista dos candidatos' para organizar.");
+        mostrarToast("Por favor, digite algum dado na 'Lista dos candidatos' para organizar.");
         return;
     }
 
@@ -487,19 +494,18 @@ function organizeData() {
                 atualizarTabela(appState.currentColumnNames, appState.currentTableData);
                 containerResult.style.display = 'block';
                 mapColumnsButton.style.display = 'none';
-                showToast("Dados do CSV organizados!");
+                mostrarToast("Dados do CSV organizados!");
                 return;
             }
 
-            const result = inferAndApplyPattern(dadosLimpos);
-            // Uso de .map para clonagem de arrays
-            organizedData = result.organizedData.map(row => [...row]);
-            columnNames = [...result.columnNames];
-            patternDetected = result.patternDetected;
+            const result = inferirEAplicarPadrao(dadosLimpos);
+            organizedData = result.dadosOrganizados.map(row => [...row]);
+            columnNames = [...result.nomesColunas];
+            patternDetected = result.padraoDetectado;
 
             if (!patternDetected) {
-                showToast("Padrão não detectado. Por favor, mapeie os dados manualmente.");
-                showManualMappingContainer();
+                mostrarToast("Padrão não detectado. Por favor, mapeie os dados manualmente.");
+                mostrarContainerMapeamentoManual();
                 document.getElementById('manualMappingContainer').scrollIntoView({
                     behavior: 'smooth',
                     block: 'start'
@@ -531,12 +537,8 @@ function organizeData() {
 
             appState.columnTypes = {};
             columnNames.forEach(name => {
-                appState.columnTypes[name] = getColumnType(name);
+                appState.columnTypes[name] = obterTipoColuna(name);
             });
-
-            if (patternDetected && patternDetected.name !== 'Lista de Nomes (separados por vírgula)') {
-                ordenarDados(columnNames, organizedData);
-            }
 
             const hasExistingClassification = columnNames.some(name => /classificação|posição|ranking/i.test(name));
             if (!hasExistingClassification) {
@@ -546,12 +548,16 @@ function organizeData() {
                 columnNames.unshift('Classificação');
                 appState.columnTypes['Classificação'] = 'integer_numeric';
             }
-
+            
             appState.currentColumnNames = columnNames;
             appState.currentTableData = organizedData;
 
-            atualizarTabela(appState.currentColumnNames, appState.currentTableData);
-
+            if (patternDetected && patternDetected.name !== 'Lista de Nomes (separados por vírgula)') {
+                ordenarTabela(obterIndiceDeOrdenacaoInicial(columnNames), true);
+            } else {
+                atualizarTabela(appState.currentColumnNames, appState.currentTableData);
+            }
+            
             containerResult.style.display = 'block';
             mapColumnsButton.style.display = 'flex';
             document.getElementById('manualMappingContainer').style.display = 'none';
@@ -560,11 +566,11 @@ function organizeData() {
                 behavior: 'smooth',
                 block: 'start'
             });
-            showToast("Dados organizados automaticamente!");
+            mostrarToast("Dados organizados automaticamente!");
 
         } catch (error) {
             console.error(error);
-            showToast("Ocorreu um erro ao organizar os dados.");
+            mostrarToast("Ocorreu um erro ao organizar os dados.");
         } finally {
             organizeText.style.display = 'inline';
             loadingSpinner.style.display = 'none';
@@ -573,20 +579,94 @@ function organizeData() {
     }, 100);
 }
 
-function showManualMappingContainer() {
+function limparEntradaDados(inputString) {
+    if (!inputString) return "";
+
+    const lines = inputString.split(/\r\n|\r|\n/);
+    const junkPatterns = [
+        /DIÁRIO OFICIAL/i,
+        /ESTADO DO ACRE/i,
+        /SECRETARIA DE ESTADO DE PLANEJAMENTO E GESTÃO/i,
+        /INSTITUTO SOCIOEDUCATIVO/i,
+        /\b(?:segunda|terça|quarta|quinta|sexta|sábado|domingo)-feira,/i,
+        /^\s*\d+\s*$/
+    ];
+
+    const filteredLines = lines.filter(line => !junkPatterns.some(regex => regex.test(line)));
+    let processedString = filteredLines.join(' ');
+
+    processedString = processedString.replace(/-\s+/g, '');
+    processedString = processedString.replace(/º|°/g, '').replace(/(\d+),(\d{1,2})(?![0-9])/g, '$1.$2').trim();
+    processedString = processedString.replace(/\.\s*$/, '').trim();
+    processedString = processedString.replace(/\s{2,}/g, ' ');
+
+    return processedString;
+}
+
+// Lógica corrigida para exibir o tooltip do botão de excluir
+function criarCabecalhosTabela(nomesColunas, container, aoClicarNoCabecalho, aoDeletarColuna, isDeletable = true) {
+    container.innerHTML = '';
+    const globalTooltip = document.getElementById('global-tooltip');
+
+    nomesColunas.forEach((nomeColuna, indice) => {
+        const th = document.createElement('th');
+        th.className = 'relative group py-2';
+        
+        if (isDeletable) {
+            const botaoDeletar = document.createElement('button');
+            botaoDeletar.className = 'absolute top-0 left-0 p-1 text-red-500 opacity-0 group-hover:opacity-100 group-hover:text-red-700 transition-opacity duration-200';
+            botaoDeletar.textContent = '×';
+            botaoDeletar.onclick = (e) => {
+                e.stopPropagation();
+                aoDeletarColuna(indice);
+            };
+            
+            botaoDeletar.onmouseover = (e) => {
+                globalTooltip.textContent = 'Excluir Coluna';
+                globalTooltip.style.left = `${e.clientX + 10}px`;
+                globalTooltip.style.top = `${e.clientY + 10}px`;
+                globalTooltip.classList.remove('opacity-0', 'invisible');
+            };
+            botaoDeletar.onmouseout = () => {
+                globalTooltip.classList.add('opacity-0', 'invisible');
+            };
+            
+            th.appendChild(botaoDeletar);
+        }
+
+        const contentContainer = document.createElement('div');
+        contentContainer.className = 'flex items-center justify-center px-4';
+        const spanTexto = document.createElement('span');
+        spanTexto.textContent = nomeColuna;
+        const spanSeta = document.createElement('span');
+        spanSeta.className = 'sort-arrow ml-1 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity duration-200';
+
+        contentContainer.appendChild(spanTexto);
+        contentContainer.appendChild(spanSeta);
+        th.appendChild(contentContainer);
+        
+        if (aoClicarNoCabecalho) {
+            th.onclick = () => aoClicarNoCabecalho(indice);
+        }
+
+        container.appendChild(th);
+    });
+}
+
+function mostrarContainerMapeamentoManual() {
     appState.isManualMapping = true;
     document.getElementById('ContainerResult').style.display = 'none';
     document.getElementById('manualMappingContainer').style.display = 'block';
 
     const rawData = document.getElementById('dataInput').value.trim();
     if (!rawData) {
-        showToast("Por favor, insira dados para poder mapear.", 'warning');
+        mostrarToast("Por favor, insira dados para poder mapear.", 'warning');
         return;
     }
-	
-	const dadosLimpos = limparEntradaDados(rawData);
+    
+    const dadosLimpos = limparEntradaDados(rawData);
     document.getElementById('dataInput').value = dadosLimpos;
-	
+    
     const rowSep = document.getElementById('rowSeparator').value === '\\n' ? '\n' : document.getElementById('rowSeparator').value;
     const colSep = document.getElementById('columnSeparator').value === '\\t' ? '\t' : document.getElementById('columnSeparator').value;
     const userFieldCount = parseInt(document.getElementById('fieldCount').value);
@@ -604,7 +684,7 @@ function showManualMappingContainer() {
     } else {
         const lines = rawData.split(rowSep).filter(line => line.trim() !== '');
         if (lines.length === 0) {
-            showToast("Nenhum dado válido para mapear.", 'warning');
+            mostrarToast("Nenhum dado válido para mapear.", 'warning');
             return;
         }
         const firstLine = lines[0];
@@ -615,52 +695,16 @@ function showManualMappingContainer() {
         document.getElementById('fieldCount').value = initialFields.length;
     }
 
-    createColumnNameInputs(initialFields);
-    updatePreviewTable();
+    criarInputsNomesColunas(initialFields);
+    atualizarTabelaPreview();
 }
 
-function limparEntradaDados(inputString) {
-    if (!inputString) return "";
-
-    // 1. Divide o texto em linhas para aplicar a lógica de filtro
-    const lines = inputString.split(/\r\n|\r|\n/);
-
-    // 2. Define os padrões de "lixo" para filtrar as linhas
-    const junkPatterns = [
-        /DIÁRIO OFICIAL/i,
-        /ESTADO DO ACRE/i,
-        /SECRETARIA DE ESTADO DE PLANEJAMENTO E GESTÃO/i,
-        /INSTITUTO SOCIOEDUCATIVO/i,
-        // Adiciona um padrão para remover linhas que contêm datas
-        /\b(?:segunda|terça|quarta|quinta|sexta|sábado|domingo)-feira,/i,
-        // Adiciona um padrão para remover linhas que contêm apenas um número (provável número de página)
-        /^\s*\d+\s*$/
-    ];
-
-    // 3. Filtra as linhas, mantendo apenas aquelas que não contêm "lixo"
-    const filteredLines = lines.filter(line => !junkPatterns.some(regex => regex.test(line)));
-    
-    // 4. Junta as linhas filtradas em uma única string
-    let processedString = filteredLines.join(' ');
-
-    // 5. Normaliza a string removendo lixo restante
-    processedString = processedString.replace(/-\s+/g, '');
-    processedString = processedString.replace(/º|°/g, '').replace(/(\d+),(\d{1,2})(?![0-9])/g, '$1.$2').trim();
-    processedString = processedString.replace(/\.\s*$/, '').trim();
-
-    // 6. Normaliza espaços para evitar múltiplos espaços entre os dados
-    processedString = processedString.replace(/\s{2,}/g, ' ');
-
-    return processedString;
-}
-
-// Função ÚNICA para criação dos inputs de nome de coluna
-function createColumnNameInputs(initialColumnNames) {
-    const fieldsCount = parseInt(document.getElementById('fieldCount').value);
+function criarInputsNomesColunas(nomesColunasIniciais) {
+    const contagemCampos = parseInt(document.getElementById('fieldCount').value);
     const container = document.getElementById('columnNameInputs');
     container.innerHTML = '';
 
-    for (let i = 0; i < fieldsCount; i++) {
+    for (let i = 0; i < contagemCampos; i++) {
         const div = document.createElement('div');
         div.className = 'w-1/2 md:w-1/3 lg:w-1/4 px-2 mb-4';
         const label = document.createElement('label');
@@ -674,171 +718,138 @@ function createColumnNameInputs(initialColumnNames) {
         input.name = `colName${i}`;
         input.className = 'shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 dark:text-gray-300 dark:bg-gray-800 leading-tight focus:outline-none focus:shadow-outline';
 
-        if (initialColumnNames && initialColumnNames[i]) {
-            input.value = initialColumnNames[i];
+        if (nomesColunasIniciais && nomesColunasIniciais[i]) {
+            input.value = nomesColunasIniciais[i];
         }
 
-        input.addEventListener('input', updatePreviewTable);
+        input.addEventListener('input', atualizarTabelaPreview);
         div.appendChild(input);
         container.appendChild(div);
     }
 }
 
-function hideManualMappingContainer() {
+function esconderContainerMapeamentoManual() {
     appState.isManualMapping = false;
     document.getElementById('organizeForm').style.display = 'block';
     document.getElementById('manualMappingContainer').style.display = 'none';
     document.getElementById('ContainerResult').style.display = 'block';
 }
 
-function updatePreviewTable() {
-    const fieldsCount = parseInt(document.getElementById('fieldCount').value);
-    let organizedData = parseWithManualSettings();
+function atualizarTabelaPreview() {
+    const contagemCampos = parseInt(document.getElementById('fieldCount').value);
+    let dadosOrganizados = analisarComConfiguracoesManuais();
 
-    const columnNames = [];
-    for (let i = 0; i < fieldsCount; i++) {
-        const colNameInput = document.getElementById(`colName${i}`);
-        const colName = colNameInput ? colNameInput.value.trim() : `Coluna ${i + 1}`;
-        columnNames.push(colName || `Coluna ${i + 1}`);
+    const nomesColunas = [];
+    for (let i = 0; i < contagemCampos; i++) {
+        const inputNomeCol = document.getElementById(`colName${i}`);
+        const nomeCol = inputNomeCol ? inputNomeCol.value.trim() : `Coluna ${i + 1}`;
+        nomesColunas.push(nomeCol || `Coluna ${i + 1}`);
     }
 
-    ordenarDados(columnNames, organizedData);
-
     const previewTableHeaders = document.getElementById('previewTableHeaders');
-    previewTableHeaders.innerHTML = '';
-    columnNames.forEach(name => {
-        const th = document.createElement('th');
-        th.className = 'px-4 py-2 bg-gray-200 text-gray-700 dark:bg-gray-600 dark:text-gray-200';
-        th.textContent = name;
-        previewTableHeaders.appendChild(th);
-    });
-
     const previewTableBody = document.getElementById('previewTableBody');
+    
+    // Usa a nova função para criar os cabeçalhos da prévia
+    criarCabecalhosTabela(nomesColunas, previewTableHeaders, null, null, false);
+
     previewTableBody.innerHTML = '';
-    organizedData.slice(0, 5).forEach(row => {
+    dadosOrganizados.slice(0, 5).forEach(linha => {
         const tr = document.createElement('tr');
-        for (let i = 0; i < fieldsCount; i++) {
+        for (let i = 0; i < contagemCampos; i++) {
             const td = document.createElement('td');
             td.className = 'border px-4 py-2 dark:border-gray-500';
 
-            const colName = columnNames[i];
-            const cellValue = row[i];
-            const numericValue = parseFloat(cellValue);
-            let displayValue = cellValue || '';
+            const nomeCol = nomesColunas[i];
+            const valorCelula = linha[i];
+            const valorNumerico = parseFloat(valorCelula);
+            let valorExibido = valorCelula || '';
 
-            if (!isNaN(numericValue) && (colName.includes('Nota') || colName.includes('Acertos')) && (numericValue % 1 === 0)) {
-                displayValue = parseInt(numericValue, 10);
+            if (!isNaN(valorNumerico) && (nomeCol.includes('Nota') || nomeCol.includes('Acertos')) && (valorNumerico % 1 === 0)) {
+                valorExibido = parseInt(valorNumerico, 10);
             } else {
-                displayValue = cellValue;
+                valorExibido = valorCelula;
             }
 
-            td.textContent = displayValue;
+            td.textContent = valorExibido;
             tr.appendChild(td);
         }
         previewTableBody.appendChild(tr);
     });
 }
 
-function applyManualMapping() {
-    const newColumnNames = [];
-    const fieldsCount = parseInt(document.getElementById('fieldCount').value);
-    for (let i = 0; i < fieldsCount; i++) {
-        const colNameInput = document.getElementById(`colName${i}`);
-        newColumnNames.push((colNameInput && colNameInput.value.trim()) || `Coluna ${i + 1}`);
+function aplicarMapeamentoManual() {
+    const novosNomesColunas = [];
+    const contagemCampos = parseInt(document.getElementById('fieldCount').value);
+    for (let i = 0; i < contagemCampos; i++) {
+        const inputNomeCol = document.getElementById(`colName${i}`);
+        novosNomesColunas.push((inputNomeCol && inputNomeCol.value.trim()) || `Coluna ${i + 1}`);
     }
 
-    let organizedData = parseWithManualSettings();
+    let dadosOrganizados = analisarComConfiguracoesManuais();
 
-    if (organizedData.length === 0) {
-        showToast('Nenhum dado válido para aplicar o mapeamento.', 'warning');
+    if (dadosOrganizados.length === 0) {
+        mostrarToast('Nenhum dado válido para aplicar o mapeamento.', 'warning');
         return;
     }
 
-    appState.lastOriginalColumnNames = [...newColumnNames];
+    appState.lastOriginalColumnNames = [...novosNomesColunas];
+    
+    // Re-infere os tipos de cada coluna após o mapeamento manual
     appState.columnTypes = {};
-    newColumnNames.forEach(name => {
-        appState.columnTypes[name] = getColumnType(name);
+    novosNomesColunas.forEach(nome => {
+        appState.columnTypes[nome] = obterTipoColuna(nome);
     });
 
-    ordenarDados(newColumnNames, organizedData);
-
-    const addRank = !newColumnNames.some(name => /classificação|posição|ranking/i.test(name));
-    let finalColumnNamesForTable = [...newColumnNames];
-    if (addRank) {
-        organizedData.forEach((row, index) => {
+    const adicionarClassificacao = !novosNomesColunas.some(nome => /classificação|posição|ranking/i.test(nome));
+    let nomesColunasFinais = [...novosNomesColunas];
+    if (adicionarClassificacao) {
+        dadosOrganizados.forEach((row, index) => {
             row.unshift(index + 1);
         });
-        finalColumnNamesForTable.unshift('Classificação');
+        nomesColunasFinais.unshift('Classificação');
     }
 
-    atualizarTabela(finalColumnNamesForTable, organizedData);
+    appState.currentColumnNames = nomesColunasFinais;
+    appState.currentTableData = dadosOrganizados;
+    
+    ordenarTabela(obterIndiceDeOrdenacaoInicial(nomesColunasFinais), true);
+
     document.getElementById('ContainerResult').style.display = 'block';
-    hideManualMappingContainer();
+    esconderContainerMapeamentoManual();
     document.getElementById('ContainerResult').scrollIntoView({
         behavior: 'smooth'
     });
-    showToast('Mapeamento manual aplicado com sucesso!');
+    mostrarToast('Mapeamento manual aplicado com sucesso!');
 }
 
 function atualizarTabela(columnNames, data) {
     const tableHeaders = document.getElementById('tableHeaders');
     const tableBody = document.getElementById('tableBody');
-    tableHeaders.innerHTML = '';
     tableBody.innerHTML = '';
+    
     appState.currentColumnNames = columnNames;
     appState.currentTableData = data;
+    
     const newSortDirections = {};
     appState.currentColumnNames.forEach((name, index) => {
-        const oldIndex = -1;
-        if (oldIndex !== -1 && appState.sortDirections[oldIndex] !== undefined) {
-            newSortDirections[index] = appState.sortDirections[oldIndex];
-        } else {
-            newSortDirections[index] = true;
-        }
+        newSortDirections[index] = appState.sortDirections[index] || undefined;
     });
     appState.sortDirections = newSortDirections;
-    const globalTooltip = document.getElementById('global-tooltip');
 
+    criarCabecalhosTabela(columnNames, tableHeaders, ordenarTabela, excluirColuna);
+
+    // Lógica para exibir a seta apenas na coluna ordenada
     columnNames.forEach((columnName, index) => {
-        const th = document.createElement('th');
-        th.className = 'relative group py-2';
+        const th = tableHeaders.children[index];
+        const arrowSpan = th.querySelector('.sort-arrow');
+        arrowSpan.innerHTML = '';
+        arrowSpan.classList.remove('opacity-100');
 
-        const deleteBtn = document.createElement('button');
-        deleteBtn.className = 'absolute top-0 left-0 p-1 text-red-500 opacity-0 group-hover:opacity-100 group-hover:text-red-700 transition-opacity duration-200';
-        deleteBtn.textContent = '×';
-        deleteBtn.onclick = (e) => {
-            e.stopPropagation();
-            deleteColumn(index);
-        };
-
-        deleteBtn.addEventListener('mouseenter', () => {
-            globalTooltip.classList.remove('opacity-0', 'invisible');
-        });
-        deleteBtn.addEventListener('mouseleave', () => {
-            globalTooltip.classList.add('opacity-0', 'invisible');
-        });
-        deleteBtn.addEventListener('mousemove', (e) => {
-            globalTooltip.style.left = e.clientX + 15 + 'px';
-            globalTooltip.style.top = e.clientY + 15 + 'px';
-        });
-
-        const contentContainer = document.createElement('div');
-        contentContainer.className = 'flex items-center justify-center px-4';
-
-        const textSpan = document.createElement('span');
-        textSpan.textContent = columnName;
-
-        const arrowSpan = document.createElement('span');
-        arrowSpan.className = 'sort-arrow ml-1 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity duration-200';
-
-        th.appendChild(deleteBtn);
-        contentContainer.appendChild(textSpan);
-        contentContainer.appendChild(arrowSpan);
-
-        th.appendChild(contentContainer);
-        th.onclick = () => ordenarTabela(index);
-
-        tableHeaders.appendChild(th);
+        if (appState.sortDirections[index] !== undefined) {
+             const arrow = appState.sortDirections[index] ? '<i class="fas fa-arrow-up"></i>' : '<i class="fas fa-arrow-down"></i>';
+             arrowSpan.innerHTML = arrow;
+             arrowSpan.classList.add('opacity-100');
+        }
     });
 
     data.forEach(row => {
@@ -847,10 +858,12 @@ function atualizarTabela(columnNames, data) {
             const td = document.createElement('td');
             let value = row[i];
             const colName = columnNames[i];
-            const colType = appState.columnTypes[colName] || getColumnType(colName);
+            const colType = appState.columnTypes[colName] || obterTipoColuna(colName);
+            
             if (value !== null && value !== undefined) {
                 value = String(value).replace(/[\r\n]+/g, ' ').trim();
             }
+
             if (value !== null && value !== undefined) {
                 if (colType === 'numeric') {
                     if (colName.includes('Acertos') || (parseFloat(value) % 1 === 0)) {
@@ -874,115 +887,95 @@ function atualizarTabela(columnNames, data) {
     });
 }
 
-function deleteColumn(columnIndex) {
+function excluirColuna(columnIndex) {
     if (confirm(`Tem certeza que deseja excluir a coluna "${appState.currentColumnNames[columnIndex]}"?`)) {
         appState.currentColumnNames.splice(columnIndex, 1);
         appState.currentTableData.forEach(row => {
             row.splice(columnIndex, 1);
         });
         atualizarTabela(appState.currentColumnNames, appState.currentTableData);
-        showToast('Coluna excluída com sucesso!');
+        mostrarToast('Coluna excluída com sucesso!');
         document.getElementById('global-tooltip').classList.add('opacity-0', 'invisible');
     }
 }
 
-function ordenarTabela(columnIndex) {
-    if (appState.isRenamingColumns) {
+function alternarRenomeacaoColunas() {
+    if (appState.isManualMapping) {
         return;
     }
+    appState.isRenamingColumns = !appState.isRenamingColumns;
+
     const table = document.getElementById('resultTable');
-    const tbody = table.getElementsByTagName('tbody')[0];
-    const rows = Array.from(tbody.getElementsByTagName('tr'));
-    const headerCell = table.querySelector(`th:nth-child(${columnIndex + 1})`);
-    const headerText = headerCell.textContent.replace(/[\u2191\u2193]/g, '').replace('×', '').trim();
-    const currentArrow = headerCell.querySelector('.sort-arrow');
-    document.querySelectorAll('#tableHeaders th .sort-arrow').forEach(arrow => {
-        arrow.classList.remove('opacity-100');
-        arrow.classList.add('opacity-0');
-        arrow.innerHTML = '';
-    });
-    appState.sortDirections[columnIndex] = !appState.sortDirections[columnIndex];
-    const colType = appState.columnTypes[headerText] || getColumnType(headerText);
-    const sortedRows = rows.sort((a, b) => {
-        const textA = a.cells[columnIndex].textContent.trim();
-        const textB = b.cells[columnIndex].textContent.trim();
-        let valA, valB;
-        if (colType === 'numeric' || colType === 'integer_numeric') {
-            valA = parseFloat(textA.replace(',', '.'));
-            valB = parseFloat(textB.replace(',', '.'));
-            valA = isNaN(valA) ? (appState.sortDirections[columnIndex] ? Infinity : -Infinity) : valA;
-            valB = isNaN(valB) ? (appState.sortDirections[columnIndex] ? Infinity : -Infinity) : valB;
-            return appState.sortDirections[columnIndex] ? valA - valB : valB - valA;
-        } else if (colType === 'numeric_string') {
-            valA = parseInt(textA);
-            valB = parseInt(textB);
-            valA = isNaN(valA) ? (appState.sortDirections[columnIndex] ? Infinity : -Infinity) : valA;
-            valB = isNaN(valB) ? (appState.sortDirections[columnIndex] ? Infinity : -Infinity) : valB;
-            return appState.sortDirections[columnIndex] ? valA - valB : valB - valA;
-        } else {
-            return appState.sortDirections[columnIndex] ? textA.localeCompare(textB, undefined, {
-                numeric: true,
-                sensitivity: 'base'
-            }) : textB.localeCompare(textA, undefined, {
-                numeric: true,
-                sensitivity: 'base'
-            });
+    const headers = document.querySelectorAll('#tableHeaders th');
+    const deleteButtons = document.querySelectorAll('#tableHeaders th button');
+    const button = document.getElementById('toggleRenameHeadersButton');
+    const icon = button.querySelector('i');
+    const textSpan = button.querySelector('span:not(.tooltip-text)');
+    const tooltip = button.querySelector('.tooltip-text');
+
+    if (appState.isRenamingColumns) {
+        alternarBotoesAcao(true, 'toggleRenameHeadersButton');
+        table.classList.add('table-editing-mode');
+
+        icon.classList.remove('fa-pencil-alt');
+        icon.classList.add('fa-save');
+        textSpan.textContent = 'Salvar Nomes';
+        tooltip.textContent = 'Salve os novos nomes dos cabeçalhos.';
+        button.classList.remove('bg-purple-600', 'hover:bg-purple-700', 'dark:bg-purple-500', 'dark:hover:bg-purple-400');
+        button.classList.add('bg-green-600', 'hover:bg-green-700', 'dark:bg-green-500', 'dark:hover:bg-green-400');
+
+        deleteButtons.forEach(btn => btn.style.display = 'none');
+
+        headers.forEach((th, index) => {
+            const originalText = appState.currentColumnNames[index];
+            th.onclick = null;
+            th.classList.add('editable-header');
+            th.innerHTML = `<input type="text" value="${originalText}" class="w-full bg-transparent text-center font-semibold p-0 text-sm border-none focus:ring-0" data-original-index="${index}">`;
+        });
+
+        const firstInput = headers[0].querySelector('input');
+        if (firstInput) firstInput.focus();
+
+    } else {
+        alternarBotoesAcao(false);
+        table.classList.remove('table-editing-mode');
+
+        icon.classList.remove('fa-save');
+        icon.classList.add('fa-pencil-alt');
+        textSpan.textContent = 'Renomear Cabeçalhos';
+        tooltip.textContent = 'Mude os nomes dos cabeçalhos.';
+        button.classList.remove('bg-green-600', 'hover:bg-green-700', 'dark:bg-green-500', 'dark:hover:bg-green-400');
+        button.classList.add('bg-purple-600', 'hover:bg-purple-700', 'dark:bg-purple-500', 'dark:hover:bg-purple-400');
+
+        const newColumnNames = [];
+        headers.forEach(th => {
+            const input = th.querySelector('input');
+            const newName = input ? input.value.trim() : th.textContent.trim();
+            newColumnNames.push(newName);
+        });
+
+        appState.currentColumnNames = newColumnNames;
+        atualizarTabela(appState.currentColumnNames, appState.currentTableData);
+        mostrarToast('Nomes dos cabeçalhos atualizados!');
+    }
+}
+
+
+document.addEventListener('DOMContentLoaded', (event) => {
+    document.getElementById('rowSeparator').addEventListener('change', atualizarTabelaPreview);
+    document.getElementById('columnSeparator').addEventListener('change', atualizarTabelaPreview);
+    document.getElementById('fieldCount').addEventListener('input', () => {
+        const fieldCount = parseInt(document.getElementById('fieldCount').value) || 0;
+        const existingNames = Array.from(document.querySelectorAll('#columnNameInputs input')).map(input => input.value);
+        while (existingNames.length < fieldCount) {
+            existingNames.push(`Coluna ${existingNames.length + 1}`);
         }
+        criarInputsNomesColunas(existingNames.slice(0, fieldCount));
+        atualizarTabelaPreview();
     });
-    tbody.innerHTML = '';
-    sortedRows.forEach(row => tbody.appendChild(row));
-    currentArrow.classList.add('opacity-100');
-    currentArrow.innerHTML = appState.sortDirections[columnIndex] ? '<i class="fas fa-arrow-up"></i>' : '<i class="fas fa-arrow-down"></i>';
-}
-const themeToggle = document.getElementById('themeToggle');
-const themeIcon = document.getElementById('themeIcon');
-const htmlElement = document.documentElement;
-
-function updateThemeToggle(isDark) {
-    if (isDark) {
-        themeIcon.classList.remove('fa-moon');
-        themeIcon.classList.add('fa-sun');
-        themeToggle.title = 'Mudar para modo claro';
-    } else {
-        themeIcon.classList.remove('fa-sun');
-        themeIcon.classList.add('fa-moon');
-        themeToggle.title = 'Mudar para modo escuro';
-    }
-}
-
-function applyTheme(theme) {
-    if (theme === 'dark') {
-        htmlElement.classList.add('dark');
-        updateThemeToggle(true);
-    } else {
-        htmlElement.classList.remove('dark');
-        updateThemeToggle(false);
-    }
-}
-const savedTheme = localStorage.getItem('theme');
-if (savedTheme) {
-    applyTheme(savedTheme);
-} else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-    applyTheme('dark');
-} else {
-    applyTheme('light');
-}
-window.onload = function() {
-    document.getElementById('currentYear').textContent = new Date().getFullYear();
-    document.getElementById('ContainerResult').style.display = 'none';
-    document.getElementById('mapColumnsButton').style.display = 'none';
-};
-themeToggle.addEventListener('click', () => {
-    if (htmlElement.classList.contains('dark')) {
-        applyTheme('light');
-        localStorage.setItem('theme', 'light');
-    } else {
-        applyTheme('dark');
-        localStorage.setItem('theme', 'dark');
-    }
 });
 
-function pesquisarTabela() {
+function filtrarTabela() {
     let input = document.getElementById('searchInput').value.toUpperCase();
     let table = document.getElementById('resultTable');
     let tr = table.getElementsByTagName('tr');
@@ -1001,7 +994,7 @@ function pesquisarTabela() {
 
 function gerarPDF() {
     if (appState.isRenamingColumns) {
-        toggleColumnRename();
+        alternarRenomeacaoColunas();
     }
 
     try {
@@ -1013,7 +1006,7 @@ function gerarPDF() {
         const lineHeight = 10;
         const table = document.getElementById('resultTable');
         if (!table || table.querySelector('tbody').children.length === 0) {
-            alert("Erro: Gere a tabela primeiro clicando em 'Organizar'!");
+            mostrarToast("Erro: Gere a tabela primeiro clicando em 'Organizar'!");
             return;
         }
 
@@ -1074,21 +1067,21 @@ function gerarPDF() {
         });
 
         window.open(doc.output('bloburl'), '_blank');
-        showToast('PDF gerado e aberto em uma nova aba.');
+        mostrarToast('PDF gerado e aberto em uma nova aba.');
     } catch (error) {
         console.error("Erro ao gerar PDF:", error);
-        alert("Erro ao gerar PDF. Veja o console para detalhes.");
+        mostrarToast("Erro ao gerar PDF. Veja o console para detalhes.");
     }
 }
 
 function exportarCSV() {
     if (appState.isRenamingColumns) {
-        toggleColumnRename();
+        alternarRenomeacaoColunas();
     }
     const table = document.getElementById('resultTable');
     const visibleRows = Array.from(table.querySelectorAll('tbody tr:not([style*="display: none"])'));
     if (visibleRows.length === 0) {
-        alert("Não há dados visíveis para exportar. Limpe a busca ou verifique os dados.");
+        mostrarToast("Não há dados visíveis para exportar. Limpe a busca ou verifique os dados.");
         return;
     }
     const headers = Array.from(table.querySelectorAll('thead th'))
@@ -1116,81 +1109,55 @@ function exportarCSV() {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(link.href);
-    showToast('Arquivo CSV gerado com sucesso, verifique seus downloads!');
+    mostrarToast('Arquivo CSV gerado com sucesso, verifique seus downloads!');
 }
 
-function toggleColumnRename() {
-    if (appState.isManualMapping) {
-        return;
-    }
-    appState.isRenamingColumns = !appState.isRenamingColumns;
+const themeToggle = document.getElementById('themeToggle');
+const themeIcon = document.getElementById('themeIcon');
+const htmlElement = document.documentElement;
 
-    const table = document.getElementById('resultTable');
-    const headers = document.querySelectorAll('#tableHeaders th');
-    const deleteButtons = document.querySelectorAll('#tableHeaders th button');
-    const button = document.getElementById('toggleRenameHeadersButton');
-    const icon = button.querySelector('i');
-    const textSpan = button.querySelector('span:not(.tooltip-text)');
-    const tooltip = button.querySelector('.tooltip-text');
-
-    if (appState.isRenamingColumns) {
-        toggleActionButtons(true, 'toggleRenameHeadersButton');
-        table.classList.add('table-editing-mode');
-
-        icon.classList.remove('fa-pencil-alt');
-        icon.classList.add('fa-save');
-        textSpan.textContent = 'Salvar Nomes';
-        tooltip.textContent = 'Salve os novos nomes dos cabeçalhos.';
-        button.classList.remove('bg-purple-600', 'hover:bg-purple-700', 'dark:bg-purple-500', 'dark:hover:bg-purple-400');
-        button.classList.add('bg-green-600', 'hover:bg-green-700', 'dark:bg-green-500', 'dark:hover:bg-green-400');
-
-        deleteButtons.forEach(btn => btn.style.display = 'none');
-
-        headers.forEach((th, index) => {
-            const originalText = appState.currentColumnNames[index];
-            th.onclick = null;
-            th.classList.add('editable-header');
-            th.innerHTML = `<input type="text" value="${originalText}" class="w-full bg-transparent text-center font-semibold p-0 text-sm border-none focus:ring-0" data-original-index="${index}">`;
-        });
-
-        const firstInput = headers[0].querySelector('input');
-        if (firstInput) firstInput.focus();
-
+function updateThemeToggle(isDark) {
+    if (isDark) {
+        themeIcon.classList.remove('fa-moon');
+        themeIcon.classList.add('fa-sun');
+        themeToggle.title = 'Mudar para modo claro';
     } else {
-        toggleActionButtons(false);
-        table.classList.remove('table-editing-mode');
-
-        icon.classList.remove('fa-save');
-        icon.classList.add('fa-pencil-alt');
-        textSpan.textContent = 'Renomear Cabeçalhos';
-        tooltip.textContent = 'Mude os nomes dos cabeçalhos.';
-        button.classList.remove('bg-green-600', 'hover:bg-green-700', 'dark:bg-green-500', 'dark:hover:bg-green-400');
-        button.classList.add('bg-purple-600', 'hover:bg-purple-700', 'dark:bg-purple-500', 'dark:hover:bg-purple-400');
-
-        const newColumnNames = [];
-        headers.forEach(th => {
-            const input = th.querySelector('input');
-            const newName = input ? input.value.trim() : th.textContent.trim();
-            newColumnNames.push(newName);
-        });
-
-        appState.currentColumnNames = newColumnNames;
-        atualizarTabela(appState.currentColumnNames, appState.currentTableData);
-        showToast('Nomes dos cabeçalhos atualizados!');
+        themeIcon.classList.remove('fa-sun');
+        themeIcon.classList.add('fa-moon');
+        themeToggle.title = 'Mudar para modo escuro';
     }
 }
 
+function applyTheme(theme) {
+    if (theme === 'dark') {
+        htmlElement.classList.add('dark');
+        updateThemeToggle(true);
+    } else {
+        htmlElement.classList.remove('dark');
+        updateThemeToggle(false);
+    }
+}
+const savedTheme = localStorage.getItem('theme');
+if (savedTheme) {
+    applyTheme(savedTheme);
+} else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+    applyTheme('dark');
+} else {
+    applyTheme('light');
+}
 
-document.addEventListener('DOMContentLoaded', (event) => {
-    document.getElementById('rowSeparator').addEventListener('change', updatePreviewTable);
-    document.getElementById('columnSeparator').addEventListener('change', updatePreviewTable);
-    document.getElementById('fieldCount').addEventListener('input', () => {
-        const fieldCount = parseInt(document.getElementById('fieldCount').value) || 0;
-        const existingNames = Array.from(document.querySelectorAll('#columnNameInputs input')).map(input => input.value);
-        while (existingNames.length < fieldCount) {
-            existingNames.push(`Coluna ${existingNames.length + 1}`);
-        }
-        createColumnNameInputs(existingNames.slice(0, fieldCount));
-        updatePreviewTable();
-    });
+window.onload = function() {
+    document.getElementById('currentYear').textContent = new Date().getFullYear();
+    document.getElementById('ContainerResult').style.display = 'none';
+    document.getElementById('mapColumnsButton').style.display = 'none';
+};
+
+themeToggle.addEventListener('click', () => {
+    if (htmlElement.classList.contains('dark')) {
+        applyTheme('light');
+        localStorage.setItem('theme', 'light');
+    } else {
+        applyTheme('dark');
+        localStorage.setItem('theme', 'dark');
+    }
 });
