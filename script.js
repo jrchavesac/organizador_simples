@@ -245,24 +245,14 @@ function getColumnType(columnName) {
     return 'string';
 }
 
-function inferAndApplyPattern(rawInputString) {
-    if (!rawInputString) {
+function inferAndApplyPattern(processedString) {
+    if (!processedString) {
         return {
             columnNames: [],
             organizedData: [],
             patternDetected: null
         };
     }
-
-    const lines = rawInputString.split(/\r\n|\r|\n/);
-    const regexDiarioOficial = /DIÁRIO OFICIAL/i;
-    const filteredLines = lines.filter(line => !regexDiarioOficial.test(line));
-    let processedString = filteredLines.join(' ');
-
-    processedString = processedString.replace(/-\s+/g, '');
-    processedString = processedString.replace(/º|°/g, '').replace(/(\d+),(\d{1,2})(?![0-9])/g, '$1.$2').trim();
-    processedString = processedString.replace(/\.\s*$/, '');
-    processedString = processedString.trim();
 
     let candidateBlocks = [];
     let finalColumnNames = [];
@@ -434,7 +424,15 @@ function resetAppState() {
 
 function organizeData() {
     resetAppState();
-    const dataInput = document.getElementById('dataInput').value.trim();
+    
+	const dataInput = document.getElementById('dataInput').value.trim();
+
+    // 1. Chame a função de limpeza e armazene o resultado
+    const dadosLimpos = limparEntradaDados(dataInput);
+    
+    // ⭐ 2. Atualize o valor do campo de entrada com os dados limpos
+    document.getElementById('dataInput').value = dadosLimpos;
+	
     const containerResult = document.getElementById('ContainerResult');
     const organizeButton = document.getElementById('organizeButton');
     const loadingSpinner = document.getElementById('loadingSpinner');
@@ -493,7 +491,7 @@ function organizeData() {
                 return;
             }
 
-            const result = inferAndApplyPattern(dataInput);
+            const result = inferAndApplyPattern(dadosLimpos);
             // Uso de .map para clonagem de arrays
             organizedData = result.organizedData.map(row => [...row]);
             columnNames = [...result.columnNames];
@@ -585,7 +583,10 @@ function showManualMappingContainer() {
         showToast("Por favor, insira dados para poder mapear.", 'warning');
         return;
     }
-
+	
+	const dadosLimpos = limparEntradaDados(rawData);
+    document.getElementById('dataInput').value = dadosLimpos;
+	
     const rowSep = document.getElementById('rowSeparator').value === '\\n' ? '\n' : document.getElementById('rowSeparator').value;
     const colSep = document.getElementById('columnSeparator').value === '\\t' ? '\t' : document.getElementById('columnSeparator').value;
     const userFieldCount = parseInt(document.getElementById('fieldCount').value);
@@ -616,6 +617,21 @@ function showManualMappingContainer() {
 
     createColumnNameInputs(initialFields);
     updatePreviewTable();
+}
+
+function limparEntradaDados(inputString) {
+    if (!inputString) return "";
+
+    const lines = inputString.split(/\r\n|\r|\n/);
+    const regexDiarioOficial = /DIÁRIO OFICIAL/i;
+    const filteredLines = lines.filter(line => !regexDiarioOficial.test(line));
+    let processedString = filteredLines.join(' ');
+
+    processedString = processedString.replace(/-\s+/g, '');
+    processedString = processedString.replace(/º|°/g, '').replace(/(\d+),(\d{1,2})(?![0-9])/g, '$1.$2').trim();
+    processedString = processedString.replace(/\.\s*$/, '').trim();
+
+    return processedString;
 }
 
 // Função ÚNICA para criação dos inputs de nome de coluna
