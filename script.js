@@ -245,6 +245,26 @@ function getColumnType(columnName) {
     return 'string';
 }
 
+function limparEntradaDados(inputString) {
+    if (!inputString) return "";
+    const lines = inputString.split(/\r\n|\r|\n/);
+    const junkPatterns = [
+        /DIÁRIO OFICIAL/i,
+        /ESTADO DO ACRE/i,
+        /SECRETARIA DE ESTADO DE PLANEJAMENTO E GESTÃO/i,
+        /INSTITUTO SOCIOEDUCATIVO/i,
+        /\b(?:segunda|terça|quarta|quinta|sexta|sábado|domingo)-feira,/i,
+        /^\s*\d+\s*$/
+    ];
+    const filteredLines = lines.filter(line => !junkPatterns.some(regex => regex.test(line)));
+    let processedString = filteredLines.join(' ');
+    processedString = processedString.replace(/-\s+/g, '');
+    processedString = processedString.replace(/º|°/g, '').replace(/(\d+),(\d{1,2})(?![0-9])/g, '$1.$2').trim();
+    processedString = processedString.replace(/\.\s*$/, '').trim();
+    processedString = processedString.replace(/\s{2,}/g, ' ');
+    return processedString;
+}
+
 function inferAndApplyPattern(rawInputString) {
     if (!rawInputString) {
         return {
@@ -254,15 +274,8 @@ function inferAndApplyPattern(rawInputString) {
         };
     }
 
-    const lines = rawInputString.split(/\r\n|\r|\n/);
-    const regexDiarioOficial = /DIÁRIO OFICIAL/i;
-    const filteredLines = lines.filter(line => !regexDiarioOficial.test(line));
-    let processedString = filteredLines.join(' ');
-
-    processedString = processedString.replace(/-\s+/g, '');
-    processedString = processedString.replace(/º|°/g, '').replace(/(\d+),(\d{1,2})(?![0-9])/g, '$1.$2').trim();
-    processedString = processedString.replace(/\.\s*$/, '');
-    processedString = processedString.trim();
+    // Chama a nova função de limpeza para processar a string de entrada
+    const processedString = limparEntradaDados(rawInputString);
 
     let candidateBlocks = [];
     let finalColumnNames = [];
