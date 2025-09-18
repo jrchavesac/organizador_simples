@@ -147,7 +147,7 @@ const patterns = [
         regex: /(\d+),\s*(\d+),\s*([A-ZÀ-Ÿ\s.()-]+?),\s*(\d+\.?\d*)\s*(?:\/\s*|$)/gi,
         columns: ['Classificação', 'Inscrição', 'Nome', 'Nota']
     },
-	{
+    {
         name: 'Inscrição, Nome, Nota, Classificação',
         regex: /(\d+),\s*([A-ZÀ-Ÿ\s.()-]+?),\s*(\d+\.?\d*),\s*(\d+)\s*(?:\/\s*|$)/gi,
         columns: ['Inscrição', 'Nome', 'Nota', 'Classificação']
@@ -367,17 +367,18 @@ function parseWithManualSettings() {
 }
 
 function ordenarDados(columnNames, data) {
-    data.sort((a, b) => {
-        const sortIndexes = {
-            notaObjetiva: columnNames.indexOf('Nota Objetiva'),
-            notaP2: columnNames.indexOf('Nota P2'),
-            notaFinal: columnNames.indexOf('Nota Final') !== -1 ? columnNames.indexOf('Nota Final') : columnNames.indexOf('Nota Final Total'),
-            nota: columnNames.indexOf('Nota'),
-            classificacao: columnNames.findIndex(name => /classificação|posição|ranking/i.test(name)),
-            nome: columnNames.indexOf('Nome'),
-            idade: columnNames.indexOf('Idade')
-        };
+    const sortIndexes = {
+        notaObjetiva: columnNames.indexOf('Nota Objetiva'),
+        notaP2: columnNames.indexOf('Nota P2'),
+        notaFinal: columnNames.indexOf('Nota Final') !== -1 ? columnNames.indexOf('Nota Final') : columnNames.indexOf('Nota Final Total'),
+        nota: columnNames.indexOf('Nota'),
+        classificacao: columnNames.findIndex(name => /classificação|posição|ranking/i.test(name)),
+        nome: columnNames.indexOf('Nome'),
+        idade: columnNames.indexOf('Idade'),
+        originalIndex: columnNames.indexOf('__originalIndex__')
+    };
 
+    data.sort((a, b) => {
         if (sortIndexes.notaObjetiva !== -1) {
             const valA = a[sortIndexes.notaObjetiva] !== null ? parseFloat(a[sortIndexes.notaObjetiva]) : -Infinity;
             const valB = b[sortIndexes.notaObjetiva] !== null ? parseFloat(b[sortIndexes.notaObjetiva]) : -Infinity;
@@ -387,21 +388,36 @@ function ordenarDados(columnNames, data) {
                 const desempateB = b[sortIndexes.notaP2] !== null ? parseFloat(b[sortIndexes.notaP2]) : -Infinity;
                 if (desempateA !== desempateB) return desempateB - desempateA;
             }
-        }
-        if (sortIndexes.classificacao !== -1) {
-            const valA = a[sortIndexes.classificacao] !== null ? parseInt(a[sortIndexes.classificacao]) : Infinity;
-            const valB = b[sortIndexes.classificacao] !== null ? parseInt(b[sortIndexes.classificacao]) : Infinity;
-            if (valA !== valB) return valA - valB;
+            if (sortIndexes.originalIndex !== -1) {
+                const indexA = a[sortIndexes.originalIndex];
+                const indexB = b[sortIndexes.originalIndex];
+                return indexA - indexB;
+            }
         }
         if (sortIndexes.notaFinal !== -1) {
             const valA = a[sortIndexes.notaFinal] !== null ? parseFloat(a[sortIndexes.notaFinal]) : -Infinity;
             const valB = b[sortIndexes.notaFinal] !== null ? parseFloat(b[sortIndexes.notaFinal]) : -Infinity;
             if (valA !== valB) return valB - valA;
+            if (sortIndexes.originalIndex !== -1) {
+                const indexA = a[sortIndexes.originalIndex];
+                const indexB = b[sortIndexes.originalIndex];
+                return indexA - indexB;
+            }
         }
         if (sortIndexes.nota !== -1) {
             const valA = a[sortIndexes.nota] !== null ? parseFloat(a[sortIndexes.nota]) : -Infinity;
             const valB = b[sortIndexes.nota] !== null ? parseFloat(b[sortIndexes.nota]) : -Infinity;
             if (valA !== valB) return valB - valA;
+            if (sortIndexes.originalIndex !== -1) {
+                const indexA = a[sortIndexes.originalIndex];
+                const indexB = b[sortIndexes.originalIndex];
+                return indexA - indexB;
+            }
+        }
+        if (sortIndexes.classificacao !== -1) {
+            const valA = a[sortIndexes.classificacao] !== null ? parseInt(a[sortIndexes.classificacao]) : Infinity;
+            const valB = b[sortIndexes.classificacao] !== null ? parseInt(b[sortIndexes.classificacao]) : Infinity;
+            if (valA !== valB) return valA - valB;
         }
         if (sortIndexes.idade !== -1) {
             const valA = a[sortIndexes.idade] !== null ? parseInt(a[sortIndexes.idade]) : -Infinity;
@@ -494,9 +510,8 @@ function organizeData() {
             }
 
             const result = inferAndApplyPattern(dataInput);
-            // Uso de .map para clonagem de arrays
-            organizedData = result.organizedData.map(row => [...row]);
-            columnNames = [...result.columnNames];
+            organizedData = result.organizedData.map((row, index) => [...row, index]);
+            columnNames = [...result.columnNames, '__originalIndex__'];
             patternDetected = result.patternDetected;
 
             if (!patternDetected) {
@@ -515,14 +530,21 @@ function organizeData() {
                     source2,
                     destination
                 } = patternDetected.calculation;
+
+                // Remove o índice original para o cálculo e o adiciona no final novamente
+                const originalIndex = columnNames.pop();
+                organizedData.forEach(row => row.pop());
+
                 columnNames.push(destination);
-                organizedData = organizedData.map(row => {
+                organizedData = organizedData.map((row, index) => {
                     const value1 = parseFloat(row[columnNames.indexOf(source1)]);
                     const value2 = parseFloat(row[columnNames.indexOf(source2)]);
                     const total = value1 + value2;
-                    return [...row, total];
+                    return [...row, total, index];
                 });
+                columnNames.push(originalIndex);
             }
+
 
             appState.lastOriginalColumnNames = [...columnNames];
             appState.lastInferredData = {
@@ -548,6 +570,14 @@ function organizeData() {
                 columnNames.unshift('Classificação');
                 appState.columnTypes['Classificação'] = 'integer_numeric';
             }
+            
+            // Remove a coluna de índice antes de exibir
+            const originalIndexPos = columnNames.indexOf('__originalIndex__');
+            if (originalIndexPos !== -1) {
+                columnNames.splice(originalIndexPos, 1);
+                organizedData.forEach(row => row.splice(originalIndexPos, 1));
+            }
+
 
             appState.currentColumnNames = columnNames;
             appState.currentTableData = organizedData;
@@ -666,7 +696,11 @@ function updatePreviewTable() {
         columnNames.push(colName || `Coluna ${i + 1}`);
     }
 
-    ordenarDados(columnNames, organizedData);
+    // Adiciona o índice original para ordenação na pré-visualização
+    organizedData = organizedData.map((row, index) => [...row, index]);
+    const previewColumnNames = [...columnNames, '__originalIndex__'];
+    
+    ordenarDados(previewColumnNames, organizedData);
 
     const previewTableHeaders = document.getElementById('previewTableHeaders');
     previewTableHeaders.innerHTML = '';
@@ -718,13 +752,18 @@ function applyManualMapping() {
         return;
     }
 
-    appState.lastOriginalColumnNames = [...newColumnNames];
+    // Adiciona o índice original para ordenação
+    organizedData = organizedData.map((row, index) => [...row, index]);
+    const finalColumnNames = [...newColumnNames, '__originalIndex__'];
+
+
+    appState.lastOriginalColumnNames = [...finalColumnNames];
     appState.columnTypes = {};
-    newColumnNames.forEach(name => {
+    finalColumnNames.forEach(name => {
         appState.columnTypes[name] = getColumnType(name);
     });
 
-    ordenarDados(newColumnNames, organizedData);
+    ordenarDados(finalColumnNames, organizedData);
 
     const addRank = !newColumnNames.some(name => /classificação|posição|ranking/i.test(name));
     let finalColumnNamesForTable = [...newColumnNames];
@@ -735,6 +774,12 @@ function applyManualMapping() {
         finalColumnNamesForTable.unshift('Classificação');
     }
 
+    // Remove a coluna de índice antes de exibir
+    const originalIndexPos = finalColumnNames.indexOf('__originalIndex__');
+    if (originalIndexPos !== -1) {
+        organizedData.forEach(row => row.splice(originalIndexPos, 1));
+    }
+    
     atualizarTabela(finalColumnNamesForTable, organizedData);
     document.getElementById('ContainerResult').style.display = 'block';
     hideManualMappingContainer();
