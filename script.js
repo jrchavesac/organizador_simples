@@ -254,7 +254,11 @@ function limparEntradaDados(inputString) {
         /SECRETARIA DE ESTADO DE PLANEJAMENTO E GESTÃO/i,
         /INSTITUTO SOCIOEDUCATIVO/i,
         /\b(?:segunda|terça|quarta|quinta|sexta|sábado|domingo)-feira,/i,
-        /^\s*\d+\s*$/
+        /^\s*\d+\s*$/,
+		/Secretaria de Estado de Administração/i,
+        /Resultado final da prova objetiva/i,
+        /Edital de Abertura/i,
+        /nos seguintes termos/i
     ];
     const filteredLines = lines.filter(line => !junkPatterns.some(regex => regex.test(line)));
     let processedString = filteredLines.join(' ');
@@ -265,18 +269,15 @@ function limparEntradaDados(inputString) {
     return processedString;
 }
 
-function inferAndApplyPattern(rawInputString) {
-    if (!rawInputString) {
+function inferAndApplyPattern(processedString) { // Agora recebe a string já processada
+    if (!processedString) {
         return {
             columnNames: [],
             organizedData: [],
             patternDetected: null
         };
     }
-
-    // Chama a nova função de limpeza para processar a string de entrada
-    const processedString = limparEntradaDados(rawInputString);
-
+    
     let candidateBlocks = [];
     let finalColumnNames = [];
     let patternFound = null;
@@ -463,7 +464,7 @@ function resetAppState() {
 
 function organizeData() {
     resetAppState();
-    const dataInput = document.getElementById('dataInput').value.trim();
+    const dataInput = document.getElementById('dataInput');
     const containerResult = document.getElementById('ContainerResult');
     const organizeButton = document.getElementById('organizeButton');
     const loadingSpinner = document.getElementById('loadingSpinner');
@@ -475,7 +476,9 @@ function organizeData() {
     }
     toggleActionButtons(false);
 
-    if (dataInput === "") {
+    const rawDataInput = dataInput.value;
+
+    if (rawDataInput === "") {
         alert("Por favor, digite algum dado na 'Lista dos candidatos' para organizar.");
         return;
     }
@@ -490,8 +493,14 @@ function organizeData() {
         let patternDetected;
         let isCsv = false;
 
+        // Limpa os dados na memória
+        const cleanedData = limparEntradaDados(rawDataInput);
+
+        // AQUI: Adiciona a linha para atualizar o campo de texto visualmente
+        dataInput.value = cleanedData;
+        
         try {
-            const lines = dataInput.split('\n');
+            const lines = cleanedData.split('\n');
             const hasMultipleLines = lines.length > 1;
             let delimiter = '';
 
@@ -522,7 +531,7 @@ function organizeData() {
                 return;
             }
 
-            const result = inferAndApplyPattern(dataInput);
+            const result = inferAndApplyPattern(cleanedData);
             organizedData = result.organizedData.map((row, index) => [...row, index]);
             columnNames = [...result.columnNames, '__originalIndex__'];
             patternDetected = result.patternDetected;
@@ -544,7 +553,6 @@ function organizeData() {
                     destination
                 } = patternDetected.calculation;
 
-                // Remove o índice original para o cálculo e o adiciona no final novamente
                 const originalIndex = columnNames.pop();
                 organizedData.forEach(row => row.pop());
 
@@ -584,7 +592,6 @@ function organizeData() {
                 appState.columnTypes['Classificação'] = 'integer_numeric';
             }
             
-            // Remove a coluna de índice antes de exibir
             const originalIndexPos = columnNames.indexOf('__originalIndex__');
             if (originalIndexPos !== -1) {
                 columnNames.splice(originalIndexPos, 1);
@@ -623,7 +630,13 @@ function showManualMappingContainer() {
     document.getElementById('ContainerResult').style.display = 'none';
     document.getElementById('manualMappingContainer').style.display = 'block';
 
-    const rawData = document.getElementById('dataInput').value.trim();
+    const dataInput = document.getElementById('dataInput').value;
+
+    const cleanedData = limparEntradaDados(dataInput);
+    
+    document.getElementById('dataInput').value = cleanedData;
+
+    const rawData = cleanedData.trim();
     if (!rawData) {
         showToast("Por favor, insira dados para poder mapear.", 'warning');
         return;
@@ -765,10 +778,24 @@ function applyManualMapping() {
         return;
     }
 
+    // Identifica o índice da coluna 'Nota' para conversão e ordenação
+    const notaIndex = newColumnNames.findIndex(name => name.toLowerCase() === 'nota');
+
+    // Converte os valores da coluna 'Nota' para numérico
+    if (notaIndex !== -1) {
+        organizedData = organizedData.map(row => {
+            const newRow = [...row];
+            if (newRow[notaIndex]) {
+                const cleanedValue = newRow[notaIndex].replace(',', '.');
+                newRow[notaIndex] = parseFloat(cleanedValue);
+            }
+            return newRow;
+        });
+    }
+
     // Adiciona o índice original para ordenação
     organizedData = organizedData.map((row, index) => [...row, index]);
     const finalColumnNames = [...newColumnNames, '__originalIndex__'];
-
 
     appState.lastOriginalColumnNames = [...finalColumnNames];
     appState.columnTypes = {};
@@ -776,7 +803,10 @@ function applyManualMapping() {
         appState.columnTypes[name] = getColumnType(name);
     });
 
-    ordenarDados(finalColumnNames, organizedData);
+    // Ordena os dados com base na coluna 'Nota', se existir
+    if (notaIndex !== -1) {
+        ordenarDados(finalColumnNames, organizedData);
+    }
 
     const addRank = !newColumnNames.some(name => /classificação|posição|ranking/i.test(name));
     let finalColumnNamesForTable = [...newColumnNames];
@@ -788,12 +818,15 @@ function applyManualMapping() {
     }
 
     // Remove a coluna de índice antes de exibir
-    const originalIndexPos = finalColumnNames.indexOf('__originalIndex__');
+    const originalIndexPos = finalColumnNamesForTable.indexOf('__originalIndex__');
     if (originalIndexPos !== -1) {
+        finalColumnNamesForTable.splice(originalIndexPos, 1);
         organizedData.forEach(row => row.splice(originalIndexPos, 1));
     }
     
+    // Atualiza a tabela com as colunas e dados finais, sem a coluna de índice
     atualizarTabela(finalColumnNamesForTable, organizedData);
+    
     document.getElementById('ContainerResult').style.display = 'block';
     hideManualMappingContainer();
     document.getElementById('ContainerResult').scrollIntoView({
