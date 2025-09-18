@@ -358,22 +358,29 @@ function analisarComConfiguracoesManuais() {
     return dadosOrganizados;
 }
 
-// ** CORREÇÃO APLICADA AQUI **
-// A lógica de ordenação agora é mais robusta e independente do tipo de mapeamento.
+// ** FUNÇÃO PRINCIPAL DE ORDENAÇÃO **
+// Agora a ordenação não interfere na numeração da Classificação.
 function ordenarTabela(indiceColuna, éOrdenacaoInicial = false) {
-    if (!éOrdenacaoInicial && appState.isRenamingColumns) {
+    if (!appState.currentTableData || appState.currentTableData.length === 0) {
         return;
     }
-    
-    // Obtém o nome da coluna e seu tipo, para usar como dica de ordenação
+
+    if (appState.isRenamingColumns) {
+        return;
+    }
+
     const nomeColuna = appState.currentColumnNames[indiceColuna];
     const tipoColuna = appState.columnTypes[nomeColuna] || obterTipoColuna(nomeColuna);
 
+    console.log(`Ordenando por coluna: ${nomeColuna}, Tipo: ${tipoColuna}`);
+
     if (!éOrdenacaoInicial) {
-        appState.sortDirections[indiceColuna] = !appState.sortDirections[indiceColuna];
+        const direcaoAtual = appState.sortDirections[indiceColuna];
+        appState.sortDirections = {};
+        appState.sortDirections[indiceColuna] = !direcaoAtual;
     } else {
         appState.sortDirections = {};
-        appState.sortDirections[indiceColuna] = (tipoColuna === 'numeric' || tipoColuna === 'integer_numeric') ? false : true;
+        appState.sortDirections[indiceColuna] = (tipoColuna === 'numeric' || nomeColuna.includes('Nota') || nomeColuna.includes('Acertos')) ? false : true;
     }
     
     const direcao = appState.sortDirections[indiceColuna] ? 1 : -1;
@@ -381,46 +388,41 @@ function ordenarTabela(indiceColuna, éOrdenacaoInicial = false) {
     appState.currentTableData.sort((a, b) => {
         let valA = a[indiceColuna];
         let valB = b[indiceColuna];
-
-        // Tenta sempre a ordenação numérica primeiro, se os valores forem válidos
-        const numA = parseFloat(String(valA).replace(',', '.'));
-        const numB = parseFloat(String(valB).replace(',', '.'));
         
-        const aIsNum = isFinite(numA);
-        const bIsNum = isFinite(numB);
+        const aIsNum = isFinite(parseFloat(String(valA).replace(',', '.')));
+        const bIsNum = isFinite(parseFloat(String(valB).replace(',', '.')));
 
-        // Se ambos são numéricos, use a ordenação numérica
         if (aIsNum && bIsNum) {
+            const numA = parseFloat(String(valA).replace(',', '.'));
+            const numB = parseFloat(String(valB).replace(',', '.'));
             return (numA - numB) * direcao;
         }
 
-        // Caso um ou ambos não sejam numéricos, use a ordenação de texto
         const strA = String(valA || '').toLowerCase();
         const strB = String(valB || '').toLowerCase();
         
-        // Trata valores vazios para que fiquem no final
         if (strA === '' && strB !== '') return direcao;
         if (strB === '' && strA !== '') return -direcao;
         if (strA === '' && strB === '') return 0;
         
         return strA.localeCompare(strB, 'pt', { sensitivity: 'base' }) * direcao;
     });
-
+    
+    console.log("Dados após ordenação:", appState.currentTableData);
+    
     atualizarTabela(appState.currentColumnNames, appState.currentTableData);
 }
 
-// Função auxiliar para determinar qual coluna ordenar na inicialização
 function obterIndiceDeOrdenacaoInicial(nomesDasColunas) {
-    const colunasDeOrdenacaoPadrao = ['Nota Objetiva', 'Nota Final Total', 'Nota', 'Classificação', 'Posição', 'Ranking', 'Idade', 'Nome'];
+    const colunasDeOrdenacaoPadrao = ['Nota Final Total', 'Nota Objetiva', 'Nota', 'Pontuação', 'Classificação', 'Posição', 'Ranking', 'Idade', 'Nome'];
     for (const nomeCol of colunasDeOrdenacaoPadrao) {
         const index = nomesDasColunas.indexOf(nomeCol);
         if (index !== -1) {
             return index;
         }
     }
-    return -1; // Não encontrou coluna para ordenação padrão
+    return -1;
 }
-
 
 function reiniciarEstadoApp() {
     appState.sortDirections = {};
@@ -434,6 +436,7 @@ function reiniciarEstadoApp() {
     appState.manualMappingData = null;
 }
 
+// ** FUNÇÃO ORGANIZARDADOS CORRIGIDA PARA O CASO DA NOTA FINAL TOTAL **
 function organizarDados() {
     reiniciarEstadoApp();
     const dataInput = document.getElementById('dataInput').value.trim();
@@ -513,19 +516,33 @@ function organizarDados() {
                 return;
             }
 
-            if (patternDetected && patternDetected.calculation) {
+            const isNewTotalColumnCreated = (patternDetected && patternDetected.calculation);
+            let notaFinalTotalIndex = -1;
+            
+            if (isNewTotalColumnCreated) {
                 const {
                     source1,
                     source2,
                     destination
                 } = patternDetected.calculation;
                 columnNames.push(destination);
+                notaFinalTotalIndex = columnNames.indexOf(destination);
                 organizedData = organizedData.map(row => {
                     const value1 = parseFloat(row[columnNames.indexOf(source1)]);
                     const value2 = parseFloat(row[columnNames.indexOf(source2)]);
                     const total = value1 + value2;
                     return [...row, total];
                 });
+            }
+
+            const hasExistingClassification = columnNames.some(name => /classificação|posição|ranking/i.test(name));
+            if (!hasExistingClassification) {
+                // Adiciona a coluna de Classificação se ela não existir
+                organizedData.forEach((row, index) => {
+                    row.unshift(index + 1);
+                });
+                columnNames.unshift('Classificação');
+                appState.columnTypes['Classificação'] = 'integer_numeric';
             }
 
             appState.lastOriginalColumnNames = [...columnNames];
@@ -539,24 +556,47 @@ function organizarDados() {
             columnNames.forEach(name => {
                 appState.columnTypes[name] = obterTipoColuna(name);
             });
-
-            const hasExistingClassification = columnNames.some(name => /classificação|posição|ranking/i.test(name));
-            if (!hasExistingClassification) {
-                organizedData.forEach((row, index) => {
-                    row.unshift(index + 1);
-                });
-                columnNames.unshift('Classificação');
-                appState.columnTypes['Classificação'] = 'integer_numeric';
-            }
             
             appState.currentColumnNames = columnNames;
             appState.currentTableData = organizedData;
 
-            if (patternDetected && patternDetected.name !== 'Lista de Nomes (separados por vírgula)') {
-                ordenarTabela(obterIndiceDeOrdenacaoInicial(columnNames), true);
+            // ** LÓGICA CHAVE: ORDENAR E RECLASSIFICAR SÓ NESTE PONTO **
+            if (isNewTotalColumnCreated) {
+                // Ordena e reclassifica pela nota final, se a coluna foi criada
+                const finalTotalIndex = appState.currentColumnNames.indexOf('Nota Final Total');
+                appState.currentTableData.sort((a, b) => {
+                    const numA = parseFloat(String(a[finalTotalIndex]).replace(',', '.'));
+                    const numB = parseFloat(String(b[finalTotalIndex]).replace(',', '.'));
+                    return numB - numA; // Ordena decrescente
+                });
+
+                const classificacaoIndex = appState.currentColumnNames.indexOf('Classificação');
+                if (classificacaoIndex !== -1) {
+                    appState.currentTableData.forEach((row, index) => {
+                        row[classificacaoIndex] = index + 1;
+                    });
+                }
+                
+                // Marca a coluna como ordenada
+                appState.sortDirections = {};
+                appState.sortDirections[finalTotalIndex] = false;
             } else {
-                atualizarTabela(appState.currentColumnNames, appState.currentTableData);
+                // Se a coluna de nota não foi criada, ordena pela classificação inicial
+                const classificacaoIndex = appState.currentColumnNames.indexOf('Classificação');
+                if(classificacaoIndex !== -1) {
+                    appState.currentTableData.sort((a, b) => {
+                        const numA = parseInt(String(a[classificacaoIndex]), 10);
+                        const numB = parseInt(String(b[classificacaoIndex]), 10);
+                        return numA - numB; // Ordena crescente
+                    });
+                    appState.sortDirections = {};
+                    appState.sortDirections[classificacaoIndex] = true;
+                }
             }
+            
+            console.log("Dados após ordenação inicial e reclassificação:", appState.currentTableData);
+            
+            atualizarTabela(appState.currentColumnNames, appState.currentTableData);
             
             containerResult.style.display = 'block';
             mapColumnsButton.style.display = 'flex';
@@ -603,7 +643,6 @@ function limparEntradaDados(inputString) {
     return processedString;
 }
 
-// Lógica corrigida para exibir o tooltip do botão de excluir
 function criarCabecalhosTabela(nomesColunas, container, aoClicarNoCabecalho, aoDeletarColuna, isDeletable = true) {
     container.innerHTML = '';
     const globalTooltip = document.getElementById('global-tooltip');
@@ -749,7 +788,6 @@ function atualizarTabelaPreview() {
     const previewTableHeaders = document.getElementById('previewTableHeaders');
     const previewTableBody = document.getElementById('previewTableBody');
     
-    // Usa a nova função para criar os cabeçalhos da prévia
     criarCabecalhosTabela(nomesColunas, previewTableHeaders, null, null, false);
 
     previewTableBody.innerHTML = '';
@@ -794,7 +832,6 @@ function aplicarMapeamentoManual() {
 
     appState.lastOriginalColumnNames = [...novosNomesColunas];
     
-    // Re-infere os tipos de cada coluna após o mapeamento manual
     appState.columnTypes = {};
     novosNomesColunas.forEach(nome => {
         appState.columnTypes[nome] = obterTipoColuna(nome);
@@ -838,7 +875,6 @@ function atualizarTabela(columnNames, data) {
 
     criarCabecalhosTabela(columnNames, tableHeaders, ordenarTabela, excluirColuna);
 
-    // Lógica para exibir a seta apenas na coluna ordenada
     columnNames.forEach((columnName, index) => {
         const th = tableHeaders.children[index];
         const arrowSpan = th.querySelector('.sort-arrow');
@@ -846,9 +882,9 @@ function atualizarTabela(columnNames, data) {
         arrowSpan.classList.remove('opacity-100');
 
         if (appState.sortDirections[index] !== undefined) {
-             const arrow = appState.sortDirections[index] ? '<i class="fas fa-arrow-up"></i>' : '<i class="fas fa-arrow-down"></i>';
-             arrowSpan.innerHTML = arrow;
-             arrowSpan.classList.add('opacity-100');
+            const arrow = appState.sortDirections[index] ? '<i class="fas fa-arrow-up"></i>' : '<i class="fas fa-arrow-down"></i>';
+            arrowSpan.innerHTML = arrow;
+            arrowSpan.classList.add('opacity-100');
         }
     });
 
