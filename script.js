@@ -1,5 +1,4 @@
 document.getElementById('currentYear').textContent = new Date().getFullYear();
-
 const typeMapping = {
     'classificacao': 'integer_numeric',
     'posicao': 'integer_numeric',
@@ -12,7 +11,6 @@ const typeMapping = {
     'acertos': 'numeric',
     'idade': 'integer_numeric'
 };
-
 const predefinedColumnOptions = [{
     value: '',
     text: 'Selecione...'
@@ -149,7 +147,7 @@ const patterns = [
         regex: /(\d+),\s*(\d+),\s*([A-ZÀ-Ÿ\s.()-]+?),\s*(\d+\.?\d*)\s*(?:\/\s*|$)/gi,
         columns: ['Classificação', 'Inscrição', 'Nome', 'Nota']
     },
-    {
+	{
         name: 'Inscrição, Nome, Nota, Classificação',
         regex: /(\d+),\s*([A-ZÀ-Ÿ\s.()-]+?),\s*(\d+\.?\d*),\s*(\d+)\s*(?:\/\s*|$)/gi,
         columns: ['Inscrição', 'Nome', 'Nota', 'Classificação']
@@ -216,116 +214,126 @@ const patterns = [
     }
 ];
 
-function mostrarToast(mensagem, duracao = 3000) {
+function showToast(message, duration = 3000) {
     const toast = document.getElementById('toast-notification');
     if (!toast) return;
-    toast.textContent = mensagem;
+    toast.textContent = message;
     toast.classList.remove('translate-y-20', 'opacity-0');
     setTimeout(() => {
         toast.classList.add('translate-y-20', 'opacity-0');
-    }, duracao);
+    }, duration);
 }
 
-function alternarBotoesAcao(desabilitar, excetoId = null) {
+function toggleActionButtons(disable, exceptId = null) {
     const buttonIds = ['gerarPdfButton', 'exportCsvButton', 'toggleRenameHeadersButton', 'mapColumnsButton'];
     buttonIds.forEach(id => {
-        if (id !== excetoId) {
+        if (id !== exceptId) {
             const button = document.getElementById(id);
             if (button) {
-                button.disabled = desabilitar;
+                button.disabled = disable;
             }
         }
     });
 }
 
-function obterTipoColuna(nomeColuna) {
-    const nomeMinusculo = nomeColuna.toLowerCase();
+function getColumnType(columnName) {
+    const lowerName = columnName.toLowerCase();
     for (const key in typeMapping) {
-        if (nomeMinusculo.includes(key)) return typeMapping[key];
+        if (lowerName.includes(key)) return typeMapping[key];
     }
-    if (nomeMinusculo.includes('nome')) return 'string';
+    if (lowerName.includes('nome')) return 'string';
     return 'string';
 }
 
-function inferirEAplicarPadrao(textoProcessado) {
-    if (!textoProcessado) {
+function inferAndApplyPattern(rawInputString) {
+    if (!rawInputString) {
         return {
-            nomesColunas: [],
-            dadosOrganizados: [],
-            padraoDetectado: null
+            columnNames: [],
+            organizedData: [],
+            patternDetected: null
         };
     }
 
-    let blocosCandidatos = [];
-    let nomesColunasFinais = [];
-    let padraoEncontrado = null;
+    const lines = rawInputString.split(/\r\n|\r|\n/);
+    const regexDiarioOficial = /DIÁRIO OFICIAL/i;
+    const filteredLines = lines.filter(line => !regexDiarioOficial.test(line));
+    let processedString = filteredLines.join(' ');
 
-    for (const padrao of patterns) {
+    processedString = processedString.replace(/-\s+/g, '');
+    processedString = processedString.replace(/º|°/g, '').replace(/(\d+),(\d{1,2})(?![0-9])/g, '$1.$2').trim();
+    processedString = processedString.replace(/\.\s*$/, '');
+    processedString = processedString.trim();
+
+    let candidateBlocks = [];
+    let finalColumnNames = [];
+    let patternFound = null;
+
+    for (const pattern of patterns) {
         const tempBlocks = [];
         let match;
-        padrao.regex.lastIndex = 0;
-        while ((match = padrao.regex.exec(textoProcessado)) !== null) {
+        pattern.regex.lastIndex = 0;
+        while ((match = pattern.regex.exec(processedString)) !== null) {
             tempBlocks.push(match.slice(1).map(field => field ? field.trim() : null));
         }
         if (tempBlocks.length > 0) {
-            nomesColunasFinais = padrao.columns;
-            blocosCandidatos = tempBlocks;
-            padraoEncontrado = padrao;
+            finalColumnNames = pattern.columns;
+            candidateBlocks = tempBlocks;
+            patternFound = pattern;
             break;
         }
     }
 
-    if (!padraoEncontrado && textoProcessado.length > 0) {
-        const linhas = textoProcessado.split('/').map(linha => linha.trim()).filter(linha => linha.length > 0);
-        if (linhas.length > 0) {
-            const linhaExemplo = linhas[0];
-            let campos = linhaExemplo.split(/[\s,;]+/).filter(f => f.length > 0);
-            if (campos.length > 1) {
-                nomesColunasFinais = Array.from({
-                    length: campos.length
+    if (!patternFound && processedString.length > 0) {
+        const lines = processedString.split('/').map(line => line.trim()).filter(line => line.length > 0);
+        if (lines.length > 0) {
+            const sampleLine = lines[0];
+            let fields = sampleLine.split(/[\s,;]+/).filter(f => f.length > 0);
+            if (fields.length > 1) {
+                finalColumnNames = Array.from({
+                    length: fields.length
                 }, (_, i) => `Campo ${i + 1}`);
-                blocosCandidatos = linhas.map(linha => linha.split(/[\s,;]+/).filter(f => f.length > 0));
-                blocosCandidatos = blocosCandidatos.filter(bloco => bloco.length === campos.length);
-                if (blocosCandidatos.length === 0) {
-                    blocosCandidatos = [
-                        [textoProcessado]
+                candidateBlocks = lines.map(line => line.split(/[\s,;]+/).filter(f => f.length > 0));
+                candidateBlocks = candidateBlocks.filter(block => block.length === fields.length);
+                if (candidateBlocks.length === 0) {
+                    candidateBlocks = [
+                        [processedString]
                     ];
-                    nomesColunasFinais = ['Dados Brutos'];
+                    finalColumnNames = ['Dados Brutos'];
                 }
             } else {
-                blocosCandidatos = [
-                    [textoProcessado]
+                candidateBlocks = [
+                    [processedString]
                 ];
-                nomesColunasFinais = ['Dados Brutos'];
+                finalColumnNames = ['Dados Brutos'];
             }
         }
     }
 
-    const dadosOrganizados = [];
-    blocosCandidatos.forEach(camposLinha => {
-        const dadosLinha = new Array(nomesColunasFinais.length).fill(null);
-        for (let i = 0; i < Math.min(camposLinha.length, nomesColunasFinais.length); i++) {
-            const valor = camposLinha[i];
-            const nomeCol = nomesColunasFinais[i];
-            const tipoInferido = obterTipoColuna(nomeCol);
-            if (valor !== null && valor !== undefined && valor !== '') {
-                let valorLimpo = valor.trim();
-                if (tipoInferido === 'numeric') dadosLinha[i] = parseFloat(valorLimpo);
-                else if (tipoInferido === 'integer_numeric') dadosLinha[i] = parseInt(valorLimpo, 10);
-                else dadosLinha[i] = valorLimpo;
+    const organizedData = [];
+    candidateBlocks.forEach(rowFields => {
+        const rowData = new Array(finalColumnNames.length).fill(null);
+        for (let i = 0; i < Math.min(rowFields.length, finalColumnNames.length); i++) {
+            const value = rowFields[i];
+            const colName = finalColumnNames[i];
+            const inferredType = getColumnType(colName);
+            if (value !== null && value !== undefined && value !== '') {
+                let cleanedValue = value.trim();
+                if (inferredType === 'numeric') rowData[i] = parseFloat(cleanedValue);
+                else if (inferredType === 'integer_numeric') rowData[i] = parseInt(cleanedValue, 10);
+                else rowData[i] = cleanedValue;
             }
         }
-        dadosOrganizados.push(dadosLinha);
+        organizedData.push(rowData);
     });
 
     return {
-        nomesColunas: nomesColunasFinais,
-        dadosOrganizados,
-        padraoDetectado: padraoEncontrado
+        columnNames: finalColumnNames,
+        organizedData,
+        patternDetected: patternFound
     };
 }
 
-function analisarComConfiguracoesManuais() {
+function parseWithManualSettings() {
     const dataInput = document.getElementById('dataInput').value.trim();
     const rowSep = document.getElementById('rowSeparator').value.replace(/\\n/g, '\n');
     const colSep = document.getElementById('columnSeparator').value.replace(/\\t/g, '\t');
@@ -333,7 +341,7 @@ function analisarComConfiguracoesManuais() {
 
     if (!dataInput) return [];
 
-    let dadosOrganizados = [];
+    let organizedData = [];
 
     if (colSep === rowSep && fieldsCount > 0) {
         const allFields = dataInput.split(colSep).map(f => f.trim()).filter(Boolean);
@@ -343,11 +351,11 @@ function analisarComConfiguracoesManuais() {
             while (chunk.length < fieldsCount) {
                 chunk.push('');
             }
-            dadosOrganizados.push(chunk);
+            organizedData.push(chunk);
         }
     } else {
         const lines = dataInput.split(rowSep).filter(line => line.trim() !== '');
-        dadosOrganizados = lines.map(line => {
+        organizedData = lines.map(line => {
             const fields = line.split(colSep).map(field => field.trim());
             while (fields.length < fieldsCount) {
                 fields.push('');
@@ -355,76 +363,64 @@ function analisarComConfiguracoesManuais() {
             return fields.slice(0, fieldsCount);
         });
     }
-    return dadosOrganizados;
+    return organizedData;
 }
 
-// ** FUNÇÃO PRINCIPAL DE ORDENAÇÃO **
-// Agora a ordenação não interfere na numeração da Classificação.
-function ordenarTabela(indiceColuna, éOrdenacaoInicial = false) {
-    if (!appState.currentTableData || appState.currentTableData.length === 0) {
-        return;
-    }
+function ordenarDados(columnNames, data) {
+    data.sort((a, b) => {
+        const sortIndexes = {
+            notaObjetiva: columnNames.indexOf('Nota Objetiva'),
+            notaP2: columnNames.indexOf('Nota P2'),
+            notaFinal: columnNames.indexOf('Nota Final') !== -1 ? columnNames.indexOf('Nota Final') : columnNames.indexOf('Nota Final Total'),
+            nota: columnNames.indexOf('Nota'),
+            classificacao: columnNames.findIndex(name => /classificação|posição|ranking/i.test(name)),
+            nome: columnNames.indexOf('Nome'),
+            idade: columnNames.indexOf('Idade')
+        };
 
-    if (appState.isRenamingColumns) {
-        return;
-    }
-
-    const nomeColuna = appState.currentColumnNames[indiceColuna];
-    const tipoColuna = appState.columnTypes[nomeColuna] || obterTipoColuna(nomeColuna);
-
-    console.log(`Ordenando por coluna: ${nomeColuna}, Tipo: ${tipoColuna}`);
-
-    if (!éOrdenacaoInicial) {
-        const direcaoAtual = appState.sortDirections[indiceColuna];
-        appState.sortDirections = {};
-        appState.sortDirections[indiceColuna] = !direcaoAtual;
-    } else {
-        appState.sortDirections = {};
-        appState.sortDirections[indiceColuna] = (tipoColuna === 'numeric' || nomeColuna.includes('Nota') || nomeColuna.includes('Acertos')) ? false : true;
-    }
-    
-    const direcao = appState.sortDirections[indiceColuna] ? 1 : -1;
-
-    appState.currentTableData.sort((a, b) => {
-        let valA = a[indiceColuna];
-        let valB = b[indiceColuna];
-        
-        const aIsNum = isFinite(parseFloat(String(valA).replace(',', '.')));
-        const bIsNum = isFinite(parseFloat(String(valB).replace(',', '.')));
-
-        if (aIsNum && bIsNum) {
-            const numA = parseFloat(String(valA).replace(',', '.'));
-            const numB = parseFloat(String(valB).replace(',', '.'));
-            return (numA - numB) * direcao;
+        if (sortIndexes.notaObjetiva !== -1) {
+            const valA = a[sortIndexes.notaObjetiva] !== null ? parseFloat(a[sortIndexes.notaObjetiva]) : -Infinity;
+            const valB = b[sortIndexes.notaObjetiva] !== null ? parseFloat(b[sortIndexes.notaObjetiva]) : -Infinity;
+            if (valA !== valB) return valB - valA;
+            if (sortIndexes.notaP2 !== -1) {
+                const desempateA = a[sortIndexes.notaP2] !== null ? parseFloat(a[sortIndexes.notaP2]) : -Infinity;
+                const desempateB = b[sortIndexes.notaP2] !== null ? parseFloat(b[sortIndexes.notaP2]) : -Infinity;
+                if (desempateA !== desempateB) return desempateB - desempateA;
+            }
         }
-
-        const strA = String(valA || '').toLowerCase();
-        const strB = String(valB || '').toLowerCase();
-        
-        if (strA === '' && strB !== '') return direcao;
-        if (strB === '' && strA !== '') return -direcao;
-        if (strA === '' && strB === '') return 0;
-        
-        return strA.localeCompare(strB, 'pt', { sensitivity: 'base' }) * direcao;
+        if (sortIndexes.classificacao !== -1) {
+            const valA = a[sortIndexes.classificacao] !== null ? parseInt(a[sortIndexes.classificacao]) : Infinity;
+            const valB = b[sortIndexes.classificacao] !== null ? parseInt(b[sortIndexes.classificacao]) : Infinity;
+            if (valA !== valB) return valA - valB;
+        }
+        if (sortIndexes.notaFinal !== -1) {
+            const valA = a[sortIndexes.notaFinal] !== null ? parseFloat(a[sortIndexes.notaFinal]) : -Infinity;
+            const valB = b[sortIndexes.notaFinal] !== null ? parseFloat(b[sortIndexes.notaFinal]) : -Infinity;
+            if (valA !== valB) return valB - valA;
+        }
+        if (sortIndexes.nota !== -1) {
+            const valA = a[sortIndexes.nota] !== null ? parseFloat(a[sortIndexes.nota]) : -Infinity;
+            const valB = b[sortIndexes.nota] !== null ? parseFloat(b[sortIndexes.nota]) : -Infinity;
+            if (valA !== valB) return valB - valA;
+        }
+        if (sortIndexes.idade !== -1) {
+            const valA = a[sortIndexes.idade] !== null ? parseInt(a[sortIndexes.idade]) : -Infinity;
+            const valB = b[sortIndexes.idade] !== null ? parseInt(b[sortIndexes.idade]) : -Infinity;
+            if (valA !== valB) return valB - valA;
+        }
+        if (sortIndexes.nome !== -1) {
+            const nomeA = a[sortIndexes.nome] || '';
+            const nomeB = b[sortIndexes.nome] || '';
+            return String(nomeA).localeCompare(String(nomeB), undefined, {
+                numeric: true,
+                sensitivity: 'base'
+            });
+        }
+        return 0;
     });
-    
-    console.log("Dados após ordenação:", appState.currentTableData);
-    
-    atualizarTabela(appState.currentColumnNames, appState.currentTableData);
 }
 
-function obterIndiceDeOrdenacaoInicial(nomesDasColunas) {
-    const colunasDeOrdenacaoPadrao = ['Nota Final Total', 'Nota Objetiva', 'Nota', 'Pontuação', 'Classificação', 'Posição', 'Ranking', 'Idade', 'Nome'];
-    for (const nomeCol of colunasDeOrdenacaoPadrao) {
-        const index = nomesDasColunas.indexOf(nomeCol);
-        if (index !== -1) {
-            return index;
-        }
-    }
-    return -1;
-}
-
-function reiniciarEstadoApp() {
+function resetAppState() {
     appState.sortDirections = {};
     appState.currentColumnNames = [];
     appState.columnTypes = {};
@@ -436,13 +432,9 @@ function reiniciarEstadoApp() {
     appState.manualMappingData = null;
 }
 
-// ** FUNÇÃO ORGANIZARDADOS CORRIGIDA PARA O CASO DA NOTA FINAL TOTAL **
-function organizarDados() {
-    reiniciarEstadoApp();
+function organizeData() {
+    resetAppState();
     const dataInput = document.getElementById('dataInput').value.trim();
-    const dadosLimpos = limparEntradaDados(dataInput);
-    document.getElementById('dataInput').value = dadosLimpos;
-    
     const containerResult = document.getElementById('ContainerResult');
     const organizeButton = document.getElementById('organizeButton');
     const loadingSpinner = document.getElementById('loadingSpinner');
@@ -450,12 +442,12 @@ function organizarDados() {
     const mapColumnsButton = document.getElementById('mapColumnsButton');
 
     if (appState.isRenamingColumns) {
-        alternarRenomeacaoColunas();
+        toggleColumnRename();
     }
-    alternarBotoesAcao(false);
+    toggleActionButtons(false);
 
     if (dataInput === "") {
-        mostrarToast("Por favor, digite algum dado na 'Lista dos candidatos' para organizar.");
+        alert("Por favor, digite algum dado na 'Lista dos candidatos' para organizar.");
         return;
     }
 
@@ -497,18 +489,19 @@ function organizarDados() {
                 atualizarTabela(appState.currentColumnNames, appState.currentTableData);
                 containerResult.style.display = 'block';
                 mapColumnsButton.style.display = 'none';
-                mostrarToast("Dados do CSV organizados!");
+                showToast("Dados do CSV organizados!");
                 return;
             }
 
-            const result = inferirEAplicarPadrao(dadosLimpos);
-            organizedData = result.dadosOrganizados.map(row => [...row]);
-            columnNames = [...result.nomesColunas];
-            patternDetected = result.padraoDetectado;
+            const result = inferAndApplyPattern(dataInput);
+            // Uso de .map para clonagem de arrays
+            organizedData = result.organizedData.map(row => [...row]);
+            columnNames = [...result.columnNames];
+            patternDetected = result.patternDetected;
 
             if (!patternDetected) {
-                mostrarToast("Padrão não detectado. Por favor, mapeie os dados manualmente.");
-                mostrarContainerMapeamentoManual();
+                showToast("Padrão não detectado. Por favor, mapeie os dados manualmente.");
+                showManualMappingContainer();
                 document.getElementById('manualMappingContainer').scrollIntoView({
                     behavior: 'smooth',
                     block: 'start'
@@ -516,33 +509,19 @@ function organizarDados() {
                 return;
             }
 
-            const isNewTotalColumnCreated = (patternDetected && patternDetected.calculation);
-            let notaFinalTotalIndex = -1;
-            
-            if (isNewTotalColumnCreated) {
+            if (patternDetected && patternDetected.calculation) {
                 const {
                     source1,
                     source2,
                     destination
                 } = patternDetected.calculation;
                 columnNames.push(destination);
-                notaFinalTotalIndex = columnNames.indexOf(destination);
                 organizedData = organizedData.map(row => {
                     const value1 = parseFloat(row[columnNames.indexOf(source1)]);
                     const value2 = parseFloat(row[columnNames.indexOf(source2)]);
                     const total = value1 + value2;
                     return [...row, total];
                 });
-            }
-
-            const hasExistingClassification = columnNames.some(name => /classificação|posição|ranking/i.test(name));
-            if (!hasExistingClassification) {
-                // Adiciona a coluna de Classificação se ela não existir
-                organizedData.forEach((row, index) => {
-                    row.unshift(index + 1);
-                });
-                columnNames.unshift('Classificação');
-                appState.columnTypes['Classificação'] = 'integer_numeric';
             }
 
             appState.lastOriginalColumnNames = [...columnNames];
@@ -554,50 +533,27 @@ function organizarDados() {
 
             appState.columnTypes = {};
             columnNames.forEach(name => {
-                appState.columnTypes[name] = obterTipoColuna(name);
+                appState.columnTypes[name] = getColumnType(name);
             });
-            
+
+            if (patternDetected && patternDetected.name !== 'Lista de Nomes (separados por vírgula)') {
+                ordenarDados(columnNames, organizedData);
+            }
+
+            const hasExistingClassification = columnNames.some(name => /classificação|posição|ranking/i.test(name));
+            if (!hasExistingClassification) {
+                organizedData.forEach((row, index) => {
+                    row.unshift(index + 1);
+                });
+                columnNames.unshift('Classificação');
+                appState.columnTypes['Classificação'] = 'integer_numeric';
+            }
+
             appState.currentColumnNames = columnNames;
             appState.currentTableData = organizedData;
 
-            // ** LÓGICA CHAVE: ORDENAR E RECLASSIFICAR SÓ NESTE PONTO **
-            if (isNewTotalColumnCreated) {
-                // Ordena e reclassifica pela nota final, se a coluna foi criada
-                const finalTotalIndex = appState.currentColumnNames.indexOf('Nota Final Total');
-                appState.currentTableData.sort((a, b) => {
-                    const numA = parseFloat(String(a[finalTotalIndex]).replace(',', '.'));
-                    const numB = parseFloat(String(b[finalTotalIndex]).replace(',', '.'));
-                    return numB - numA; // Ordena decrescente
-                });
-
-                const classificacaoIndex = appState.currentColumnNames.indexOf('Classificação');
-                if (classificacaoIndex !== -1) {
-                    appState.currentTableData.forEach((row, index) => {
-                        row[classificacaoIndex] = index + 1;
-                    });
-                }
-                
-                // Marca a coluna como ordenada
-                appState.sortDirections = {};
-                appState.sortDirections[finalTotalIndex] = false;
-            } else {
-                // Se a coluna de nota não foi criada, ordena pela classificação inicial
-                const classificacaoIndex = appState.currentColumnNames.indexOf('Classificação');
-                if(classificacaoIndex !== -1) {
-                    appState.currentTableData.sort((a, b) => {
-                        const numA = parseInt(String(a[classificacaoIndex]), 10);
-                        const numB = parseInt(String(b[classificacaoIndex]), 10);
-                        return numA - numB; // Ordena crescente
-                    });
-                    appState.sortDirections = {};
-                    appState.sortDirections[classificacaoIndex] = true;
-                }
-            }
-            
-            console.log("Dados após ordenação inicial e reclassificação:", appState.currentTableData);
-            
             atualizarTabela(appState.currentColumnNames, appState.currentTableData);
-            
+
             containerResult.style.display = 'block';
             mapColumnsButton.style.display = 'flex';
             document.getElementById('manualMappingContainer').style.display = 'none';
@@ -606,11 +562,11 @@ function organizarDados() {
                 behavior: 'smooth',
                 block: 'start'
             });
-            mostrarToast("Dados organizados automaticamente!");
+            showToast("Dados organizados automaticamente!");
 
         } catch (error) {
             console.error(error);
-            mostrarToast("Ocorreu um erro ao organizar os dados.");
+            showToast("Ocorreu um erro ao organizar os dados.");
         } finally {
             organizeText.style.display = 'inline';
             loadingSpinner.style.display = 'none';
@@ -619,93 +575,17 @@ function organizarDados() {
     }, 100);
 }
 
-function limparEntradaDados(inputString) {
-    if (!inputString) return "";
-
-    const lines = inputString.split(/\r\n|\r|\n/);
-    const junkPatterns = [
-        /DIÁRIO OFICIAL/i,
-        /ESTADO DO ACRE/i,
-        /SECRETARIA DE ESTADO DE PLANEJAMENTO E GESTÃO/i,
-        /INSTITUTO SOCIOEDUCATIVO/i,
-        /\b(?:segunda|terça|quarta|quinta|sexta|sábado|domingo)-feira,/i,
-        /^\s*\d+\s*$/
-    ];
-
-    const filteredLines = lines.filter(line => !junkPatterns.some(regex => regex.test(line)));
-    let processedString = filteredLines.join(' ');
-
-    processedString = processedString.replace(/-\s+/g, '');
-    processedString = processedString.replace(/º|°/g, '').replace(/(\d+),(\d{1,2})(?![0-9])/g, '$1.$2').trim();
-    processedString = processedString.replace(/\.\s*$/, '').trim();
-    processedString = processedString.replace(/\s{2,}/g, ' ');
-
-    return processedString;
-}
-
-function criarCabecalhosTabela(nomesColunas, container, aoClicarNoCabecalho, aoDeletarColuna, isDeletable = true) {
-    container.innerHTML = '';
-    const globalTooltip = document.getElementById('global-tooltip');
-
-    nomesColunas.forEach((nomeColuna, indice) => {
-        const th = document.createElement('th');
-        th.className = 'relative group py-2';
-        
-        if (isDeletable) {
-            const botaoDeletar = document.createElement('button');
-            botaoDeletar.className = 'absolute top-0 left-0 p-1 text-red-500 opacity-0 group-hover:opacity-100 group-hover:text-red-700 transition-opacity duration-200';
-            botaoDeletar.textContent = '×';
-            botaoDeletar.onclick = (e) => {
-                e.stopPropagation();
-                aoDeletarColuna(indice);
-            };
-            
-            botaoDeletar.onmouseover = (e) => {
-                globalTooltip.textContent = 'Excluir Coluna';
-                globalTooltip.style.left = `${e.clientX + 10}px`;
-                globalTooltip.style.top = `${e.clientY + 10}px`;
-                globalTooltip.classList.remove('opacity-0', 'invisible');
-            };
-            botaoDeletar.onmouseout = () => {
-                globalTooltip.classList.add('opacity-0', 'invisible');
-            };
-            
-            th.appendChild(botaoDeletar);
-        }
-
-        const contentContainer = document.createElement('div');
-        contentContainer.className = 'flex items-center justify-center px-4';
-        const spanTexto = document.createElement('span');
-        spanTexto.textContent = nomeColuna;
-        const spanSeta = document.createElement('span');
-        spanSeta.className = 'sort-arrow ml-1 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity duration-200';
-
-        contentContainer.appendChild(spanTexto);
-        contentContainer.appendChild(spanSeta);
-        th.appendChild(contentContainer);
-        
-        if (aoClicarNoCabecalho) {
-            th.onclick = () => aoClicarNoCabecalho(indice);
-        }
-
-        container.appendChild(th);
-    });
-}
-
-function mostrarContainerMapeamentoManual() {
+function showManualMappingContainer() {
     appState.isManualMapping = true;
     document.getElementById('ContainerResult').style.display = 'none';
     document.getElementById('manualMappingContainer').style.display = 'block';
 
     const rawData = document.getElementById('dataInput').value.trim();
     if (!rawData) {
-        mostrarToast("Por favor, insira dados para poder mapear.", 'warning');
+        showToast("Por favor, insira dados para poder mapear.", 'warning');
         return;
     }
-    
-    const dadosLimpos = limparEntradaDados(rawData);
-    document.getElementById('dataInput').value = dadosLimpos;
-    
+
     const rowSep = document.getElementById('rowSeparator').value === '\\n' ? '\n' : document.getElementById('rowSeparator').value;
     const colSep = document.getElementById('columnSeparator').value === '\\t' ? '\t' : document.getElementById('columnSeparator').value;
     const userFieldCount = parseInt(document.getElementById('fieldCount').value);
@@ -723,7 +603,7 @@ function mostrarContainerMapeamentoManual() {
     } else {
         const lines = rawData.split(rowSep).filter(line => line.trim() !== '');
         if (lines.length === 0) {
-            mostrarToast("Nenhum dado válido para mapear.", 'warning');
+            showToast("Nenhum dado válido para mapear.", 'warning');
             return;
         }
         const firstLine = lines[0];
@@ -734,16 +614,17 @@ function mostrarContainerMapeamentoManual() {
         document.getElementById('fieldCount').value = initialFields.length;
     }
 
-    criarInputsNomesColunas(initialFields);
-    atualizarTabelaPreview();
+    createColumnNameInputs(initialFields);
+    updatePreviewTable();
 }
 
-function criarInputsNomesColunas(nomesColunasIniciais) {
-    const contagemCampos = parseInt(document.getElementById('fieldCount').value);
+// Função ÚNICA para criação dos inputs de nome de coluna
+function createColumnNameInputs(initialColumnNames) {
+    const fieldsCount = parseInt(document.getElementById('fieldCount').value);
     const container = document.getElementById('columnNameInputs');
     container.innerHTML = '';
 
-    for (let i = 0; i < contagemCampos; i++) {
+    for (let i = 0; i < fieldsCount; i++) {
         const div = document.createElement('div');
         div.className = 'w-1/2 md:w-1/3 lg:w-1/4 px-2 mb-4';
         const label = document.createElement('label');
@@ -757,135 +638,171 @@ function criarInputsNomesColunas(nomesColunasIniciais) {
         input.name = `colName${i}`;
         input.className = 'shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 dark:text-gray-300 dark:bg-gray-800 leading-tight focus:outline-none focus:shadow-outline';
 
-        if (nomesColunasIniciais && nomesColunasIniciais[i]) {
-            input.value = nomesColunasIniciais[i];
+        if (initialColumnNames && initialColumnNames[i]) {
+            input.value = initialColumnNames[i];
         }
 
-        input.addEventListener('input', atualizarTabelaPreview);
+        input.addEventListener('input', updatePreviewTable);
         div.appendChild(input);
         container.appendChild(div);
     }
 }
 
-function esconderContainerMapeamentoManual() {
+function hideManualMappingContainer() {
     appState.isManualMapping = false;
     document.getElementById('organizeForm').style.display = 'block';
     document.getElementById('manualMappingContainer').style.display = 'none';
     document.getElementById('ContainerResult').style.display = 'block';
 }
 
-function atualizarTabelaPreview() {
-    const contagemCampos = parseInt(document.getElementById('fieldCount').value);
-    let dadosOrganizados = analisarComConfiguracoesManuais();
+function updatePreviewTable() {
+    const fieldsCount = parseInt(document.getElementById('fieldCount').value);
+    let organizedData = parseWithManualSettings();
 
-    const nomesColunas = [];
-    for (let i = 0; i < contagemCampos; i++) {
-        const inputNomeCol = document.getElementById(`colName${i}`);
-        const nomeCol = inputNomeCol ? inputNomeCol.value.trim() : `Coluna ${i + 1}`;
-        nomesColunas.push(nomeCol || `Coluna ${i + 1}`);
+    const columnNames = [];
+    for (let i = 0; i < fieldsCount; i++) {
+        const colNameInput = document.getElementById(`colName${i}`);
+        const colName = colNameInput ? colNameInput.value.trim() : `Coluna ${i + 1}`;
+        columnNames.push(colName || `Coluna ${i + 1}`);
     }
 
-    const previewTableHeaders = document.getElementById('previewTableHeaders');
-    const previewTableBody = document.getElementById('previewTableBody');
-    
-    criarCabecalhosTabela(nomesColunas, previewTableHeaders, null, null, false);
+    ordenarDados(columnNames, organizedData);
 
+    const previewTableHeaders = document.getElementById('previewTableHeaders');
+    previewTableHeaders.innerHTML = '';
+    columnNames.forEach(name => {
+        const th = document.createElement('th');
+        th.className = 'px-4 py-2 bg-gray-200 text-gray-700 dark:bg-gray-600 dark:text-gray-200';
+        th.textContent = name;
+        previewTableHeaders.appendChild(th);
+    });
+
+    const previewTableBody = document.getElementById('previewTableBody');
     previewTableBody.innerHTML = '';
-    dadosOrganizados.slice(0, 5).forEach(linha => {
+    organizedData.slice(0, 5).forEach(row => {
         const tr = document.createElement('tr');
-        for (let i = 0; i < contagemCampos; i++) {
+        for (let i = 0; i < fieldsCount; i++) {
             const td = document.createElement('td');
             td.className = 'border px-4 py-2 dark:border-gray-500';
 
-            const nomeCol = nomesColunas[i];
-            const valorCelula = linha[i];
-            const valorNumerico = parseFloat(valorCelula);
-            let valorExibido = valorCelula || '';
+            const colName = columnNames[i];
+            const cellValue = row[i];
+            const numericValue = parseFloat(cellValue);
+            let displayValue = cellValue || '';
 
-            if (!isNaN(valorNumerico) && (nomeCol.includes('Nota') || nomeCol.includes('Acertos')) && (valorNumerico % 1 === 0)) {
-                valorExibido = parseInt(valorNumerico, 10);
+            if (!isNaN(numericValue) && (colName.includes('Nota') || colName.includes('Acertos')) && (numericValue % 1 === 0)) {
+                displayValue = parseInt(numericValue, 10);
             } else {
-                valorExibido = valorCelula;
+                displayValue = cellValue;
             }
 
-            td.textContent = valorExibido;
+            td.textContent = displayValue;
             tr.appendChild(td);
         }
         previewTableBody.appendChild(tr);
     });
 }
 
-function aplicarMapeamentoManual() {
-    const novosNomesColunas = [];
-    const contagemCampos = parseInt(document.getElementById('fieldCount').value);
-    for (let i = 0; i < contagemCampos; i++) {
-        const inputNomeCol = document.getElementById(`colName${i}`);
-        novosNomesColunas.push((inputNomeCol && inputNomeCol.value.trim()) || `Coluna ${i + 1}`);
+function applyManualMapping() {
+    const newColumnNames = [];
+    const fieldsCount = parseInt(document.getElementById('fieldCount').value);
+    for (let i = 0; i < fieldsCount; i++) {
+        const colNameInput = document.getElementById(`colName${i}`);
+        newColumnNames.push((colNameInput && colNameInput.value.trim()) || `Coluna ${i + 1}`);
     }
 
-    let dadosOrganizados = analisarComConfiguracoesManuais();
+    let organizedData = parseWithManualSettings();
 
-    if (dadosOrganizados.length === 0) {
-        mostrarToast('Nenhum dado válido para aplicar o mapeamento.', 'warning');
+    if (organizedData.length === 0) {
+        showToast('Nenhum dado válido para aplicar o mapeamento.', 'warning');
         return;
     }
 
-    appState.lastOriginalColumnNames = [...novosNomesColunas];
-    
+    appState.lastOriginalColumnNames = [...newColumnNames];
     appState.columnTypes = {};
-    novosNomesColunas.forEach(nome => {
-        appState.columnTypes[nome] = obterTipoColuna(nome);
+    newColumnNames.forEach(name => {
+        appState.columnTypes[name] = getColumnType(name);
     });
 
-    const adicionarClassificacao = !novosNomesColunas.some(nome => /classificação|posição|ranking/i.test(nome));
-    let nomesColunasFinais = [...novosNomesColunas];
-    if (adicionarClassificacao) {
-        dadosOrganizados.forEach((row, index) => {
+    ordenarDados(newColumnNames, organizedData);
+
+    const addRank = !newColumnNames.some(name => /classificação|posição|ranking/i.test(name));
+    let finalColumnNamesForTable = [...newColumnNames];
+    if (addRank) {
+        organizedData.forEach((row, index) => {
             row.unshift(index + 1);
         });
-        nomesColunasFinais.unshift('Classificação');
+        finalColumnNamesForTable.unshift('Classificação');
     }
 
-    appState.currentColumnNames = nomesColunasFinais;
-    appState.currentTableData = dadosOrganizados;
-    
-    ordenarTabela(obterIndiceDeOrdenacaoInicial(nomesColunasFinais), true);
-
+    atualizarTabela(finalColumnNamesForTable, organizedData);
     document.getElementById('ContainerResult').style.display = 'block';
-    esconderContainerMapeamentoManual();
+    hideManualMappingContainer();
     document.getElementById('ContainerResult').scrollIntoView({
         behavior: 'smooth'
     });
-    mostrarToast('Mapeamento manual aplicado com sucesso!');
+    showToast('Mapeamento manual aplicado com sucesso!');
 }
 
 function atualizarTabela(columnNames, data) {
     const tableHeaders = document.getElementById('tableHeaders');
     const tableBody = document.getElementById('tableBody');
+    tableHeaders.innerHTML = '';
     tableBody.innerHTML = '';
-    
     appState.currentColumnNames = columnNames;
     appState.currentTableData = data;
-    
     const newSortDirections = {};
     appState.currentColumnNames.forEach((name, index) => {
-        newSortDirections[index] = appState.sortDirections[index] || undefined;
+        const oldIndex = -1;
+        if (oldIndex !== -1 && appState.sortDirections[oldIndex] !== undefined) {
+            newSortDirections[index] = appState.sortDirections[oldIndex];
+        } else {
+            newSortDirections[index] = true;
+        }
     });
     appState.sortDirections = newSortDirections;
-
-    criarCabecalhosTabela(columnNames, tableHeaders, ordenarTabela, excluirColuna);
+    const globalTooltip = document.getElementById('global-tooltip');
 
     columnNames.forEach((columnName, index) => {
-        const th = tableHeaders.children[index];
-        const arrowSpan = th.querySelector('.sort-arrow');
-        arrowSpan.innerHTML = '';
-        arrowSpan.classList.remove('opacity-100');
+        const th = document.createElement('th');
+        th.className = 'relative group py-2';
 
-        if (appState.sortDirections[index] !== undefined) {
-            const arrow = appState.sortDirections[index] ? '<i class="fas fa-arrow-up"></i>' : '<i class="fas fa-arrow-down"></i>';
-            arrowSpan.innerHTML = arrow;
-            arrowSpan.classList.add('opacity-100');
-        }
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'absolute top-0 left-0 p-1 text-red-500 opacity-0 group-hover:opacity-100 group-hover:text-red-700 transition-opacity duration-200';
+        deleteBtn.textContent = '×';
+        deleteBtn.onclick = (e) => {
+            e.stopPropagation();
+            deleteColumn(index);
+        };
+
+        deleteBtn.addEventListener('mouseenter', () => {
+            globalTooltip.classList.remove('opacity-0', 'invisible');
+        });
+        deleteBtn.addEventListener('mouseleave', () => {
+            globalTooltip.classList.add('opacity-0', 'invisible');
+        });
+        deleteBtn.addEventListener('mousemove', (e) => {
+            globalTooltip.style.left = e.clientX + 15 + 'px';
+            globalTooltip.style.top = e.clientY + 15 + 'px';
+        });
+
+        const contentContainer = document.createElement('div');
+        contentContainer.className = 'flex items-center justify-center px-4';
+
+        const textSpan = document.createElement('span');
+        textSpan.textContent = columnName;
+
+        const arrowSpan = document.createElement('span');
+        arrowSpan.className = 'sort-arrow ml-1 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity duration-200';
+
+        th.appendChild(deleteBtn);
+        contentContainer.appendChild(textSpan);
+        contentContainer.appendChild(arrowSpan);
+
+        th.appendChild(contentContainer);
+        th.onclick = () => ordenarTabela(index);
+
+        tableHeaders.appendChild(th);
     });
 
     data.forEach(row => {
@@ -894,12 +811,10 @@ function atualizarTabela(columnNames, data) {
             const td = document.createElement('td');
             let value = row[i];
             const colName = columnNames[i];
-            const colType = appState.columnTypes[colName] || obterTipoColuna(colName);
-            
+            const colType = appState.columnTypes[colName] || getColumnType(colName);
             if (value !== null && value !== undefined) {
                 value = String(value).replace(/[\r\n]+/g, ' ').trim();
             }
-
             if (value !== null && value !== undefined) {
                 if (colType === 'numeric') {
                     if (colName.includes('Acertos') || (parseFloat(value) % 1 === 0)) {
@@ -923,95 +838,115 @@ function atualizarTabela(columnNames, data) {
     });
 }
 
-function excluirColuna(columnIndex) {
+function deleteColumn(columnIndex) {
     if (confirm(`Tem certeza que deseja excluir a coluna "${appState.currentColumnNames[columnIndex]}"?`)) {
         appState.currentColumnNames.splice(columnIndex, 1);
         appState.currentTableData.forEach(row => {
             row.splice(columnIndex, 1);
         });
         atualizarTabela(appState.currentColumnNames, appState.currentTableData);
-        mostrarToast('Coluna excluída com sucesso!');
+        showToast('Coluna excluída com sucesso!');
         document.getElementById('global-tooltip').classList.add('opacity-0', 'invisible');
     }
 }
 
-function alternarRenomeacaoColunas() {
-    if (appState.isManualMapping) {
+function ordenarTabela(columnIndex) {
+    if (appState.isRenamingColumns) {
         return;
     }
-    appState.isRenamingColumns = !appState.isRenamingColumns;
-
     const table = document.getElementById('resultTable');
-    const headers = document.querySelectorAll('#tableHeaders th');
-    const deleteButtons = document.querySelectorAll('#tableHeaders th button');
-    const button = document.getElementById('toggleRenameHeadersButton');
-    const icon = button.querySelector('i');
-    const textSpan = button.querySelector('span:not(.tooltip-text)');
-    const tooltip = button.querySelector('.tooltip-text');
+    const tbody = table.getElementsByTagName('tbody')[0];
+    const rows = Array.from(tbody.getElementsByTagName('tr'));
+    const headerCell = table.querySelector(`th:nth-child(${columnIndex + 1})`);
+    const headerText = headerCell.textContent.replace(/[\u2191\u2193]/g, '').replace('×', '').trim();
+    const currentArrow = headerCell.querySelector('.sort-arrow');
+    document.querySelectorAll('#tableHeaders th .sort-arrow').forEach(arrow => {
+        arrow.classList.remove('opacity-100');
+        arrow.classList.add('opacity-0');
+        arrow.innerHTML = '';
+    });
+    appState.sortDirections[columnIndex] = !appState.sortDirections[columnIndex];
+    const colType = appState.columnTypes[headerText] || getColumnType(headerText);
+    const sortedRows = rows.sort((a, b) => {
+        const textA = a.cells[columnIndex].textContent.trim();
+        const textB = b.cells[columnIndex].textContent.trim();
+        let valA, valB;
+        if (colType === 'numeric' || colType === 'integer_numeric') {
+            valA = parseFloat(textA.replace(',', '.'));
+            valB = parseFloat(textB.replace(',', '.'));
+            valA = isNaN(valA) ? (appState.sortDirections[columnIndex] ? Infinity : -Infinity) : valA;
+            valB = isNaN(valB) ? (appState.sortDirections[columnIndex] ? Infinity : -Infinity) : valB;
+            return appState.sortDirections[columnIndex] ? valA - valB : valB - valA;
+        } else if (colType === 'numeric_string') {
+            valA = parseInt(textA);
+            valB = parseInt(textB);
+            valA = isNaN(valA) ? (appState.sortDirections[columnIndex] ? Infinity : -Infinity) : valA;
+            valB = isNaN(valB) ? (appState.sortDirections[columnIndex] ? Infinity : -Infinity) : valB;
+            return appState.sortDirections[columnIndex] ? valA - valB : valB - valA;
+        } else {
+            return appState.sortDirections[columnIndex] ? textA.localeCompare(textB, undefined, {
+                numeric: true,
+                sensitivity: 'base'
+            }) : textB.localeCompare(textA, undefined, {
+                numeric: true,
+                sensitivity: 'base'
+            });
+        }
+    });
+    tbody.innerHTML = '';
+    sortedRows.forEach(row => tbody.appendChild(row));
+    currentArrow.classList.add('opacity-100');
+    currentArrow.innerHTML = appState.sortDirections[columnIndex] ? '<i class="fas fa-arrow-up"></i>' : '<i class="fas fa-arrow-down"></i>';
+}
+const themeToggle = document.getElementById('themeToggle');
+const themeIcon = document.getElementById('themeIcon');
+const htmlElement = document.documentElement;
 
-    if (appState.isRenamingColumns) {
-        alternarBotoesAcao(true, 'toggleRenameHeadersButton');
-        table.classList.add('table-editing-mode');
-
-        icon.classList.remove('fa-pencil-alt');
-        icon.classList.add('fa-save');
-        textSpan.textContent = 'Salvar Nomes';
-        tooltip.textContent = 'Salve os novos nomes dos cabeçalhos.';
-        button.classList.remove('bg-purple-600', 'hover:bg-purple-700', 'dark:bg-purple-500', 'dark:hover:bg-purple-400');
-        button.classList.add('bg-green-600', 'hover:bg-green-700', 'dark:bg-green-500', 'dark:hover:bg-green-400');
-
-        deleteButtons.forEach(btn => btn.style.display = 'none');
-
-        headers.forEach((th, index) => {
-            const originalText = appState.currentColumnNames[index];
-            th.onclick = null;
-            th.classList.add('editable-header');
-            th.innerHTML = `<input type="text" value="${originalText}" class="w-full bg-transparent text-center font-semibold p-0 text-sm border-none focus:ring-0" data-original-index="${index}">`;
-        });
-
-        const firstInput = headers[0].querySelector('input');
-        if (firstInput) firstInput.focus();
-
+function updateThemeToggle(isDark) {
+    if (isDark) {
+        themeIcon.classList.remove('fa-moon');
+        themeIcon.classList.add('fa-sun');
+        themeToggle.title = 'Mudar para modo claro';
     } else {
-        alternarBotoesAcao(false);
-        table.classList.remove('table-editing-mode');
-
-        icon.classList.remove('fa-save');
-        icon.classList.add('fa-pencil-alt');
-        textSpan.textContent = 'Renomear Cabeçalhos';
-        tooltip.textContent = 'Mude os nomes dos cabeçalhos.';
-        button.classList.remove('bg-green-600', 'hover:bg-green-700', 'dark:bg-green-500', 'dark:hover:bg-green-400');
-        button.classList.add('bg-purple-600', 'hover:bg-purple-700', 'dark:bg-purple-500', 'dark:hover:bg-purple-400');
-
-        const newColumnNames = [];
-        headers.forEach(th => {
-            const input = th.querySelector('input');
-            const newName = input ? input.value.trim() : th.textContent.trim();
-            newColumnNames.push(newName);
-        });
-
-        appState.currentColumnNames = newColumnNames;
-        atualizarTabela(appState.currentColumnNames, appState.currentTableData);
-        mostrarToast('Nomes dos cabeçalhos atualizados!');
+        themeIcon.classList.remove('fa-sun');
+        themeIcon.classList.add('fa-moon');
+        themeToggle.title = 'Mudar para modo escuro';
     }
 }
 
-
-document.addEventListener('DOMContentLoaded', (event) => {
-    document.getElementById('rowSeparator').addEventListener('change', atualizarTabelaPreview);
-    document.getElementById('columnSeparator').addEventListener('change', atualizarTabelaPreview);
-    document.getElementById('fieldCount').addEventListener('input', () => {
-        const fieldCount = parseInt(document.getElementById('fieldCount').value) || 0;
-        const existingNames = Array.from(document.querySelectorAll('#columnNameInputs input')).map(input => input.value);
-        while (existingNames.length < fieldCount) {
-            existingNames.push(`Coluna ${existingNames.length + 1}`);
-        }
-        criarInputsNomesColunas(existingNames.slice(0, fieldCount));
-        atualizarTabelaPreview();
-    });
+function applyTheme(theme) {
+    if (theme === 'dark') {
+        htmlElement.classList.add('dark');
+        updateThemeToggle(true);
+    } else {
+        htmlElement.classList.remove('dark');
+        updateThemeToggle(false);
+    }
+}
+const savedTheme = localStorage.getItem('theme');
+if (savedTheme) {
+    applyTheme(savedTheme);
+} else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+    applyTheme('dark');
+} else {
+    applyTheme('light');
+}
+window.onload = function() {
+    document.getElementById('currentYear').textContent = new Date().getFullYear();
+    document.getElementById('ContainerResult').style.display = 'none';
+    document.getElementById('mapColumnsButton').style.display = 'none';
+};
+themeToggle.addEventListener('click', () => {
+    if (htmlElement.classList.contains('dark')) {
+        applyTheme('light');
+        localStorage.setItem('theme', 'light');
+    } else {
+        applyTheme('dark');
+        localStorage.setItem('theme', 'dark');
+    }
 });
 
-function filtrarTabela() {
+function pesquisarTabela() {
     let input = document.getElementById('searchInput').value.toUpperCase();
     let table = document.getElementById('resultTable');
     let tr = table.getElementsByTagName('tr');
@@ -1030,7 +965,7 @@ function filtrarTabela() {
 
 function gerarPDF() {
     if (appState.isRenamingColumns) {
-        alternarRenomeacaoColunas();
+        toggleColumnRename();
     }
 
     try {
@@ -1042,7 +977,7 @@ function gerarPDF() {
         const lineHeight = 10;
         const table = document.getElementById('resultTable');
         if (!table || table.querySelector('tbody').children.length === 0) {
-            mostrarToast("Erro: Gere a tabela primeiro clicando em 'Organizar'!");
+            alert("Erro: Gere a tabela primeiro clicando em 'Organizar'!");
             return;
         }
 
@@ -1103,21 +1038,21 @@ function gerarPDF() {
         });
 
         window.open(doc.output('bloburl'), '_blank');
-        mostrarToast('PDF gerado e aberto em uma nova aba.');
+        showToast('PDF gerado e aberto em uma nova aba.');
     } catch (error) {
         console.error("Erro ao gerar PDF:", error);
-        mostrarToast("Erro ao gerar PDF. Veja o console para detalhes.");
+        alert("Erro ao gerar PDF. Veja o console para detalhes.");
     }
 }
 
 function exportarCSV() {
     if (appState.isRenamingColumns) {
-        alternarRenomeacaoColunas();
+        toggleColumnRename();
     }
     const table = document.getElementById('resultTable');
     const visibleRows = Array.from(table.querySelectorAll('tbody tr:not([style*="display: none"])'));
     if (visibleRows.length === 0) {
-        mostrarToast("Não há dados visíveis para exportar. Limpe a busca ou verifique os dados.");
+        alert("Não há dados visíveis para exportar. Limpe a busca ou verifique os dados.");
         return;
     }
     const headers = Array.from(table.querySelectorAll('thead th'))
@@ -1145,55 +1080,81 @@ function exportarCSV() {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(link.href);
-    mostrarToast('Arquivo CSV gerado com sucesso, verifique seus downloads!');
+    showToast('Arquivo CSV gerado com sucesso, verifique seus downloads!');
 }
 
-const themeToggle = document.getElementById('themeToggle');
-const themeIcon = document.getElementById('themeIcon');
-const htmlElement = document.documentElement;
+function toggleColumnRename() {
+    if (appState.isManualMapping) {
+        return;
+    }
+    appState.isRenamingColumns = !appState.isRenamingColumns;
 
-function updateThemeToggle(isDark) {
-    if (isDark) {
-        themeIcon.classList.remove('fa-moon');
-        themeIcon.classList.add('fa-sun');
-        themeToggle.title = 'Mudar para modo claro';
+    const table = document.getElementById('resultTable');
+    const headers = document.querySelectorAll('#tableHeaders th');
+    const deleteButtons = document.querySelectorAll('#tableHeaders th button');
+    const button = document.getElementById('toggleRenameHeadersButton');
+    const icon = button.querySelector('i');
+    const textSpan = button.querySelector('span:not(.tooltip-text)');
+    const tooltip = button.querySelector('.tooltip-text');
+
+    if (appState.isRenamingColumns) {
+        toggleActionButtons(true, 'toggleRenameHeadersButton');
+        table.classList.add('table-editing-mode');
+
+        icon.classList.remove('fa-pencil-alt');
+        icon.classList.add('fa-save');
+        textSpan.textContent = 'Salvar Nomes';
+        tooltip.textContent = 'Salve os novos nomes dos cabeçalhos.';
+        button.classList.remove('bg-purple-600', 'hover:bg-purple-700', 'dark:bg-purple-500', 'dark:hover:bg-purple-400');
+        button.classList.add('bg-green-600', 'hover:bg-green-700', 'dark:bg-green-500', 'dark:hover:bg-green-400');
+
+        deleteButtons.forEach(btn => btn.style.display = 'none');
+
+        headers.forEach((th, index) => {
+            const originalText = appState.currentColumnNames[index];
+            th.onclick = null;
+            th.classList.add('editable-header');
+            th.innerHTML = `<input type="text" value="${originalText}" class="w-full bg-transparent text-center font-semibold p-0 text-sm border-none focus:ring-0" data-original-index="${index}">`;
+        });
+
+        const firstInput = headers[0].querySelector('input');
+        if (firstInput) firstInput.focus();
+
     } else {
-        themeIcon.classList.remove('fa-sun');
-        themeIcon.classList.add('fa-moon');
-        themeToggle.title = 'Mudar para modo escuro';
+        toggleActionButtons(false);
+        table.classList.remove('table-editing-mode');
+
+        icon.classList.remove('fa-save');
+        icon.classList.add('fa-pencil-alt');
+        textSpan.textContent = 'Renomear Cabeçalhos';
+        tooltip.textContent = 'Mude os nomes dos cabeçalhos.';
+        button.classList.remove('bg-green-600', 'hover:bg-green-700', 'dark:bg-green-500', 'dark:hover:bg-green-400');
+        button.classList.add('bg-purple-600', 'hover:bg-purple-700', 'dark:bg-purple-500', 'dark:hover:bg-purple-400');
+
+        const newColumnNames = [];
+        headers.forEach(th => {
+            const input = th.querySelector('input');
+            const newName = input ? input.value.trim() : th.textContent.trim();
+            newColumnNames.push(newName);
+        });
+
+        appState.currentColumnNames = newColumnNames;
+        atualizarTabela(appState.currentColumnNames, appState.currentTableData);
+        showToast('Nomes dos cabeçalhos atualizados!');
     }
 }
 
-function applyTheme(theme) {
-    if (theme === 'dark') {
-        htmlElement.classList.add('dark');
-        updateThemeToggle(true);
-    } else {
-        htmlElement.classList.remove('dark');
-        updateThemeToggle(false);
-    }
-}
-const savedTheme = localStorage.getItem('theme');
-if (savedTheme) {
-    applyTheme(savedTheme);
-} else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-    applyTheme('dark');
-} else {
-    applyTheme('light');
-}
 
-window.onload = function() {
-    document.getElementById('currentYear').textContent = new Date().getFullYear();
-    document.getElementById('ContainerResult').style.display = 'none';
-    document.getElementById('mapColumnsButton').style.display = 'none';
-};
-
-themeToggle.addEventListener('click', () => {
-    if (htmlElement.classList.contains('dark')) {
-        applyTheme('light');
-        localStorage.setItem('theme', 'light');
-    } else {
-        applyTheme('dark');
-        localStorage.setItem('theme', 'dark');
-    }
+document.addEventListener('DOMContentLoaded', (event) => {
+    document.getElementById('rowSeparator').addEventListener('change', updatePreviewTable);
+    document.getElementById('columnSeparator').addEventListener('change', updatePreviewTable);
+    document.getElementById('fieldCount').addEventListener('input', () => {
+        const fieldCount = parseInt(document.getElementById('fieldCount').value) || 0;
+        const existingNames = Array.from(document.querySelectorAll('#columnNameInputs input')).map(input => input.value);
+        while (existingNames.length < fieldCount) {
+            existingNames.push(`Coluna ${existingNames.length + 1}`);
+        }
+        createColumnNameInputs(existingNames.slice(0, fieldCount));
+        updatePreviewTable();
+    });
 });
